@@ -1,0 +1,42 @@
+{% extends "base_nueva.html" %}
+
+{% block pagetitle %}{{ categoria.nombre }} | {{ academia.nombre }}{% endblock %}
+
+{% block canvas %}
+  <div class="row g-4">
+    <div class="col-12 col-md-5">
+      <h5>{{ categoria.nombre }}</h5>
+      <div class="ficha-dato"><span>Descripcion</span><span>{{ categoria.descripcion|default:"-" }}</span></div>
+      <div class="ficha-dato"><span>Dias</span><span>{{ categoria.dias_texto }}</span></div>
+      <div class="ficha-dato"><span>Horario</span><span>{{ categoria.horario_texto }}</span></div>
+      <div class="ficha-dato"><span>Entrenadores</span><span>{{ categoria.entrenadores_texto }}</span></div>
+      <div class="ficha-dato"><span>Mensualidad</span><span>$ {{ categoria.valor_mensual }}</span></div>
+      <div class="ficha-dato"><span>Jugadores activos</span><span>{{ categoria.total_jugadores_activos }}</span></div>
+      <a href="/sistema/adm_categoria" class="btn btn-sm btn-outline-secondary btn-touch mt-3">
+        <i class="bi bi-arrow-left me-1"></i> Volver
+      </a>
+    </div>
+
+    <div class="col-12 col-md-7">
+      <h6>Jugadores de la categoria</h6>
+      <div class="tabla-scroll">
+        <table class="tabla-joga">
+          <thead><tr><th>Jugador</th><th>Edad</th><th>Representante</th></tr></thead>
+          <tbody>
+            {% for j in jugadores %}
+              <tr>
+                <td data-label="Jugador">
+                  <a href="/sistema/adm_jugador?action=view&amp;id={{ j.id }}">{{ j.nombre_completo }}</a>
+                </td>
+                <td data-label="Edad">{{ j.edad }}</td>
+                <td data-label="Representante">{{ j.representante.nombre_completo|default:"-" }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="3" class="text-center text-muted py-3">Sin jugadores activos.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+{% endblock %}

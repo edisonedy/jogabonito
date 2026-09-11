@@ -1,0 +1,309 @@
+{% extends "modal_shell.html" %}
+
+{% block marker %}modal_form_layout{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+
+{% block body %}
+<form
+  id="horusForm"
+  class="horus-modal-form w-100"
+  method="post"
+  enctype="multipart/form-data"
+  data-horus-post-url="{% block form_action %}{% endblock %}"
+  data-horus-destino="{% block form_destino %}{% endblock %}">
+  {% csrf_token %}
+  {% block formextra %}{% endblock %}
+
+  {% block form_fields %}
+    {% for field in form %}
+      {% if field.is_hidden %}
+        {{ field }}
+      {% endif %}
+    {% endfor %}
+
+    {% for field in form %}
+      {% if not field.is_hidden %}
+        <div class="horus-field" id="fieldset_{{ field.name }}">
+          <label class="horus-label" for="{{ field.id_for_label }}">
+            {{ field.label }}
+            {% if field.field.required %}<span class="text-danger ms-1">*</span>{% endif %}
+          </label>
+          <div class="horus-control">
+            {{ field }}
+            {% if field.help_text %}
+              <div class="horus-help">{{ field.help_text }}</div>
+            {% endif %}
+            {% if field.errors %}
+              <div class="invalid-feedback d-block">{{ field.errors|striptags }}</div>
+            {% endif %}
+          </div>
+        </div>
+      {% endif %}
+    {% endfor %}
+  {% endblock %}
+</form>
+{% endblock %}
+
+{% block footer %}
+<button type="button" class="btn btn-sm btn-unified btn-create" id="horusSave">
+  <i class="bi bi-check2-circle"></i> {% block save_label %}Guardar{% endblock %}
+</button>
+<button type="button" class="btn btn-sm btn-unified btn-cancel js-modal-close">Cancelar</button>
+{% endblock %}
+
+{% block script %}
+<script>
+(function () {
+  const form = document.getElementById('horusForm');
+  const btn = document.getElementById('horusSave');
+
+  if (!form || !btn) {
+    return;
+  }
+
+  function getPostUrl() {
+    if (typeof window.horusResolveAppUrl === 'function') {
+      return window.horusResolveAppUrl((form.dataset.horusPostUrl || '').trim());
+    }
+
+    return (form.dataset.horusPostUrl || '').trim();
+  }
+
+  function getDestino() {
+    if (typeof window.horusResolveAppUrl === 'function') {
+      return window.horusResolveAppUrl((form.dataset.horusDestino || '').trim());
+    }
+
+    return (form.dataset.horusDestino || '').trim();
+  }
+
+  function getCsrf() {
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    if (meta && meta.content) {
+      return meta.content;
+    }
+
+    const input = form.querySelector('input[name="csrfmiddlewaretoken"]');
+    return input ? input.value : '';
+  }
+
+  function appendLegacyItems(formData) {
+    ['lista_items1', 'lista_items2', 'lista_items3'].forEach(function (name) {
+      try {
+        const value = window[name];
+        if (typeof value !== 'undefined' && value !== null) {
+          formData.append(name, JSON.stringify(value));
+        }
+      } catch (e) {}
+    });
+  }
+
+  function resolveDestino(destino, data) {
+    let nextUrl = String(
+      (data && (data.redirect_url || data.redirectUrl || data.url)) ||
+      destino ||
+      ''
+    ).trim();
+
+    if (nextUrl.endsWith('id=')) {
+      if (data && data.idnew) {
+        nextUrl += data.idnew;
+      } else if (data && data.id) {
+        nextUrl += data.id;
+      }
+
+      if (nextUrl.endsWith('id=')) {
+        nextUrl = nextUrl.slice(0, -3);
+      }
+    }
+
+    return nextUrl;
+  }
+
+  function isSameLocation(url) {
+    if (!url) {
+      return false;
+    }
+
+    try {
+      return new URL(url, window.location.origin).href === window.location.href;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function notifyError(data) {
+    const title = data && data.titulo ? data.titulo : 'Error';
+    const icon = data && data.icono ? data.icono : 'error';
+    const message = data && (data.mensaje || data.message)
+      ? (data.mensaje || data.message)
+      : 'No se pudo guardar.';
+
+    if (typeof window.NotificacionAlerta === 'function') {
+      window.NotificacionAlerta(icon, title, message);
+    } else {
+      window.alert(message);
+    }
+  }
+
+  async function readResponse(response) {
+    const contentType = String(response.headers.get('content-type') || '').toLowerCase();
+    let rawText = '';
+
+    try {
+      rawText = await response.text();
+    } catch (e) {}
+
+    let data = null;
+
+    if (contentType.indexOf('application/json') >= 0) {
+      if (rawText.trim()) {
+        try {
+          data = JSON.parse(rawText);
+        } catch (e) {}
+      } else {
+        data = {};
+      }
+    }
+
+    return {
+      ok: response.ok,
+      redirected: !!response.redirected,
+      redirectedUrl: response.redirected ? response.url : '',
+      data: data,
+      isEmpty: !rawText.trim()
+    };
+  }
+
+  function finishSuccess(data) {
+    const destino = resolveDestino(getDestino(), data);
+
+    if (window.horusCloseModal) {
+      window.horusCloseModal();
+    }
+
+    if (destino && !isSameLocation(destino)) {
+      window.location.href = destino;
+      return;
+    }
+
+    if (data && data.reloadpage && window.sysend && typeof window.sysend.broadcast === 'function') {
+      try {
+        window.sysend.broadcast('sga', {message: 'reload', token: data.sessionid});
+      } catch (e) {}
+    }
+
+    window.location.reload();
+  }
+
+  function showSuccessMessage(data) {
+    const message = data && data.mensaje ? data.mensaje : '';
+
+    if (!message) {
+      finishSuccess(data);
+      return;
+    }
+
+    if (typeof window.desbloqueointerface === 'function') {
+      window.desbloqueointerface(true);
+    }
+
+    setSubmittingState(false);
+
+    if (typeof window.horusShowMessage === 'function') {
+      window.horusShowMessage({
+        title: 'Informacion',
+        message: message,
+        autoCloseMs: 900,
+        onClose: function () {
+          finishSuccess(data);
+        }
+      });
+      return;
+    }
+
+    window.alert(message);
+    finishSuccess(data);
+  }
+
+  function setSubmittingState(active) {
+    btn.disabled = !!active;
+    form.setAttribute('aria-busy', active ? 'true' : 'false');
+  }
+
+  async function submit() {
+    const postUrl = getPostUrl();
+    if (!postUrl || btn.disabled) {
+      return;
+    }
+
+    setSubmittingState(true);
+
+    if (typeof window.bloqueointerface === 'function') {
+      window.bloqueointerface({
+        title: 'Guardando cambios',
+        message: 'Estamos procesando la informacion...'
+      });
+    }
+
+    try {
+      const formData = new FormData(form);
+      appendLegacyItems(formData);
+
+      const csrf = getCsrf();
+      const response = await fetch(postUrl, {
+        method: 'POST',
+        body: formData,
+        headers: Object.assign(
+          {'X-Requested-With': 'XMLHttpRequest'},
+          csrf ? {'X-CSRFToken': csrf} : {}
+        ),
+        credentials: 'same-origin'
+      });
+
+      const payload = await readResponse(response);
+      const data = payload.data;
+
+      if (data && data.result === 'ok') {
+        showSuccessMessage(data);
+        return;
+      }
+
+      if (payload.ok && (payload.redirected || payload.isEmpty)) {
+        finishSuccess(Object.assign(
+          {},
+          data && typeof data === 'object' ? data : {},
+          payload.redirectedUrl ? {redirect_url: payload.redirectedUrl} : {}
+        ));
+        return;
+      }
+
+      if (typeof window.desbloqueointerface === 'function') {
+        window.desbloqueointerface(true);
+      }
+
+      setSubmittingState(false);
+      notifyError(data);
+    } catch (error) {
+      if (typeof window.desbloqueointerface === 'function') {
+        window.desbloqueointerface(true);
+      }
+
+      setSubmittingState(false);
+      if (typeof window.NotificacionError === 'function') {
+        window.NotificacionError('Opss..!!', 'Error de conexion');
+      } else {
+        window.alert('Error de conexion');
+      }
+    }
+  }
+
+  btn.addEventListener('click', submit);
+  form.addEventListener('submit', function (event) {
+    event.preventDefault();
+    submit();
+  });
+})();
+</script>
+{% block extra_js %}{% endblock %}
+{% endblock %}

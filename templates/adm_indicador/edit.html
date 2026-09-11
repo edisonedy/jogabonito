@@ -1,0 +1,7 @@
+{% extends "form_modal.html" %}
+{% block form_action %}/sistema/adm_indicador{% endblock %}
+{% block formextra %}
+  <input type="hidden" name="action" value="edit">
+  <input type="hidden" name="id" value="{{ indicador.id }}">
+{% endblock %}
+{% block save_label %}Actualizar{% endblock %}

@@ -1,0 +1,207 @@
+{% extends "base_nueva.html" %}
+
+{% block pagetitle %}Asistencia | {{ academia.nombre }}{% endblock %}
+
+{% block canvas %}
+  <form method="get" class="modulo-toolbar" id="filtroAsistencia">
+    <select name="categoria" class="form-select form-select-sm" style="max-width:220px" onchange="this.form.submit()">
+      <option value="">Elige el grupo...</option>
+      {% for c in categorias %}
+        <option value="{{ c.id }}" {% if categoria.id == c.id %}selected{% endif %}>
+          {{ c.nombre }} ({{ c.horario_texto }})
+        </option>
+      {% endfor %}
+    </select>
+
+    <div class="input-group input-group-sm" style="max-width:230px">
+      <a class="btn btn-outline-secondary"
+         href="?categoria={{ categoria.id|default:'' }}&amp;fecha={{ fecha_anterior|date:'Y-m-d' }}"
+         title="Dia anterior"><i class="bi bi-chevron-left"></i></a>
+      <input type="date" class="form-control" name="fecha" value="{{ fecha|date:'Y-m-d' }}"
+             max="{{ fecha_maxima|date:'Y-m-d' }}" onchange="this.form.submit()">
+      <a class="btn btn-outline-secondary"
+         href="?categoria={{ categoria.id|default:'' }}&amp;fecha={{ fecha_siguiente|date:'Y-m-d' }}"
+         title="Dia siguiente"><i class="bi bi-chevron-right"></i></a>
+    </div>
+
+    {% if categoria %}
+      <span class="modulo-chip"><i class="fa-solid fa-calendar-day"></i> {{ fecha|date:"l d/m/Y" }}</span>
+    {% endif %}
+  </form>
+
+  {% if error %}
+    <div class="alert alert-warning py-2 small">{{ error }}</div>
+  {% endif %}
+
+  {% if not categoria %}
+    <div class="alert alert-info mb-0">
+      <i class="bi bi-info-circle me-1"></i> Elige un grupo para registrar la asistencia.
+    </div>
+  {% else %}
+
+    {% if not entrena_hoy %}
+      <div class="alert alert-warning py-2 small">
+        <i class="bi bi-exclamation-triangle me-1"></i>
+        {{ categoria.nombre }} normalmente no entrena este dia ({{ categoria.dias_texto }}).
+        Puedes registrar igual si hubo clase.
+      </div>
+    {% endif %}
+
+    <div class="resumen-asistencia" id="resumenAsistencia">
+      <span class="res-item res-total"><b id="resMarcados">{{ resumen.marcados }}</b> de {{ resumen.total }}</span>
+      <span class="res-item text-bg-success"><b id="resPresentes">{{ resumen.presentes }}</b> presentes</span>
+      <span class="res-item text-bg-danger"><b id="resFaltas">{{ resumen.faltas }}</b> faltas</span>
+      <span class="res-item text-bg-warning"><b id="resAtrasos">{{ resumen.atrasos }}</b> atrasos</span>
+      <span class="res-item text-bg-info"><b id="resJustificados">{{ resumen.justificados }}</b> justificados</span>
+      <span class="res-item res-pendientes"><b id="resPendientes">{{ resumen.pendientes }}</b> sin marcar</span>
+    </div>
+
+    {% if filas %}
+      <div class="d-flex flex-wrap gap-2 my-3">
+        <button type="button" class="btn btn-sm btn-outline-success btn-touch" id="btnTodosPresentes">
+          <i class="bi bi-check2-all me-1"></i> Marcar presentes a los que faltan
+        </button>
+      </div>
+
+      <div class="lista-asistencia" id="listaAsistencia"
+           data-categoria="{{ categoria.id }}" data-fecha="{{ fecha|date:'Y-m-d' }}">
+        {% for fila in filas %}
+          <div class="fila-asistencia" data-jugador="{{ fila.jugador.id }}">
+            <div class="fila-jugador">
+              {% if fila.jugador.fotografia %}
+                <img src="{{ fila.jugador.fotografia.url }}" class="avatar-jugador" alt="">
+              {% else %}
+                <span class="avatar-jugador avatar-vacio"><i class="fa-solid fa-futbol"></i></span>
+              {% endif %}
+              <div class="min-w-0">
+                <div class="fw-semibold text-truncate">{{ fila.jugador.nombre_completo }}</div>
+                <div class="small text-muted">
+                  {{ fila.jugador.edad }} anios
+                  {% if fila.asistencia.observacion %}
+                    &middot; <i class="bi bi-chat-left-text"></i> {{ fila.asistencia.observacion|truncatechars:40 }}
+                  {% endif %}
+                </div>
+              </div>
+              <a href="#" class="btn btn-sm btn-soft ms-auto btn-detalle" title="Observacion"
+                 data-modal-url="/sistema/adm_asistencia?action=detalle&amp;categoria={{ categoria.id }}&amp;fecha={{ fecha|date:'Y-m-d' }}&amp;jugador={{ fila.jugador.id }}">
+                <i class="bi bi-chat-left-text"></i>
+              </a>
+            </div>
+
+            <div class="btn-group btn-group-asistencia" role="group">
+              {% for valor, corta, larga, color in botones %}
+                <button type="button"
+                        class="btn btn-outline-{{ color }} btn-touch btn-marcar {% if fila.asistencia.estado == valor %}active{% endif %}"
+                        data-estado="{{ valor }}" title="{{ larga }}">
+                  <span class="d-none d-sm-inline">{{ larga|title }}</span>
+                  <span class="d-sm-none">{{ corta }}</span>
+                </button>
+              {% endfor %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="alert alert-warning mb-0">
+        La categoria {{ categoria.nombre }} no tiene jugadores activos.
+      </div>
+    {% endif %}
+  {% endif %}
+{% endblock %}
+
+{% block heading %}
+<script>
+  $(function () {
+    var lista = document.getElementById('listaAsistencia');
+    if (!lista) { return; }
+
+    var csrftoken = $('meta[name="csrf-token"]').attr('content');
+    var categoria = lista.dataset.categoria;
+    var fecha = lista.dataset.fecha;
+
+    function pintarResumen(resumen) {
+      if (!resumen) { return; }
+      $('#resMarcados').text(resumen.marcados);
+      $('#resPresentes').text(resumen.presentes);
+      $('#resFaltas').text(resumen.faltas);
+      $('#resAtrasos').text(resumen.atrasos);
+      $('#resJustificados').text(resumen.justificados);
+      $('#resPendientes').text(resumen.pendientes);
+    }
+
+    function avisar(data) {
+      if (typeof NotificacionAlerta === 'function') {
+        NotificacionAlerta(data.icono || 'warning', data.titulo || 'Advertencia', data.mensaje);
+      } else {
+        alert(data.mensaje || 'No se pudo guardar');
+      }
+    }
+
+    $(document).on('click', '.btn-marcar', function () {
+      var boton = $(this);
+      var fila = boton.closest('.fila-asistencia');
+      var grupoBotones = boton.closest('.btn-group-asistencia');
+      var estado = boton.data('estado');
+
+      if (boton.hasClass('active')) { return; }
+
+      grupoBotones.find('.btn-marcar').prop('disabled', true);
+
+      $.ajax({
+        type: 'POST',
+        url: '/sistema/adm_asistencia',
+        data: {
+          action: 'marcar',
+          categoria: categoria,
+          fecha: fecha,
+          jugador: fila.data('jugador'),
+          estado: estado,
+          csrfmiddlewaretoken: csrftoken
+        },
+        dataType: 'json'
+      }).done(function (data) {
+        if (data.result === 'ok') {
+          grupoBotones.find('.btn-marcar').removeClass('active');
+          boton.addClass('active');
+          fila.addClass('marcada');
+          pintarResumen(data.resumen);
+        } else {
+          avisar(data);
+        }
+      }).fail(function () {
+        avisar({mensaje: 'Error de conexion. Revisa la senal.'});
+      }).always(function () {
+        grupoBotones.find('.btn-marcar').prop('disabled', false);
+      });
+    });
+
+    $('#btnTodosPresentes').on('click', function () {
+      var boton = $(this);
+      boton.prop('disabled', true);
+
+      $.ajax({
+        type: 'POST',
+        url: '/sistema/adm_asistencia',
+        data: {
+          action: 'marcartodos',
+          categoria: categoria,
+          fecha: fecha,
+          estado: 1,
+          csrfmiddlewaretoken: csrftoken
+        },
+        dataType: 'json'
+      }).done(function (data) {
+        if (data.result === 'ok') {
+          location.reload();
+        } else {
+          avisar(data);
+          boton.prop('disabled', false);
+        }
+      }).fail(function () {
+        avisar({mensaje: 'Error de conexion. Revisa la senal.'});
+        boton.prop('disabled', false);
+      });
+    });
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,184 @@
+{% extends "base_nueva.html" %}
+
+{% block pagetitle %}{{ evaluacion.titulo }} | {{ academia.nombre }}{% endblock %}
+
+{% block canvas %}
+  <div class="modulo-toolbar">
+    <div>
+      <h5 class="mb-0">{{ evaluacion.titulo }}</h5>
+      <div class="small text-muted">
+        {{ evaluacion.categoria.nombre }} &middot; {{ evaluacion.fecha|date:"l d/m/Y" }}
+      </div>
+    </div>
+
+    <span class="modulo-chip">
+      <i class="fa-solid fa-chart-simple"></i>
+      <span id="avanceTexto">{{ avance }}</span>% completado
+    </span>
+
+    {% if evaluacion.cerrada %}
+      <span class="badge text-bg-secondary align-self-center">Cerrada</span>
+    {% endif %}
+
+    <div class="ms-auto d-flex gap-2">
+      <button type="button" class="btn btn-sm btn-outline-secondary btn-touch" id="btnCerrar">
+        {% if evaluacion.cerrada %}
+          <i class="bi bi-unlock me-1"></i> Reabrir
+        {% else %}
+          <i class="bi bi-lock me-1"></i> Cerrar
+        {% endif %}
+      </button>
+      <a href="/sistema/adm_evaluacion" class="btn btn-sm btn-outline-secondary btn-touch">
+        <i class="bi bi-arrow-left me-1"></i> Volver
+      </a>
+    </div>
+  </div>
+
+  {% if evaluacion.observacion %}
+    <div class="alert alert-light border py-2 small">{{ evaluacion.observacion|linebreaksbr }}</div>
+  {% endif %}
+
+  {% if not filas %}
+    <div class="alert alert-warning mb-0">
+      El grupo {{ evaluacion.categoria.nombre }} no tiene jugadores activos.
+    </div>
+  {% else %}
+    <div class="planilla" id="planilla" data-evaluacion="{{ evaluacion.id }}"
+         data-cerrada="{% if evaluacion.cerrada %}1{% else %}0{% endif %}">
+      {% for fila in filas %}
+        <article class="planilla-jugador">
+          <header>
+            {% if fila.jugador.fotografia %}
+              <img src="{{ fila.jugador.fotografia.url }}" class="avatar-jugador" alt="">
+            {% else %}
+              <span class="avatar-jugador avatar-vacio"><i class="fa-solid fa-futbol"></i></span>
+            {% endif %}
+            <div class="min-w-0">
+              <div class="fw-semibold text-truncate">{{ fila.jugador.nombre_completo }}</div>
+              <div class="small text-muted">
+                {{ fila.jugador.edad }} anios
+                {% if fila.jugador.posicion %} &middot; {{ fila.jugador.posicion.nombre }}{% endif %}
+              </div>
+            </div>
+            <a href="/sistema/adm_evaluacion?action=progreso&amp;id={{ fila.jugador.id }}"
+               class="btn btn-sm btn-soft ms-auto" title="Ver progreso">
+              <i class="bi bi-graph-up-arrow"></i>
+            </a>
+          </header>
+
+          <div class="planilla-campos">
+            {% for celda in fila.celdas %}
+              <label class="planilla-campo">
+                <span class="planilla-etiqueta">
+                  <i class="bi bi-dot text-{{ celda.indicador.color_area }}"></i>
+                  {{ celda.indicador.nombre }}
+                </span>
+                <span class="planilla-input">
+                  <input type="number" step="0.01" inputmode="decimal"
+                         class="form-control form-control-sm celda-valor"
+                         data-jugador="{{ fila.jugador.id }}"
+                         data-indicador="{{ celda.indicador.id }}"
+                         value="{{ celda.valor }}"
+                         {% if evaluacion.cerrada %}disabled{% endif %}>
+                  {% if celda.indicador.sufijo %}
+                    <span class="planilla-unidad">{{ celda.indicador.sufijo }}</span>
+                  {% endif %}
+                  <span class="planilla-flecha">
+                    {% if celda.mejoro is True %}<i class="bi bi-arrow-up-circle-fill text-success"></i>
+                    {% elif celda.mejoro is False %}<i class="bi bi-arrow-down-circle-fill text-danger"></i>{% endif %}
+                  </span>
+                </span>
+              </label>
+            {% endfor %}
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endblock %}
+
+{% block heading %}
+<script>
+  $(function () {
+    var planilla = document.getElementById('planilla');
+    var csrftoken = $('meta[name="csrf-token"]').attr('content');
+    var evaluacionId = {{ evaluacion.id }};
+
+    function avisar(data) {
+      if (typeof NotificacionAlerta === 'function') {
+        NotificacionAlerta(data.icono || 'warning', data.titulo || 'Advertencia', data.mensaje);
+      } else {
+        alert(data.mensaje || 'No se pudo guardar');
+      }
+    }
+
+    if (planilla) {
+      $(document).on('change', '.celda-valor', function () {
+        var campo = $(this);
+        var flecha = campo.closest('.planilla-input').find('.planilla-flecha');
+
+        campo.prop('disabled', true);
+
+        $.ajax({
+          type: 'POST',
+          url: '/sistema/adm_evaluacion',
+          data: {
+            action: 'medir',
+            evaluacion: evaluacionId,
+            jugador: campo.data('jugador'),
+            indicador: campo.data('indicador'),
+            valor: campo.val(),
+            csrfmiddlewaretoken: csrftoken
+          },
+          dataType: 'json'
+        }).done(function (data) {
+          if (data.result === 'ok') {
+            campo.addClass('guardado');
+            setTimeout(function () { campo.removeClass('guardado'); }, 900);
+
+            if (data.mejoro === true) {
+              flecha.html('<i class="bi bi-arrow-up-circle-fill text-success"></i>');
+            } else if (data.mejoro === false) {
+              flecha.html('<i class="bi bi-arrow-down-circle-fill text-danger"></i>');
+            } else {
+              flecha.html('');
+            }
+
+            if (typeof data.avance !== 'undefined') {
+              $('#avanceTexto').text(data.avance);
+            }
+          } else {
+            avisar(data);
+          }
+        }).fail(function () {
+          avisar({mensaje: 'Error de conexion. Revisa la senal.'});
+        }).always(function () {
+          campo.prop('disabled', false);
+        });
+      });
+    }
+
+    $('#btnCerrar').on('click', function () {
+      var boton = $(this);
+      boton.prop('disabled', true);
+
+      $.ajax({
+        type: 'POST',
+        url: '/sistema/adm_evaluacion',
+        data: {action: 'cerrar', id: evaluacionId, csrfmiddlewaretoken: csrftoken},
+        dataType: 'json'
+      }).done(function (data) {
+        if (data.result === 'ok') {
+          location.reload();
+        } else {
+          avisar(data);
+          boton.prop('disabled', false);
+        }
+      }).fail(function () {
+        avisar({mensaje: 'Error de conexion.'});
+        boton.prop('disabled', false);
+      });
+    });
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends "form_modal.html" %}
+
+{% block form_action %}/sistema/adm_solicitud{% endblock %}
+
+{% block formextra %}
+  <input type="hidden" name="action" value="estado">
+  <input type="hidden" name="id" value="{{ solicitud.id }}">
+
+  <div class="alert alert-light border py-2 small">
+    <b>{{ solicitud.nombre }}</b> &middot; {{ solicitud.edad }} anios<br>
+    <a href="https://wa.me/{{ solicitud.numero_whatsapp }}" target="_blank" rel="noopener">
+      <i class="fa-brands fa-whatsapp text-success"></i> {{ solicitud.telefono }}
+    </a><br>
+    Horario de interes: <b>{{ solicitud.categoria.nombre|default:"Cualquiera" }}</b><br>
+    Recibida: {{ solicitud.fecha_creacion|date:"d/m/Y H:i" }}
+    {% if solicitud.mensaje %}<hr class="my-2">{{ solicitud.mensaje }}{% endif %}
+  </div>
+{% endblock %}
+
+{% block form_fields %}
+  <div class="horus-field" id="fieldset_estado">
+    <label class="horus-label" for="id_estado">Estado</label>
+    <div class="horus-control">
+      <select name="estado" id="id_estado" class="form-select form-select-sm">
+        {% for valor, etiqueta in estados %}
+          <option value="{{ valor }}" {% if solicitud.estado == valor %}selected{% endif %}>{{ etiqueta }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+
+  <div class="horus-field" id="fieldset_nota_interna">
+    <label class="horus-label" for="id_nota_interna">Nota interna</label>
+    <div class="horus-control">
+      <textarea name="nota_interna" id="id_nota_interna" rows="3"
+                class="form-control form-control-sm">{{ solicitud.nota_interna }}</textarea>
+    </div>
+  </div>
+{% endblock %}
+
+{% block save_label %}Guardar{% endblock %}

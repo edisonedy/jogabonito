@@ -1,0 +1,91 @@
+{% extends "base_nueva.html" %}
+
+{% block pagetitle %}Evaluaciones | {{ academia.nombre }}{% endblock %}
+
+{% block canvas %}
+  <form method="get" class="modulo-toolbar">
+    <select name="categoria" class="form-select form-select-sm" style="max-width:220px" onchange="this.form.submit()">
+      <option value="">Todos los grupos</option>
+      {% for c in categorias %}
+        <option value="{{ c.id }}" {% if categoria_id == c.id %}selected{% endif %}>{{ c.nombre }}</option>
+      {% endfor %}
+    </select>
+
+    <a href="#" data-modal-url="/sistema/adm_evaluacion?action=add" class="btn btn-joga btn-sm btn-touch ms-auto">
+      <i class="fa-solid fa-plus me-1"></i> Nueva evaluacion
+    </a>
+  </form>
+
+  <div class="tabla-scroll">
+    <table class="tabla-joga">
+      <thead>
+        <tr>
+          <th>Prueba</th>
+          <th>Grupo</th>
+          <th>Fecha</th>
+          <th>Que se midio</th>
+          <th>Avance</th>
+          <th>Estado</th>
+          <th class="text-end">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in evaluaciones %}
+          <tr>
+            <td data-label="Prueba">
+              <a class="fw-semibold" href="/sistema/adm_evaluacion?action=planilla&amp;id={{ e.id }}">{{ e.titulo }}</a>
+              {% if e.observacion %}<div class="small text-muted">{{ e.observacion|truncatechars:60 }}</div>{% endif %}
+            </td>
+            <td data-label="Grupo">{{ e.categoria.nombre }}</td>
+            <td data-label="Fecha">{{ e.fecha|date:"d/m/Y" }}</td>
+            <td data-label="Que se midio">
+              {% for i in e.indicadores_ordenados|slice:":3" %}
+                <span class="badge text-bg-{{ i.color_area }}">{{ i.nombre|truncatechars:22 }}</span>
+              {% endfor %}
+              {% if e.indicadores.count > 3 %}
+                <span class="badge text-bg-light">+{{ e.indicadores.count|add:"-3" }}</span>
+              {% endif %}
+            </td>
+            <td data-label="Avance">
+              <div class="barra-avance" title="{{ e.total_registrado }} de {{ e.total_esperado }} datos">
+                <span style="width: {{ e.avance }}%"></span>
+              </div>
+              <div class="small text-muted">{{ e.avance }}%</div>
+            </td>
+            <td data-label="Estado">
+              {% if e.cerrada %}
+                <span class="badge text-bg-secondary">Cerrada</span>
+              {% else %}
+                <span class="badge text-bg-success">Abierta</span>
+              {% endif %}
+            </td>
+            <td class="text-end celda-acciones" data-label="Acciones">
+              <div class="btn-group btn-group-sm">
+                <a class="btn btn-outline-secondary" href="/sistema/adm_evaluacion?action=planilla&amp;id={{ e.id }}"
+                   title="Abrir planilla"><i class="bi bi-table"></i></a>
+                {% if not e.cerrada %}
+                  <a class="btn btn-outline-primary" href="#"
+                     data-modal-url="/sistema/adm_evaluacion?action=edit&amp;id={{ e.id }}" title="Editar">
+                    <i class="bi bi-pencil"></i></a>
+                {% endif %}
+                {% if es_administrador %}
+                  <a class="btn btn-outline-danger" href="#"
+                     data-modal-url="/sistema/adm_evaluacion?action=delete&amp;id={{ e.id }}" title="Eliminar">
+                    <i class="bi bi-trash"></i></a>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="7" class="text-center text-muted py-4">
+              Todavia no hay evaluaciones. Crea la primera y define que vas a medir.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% include "paginador.html" %}
+{% endblock %}

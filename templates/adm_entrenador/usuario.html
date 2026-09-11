@@ -1,0 +1,11 @@
+{% extends "form_modal.html" %}
+{% block form_action %}/sistema/adm_entrenador{% endblock %}
+{% block formextra %}
+  <input type="hidden" name="action" value="usuario">
+  <input type="hidden" name="id" value="{{ entrenador.id }}">
+  <div class="alert alert-info py-2 small">
+    Acceso de <b>{{ entrenador.nombre_completo }}</b> al sistema. El usuario entra al grupo ENTRENADOR
+    y solo vera los jugadores de sus categorias.
+  </div>
+{% endblock %}
+{% block save_label %}Guardar acceso{% endblock %}

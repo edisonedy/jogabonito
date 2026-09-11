@@ -1,0 +1,77 @@
+{% extends "base_nueva.html" %}
+
+{% block pagetitle %}Solicitudes | {{ academia.nombre }}{% endblock %}
+
+{% block canvas %}
+  <form method="get" class="modulo-toolbar">
+    <div class="buscador d-flex gap-2">
+      <input type="text" class="form-control form-control-sm" name="s" value="{{ search }}"
+             placeholder="Buscar por nombre o telefono">
+      <button class="btn btn-sm btn-outline-secondary btn-touch" type="submit"><i class="bi bi-search"></i></button>
+    </div>
+
+    <select name="estado" class="form-select form-select-sm" style="max-width:180px" onchange="this.form.submit()">
+      <option value="">Todos los estados</option>
+      {% for valor, etiqueta in estados %}
+        <option value="{{ valor }}" {% if estado_id == valor %}selected{% endif %}>{{ etiqueta }}</option>
+      {% endfor %}
+    </select>
+
+    <span class="modulo-chip"><i class="fa-solid fa-envelope-open-text"></i> {{ total_nuevas }} nuevas</span>
+
+    <a href="/" target="_blank" class="btn btn-sm btn-outline-secondary btn-touch ms-auto">
+      <i class="bi bi-box-arrow-up-right me-1"></i> Ver pagina publica
+    </a>
+  </form>
+
+  <div class="tabla-scroll">
+    <table class="tabla-joga">
+      <thead>
+        <tr>
+          <th>Interesado</th>
+          <th>Edad</th>
+          <th>Horario</th>
+          <th>Mensaje</th>
+          <th>Recibida</th>
+          <th>Estado</th>
+          <th class="text-end">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in solicitudes %}
+          <tr>
+            <td data-label="Interesado">
+              <div class="fw-semibold">{{ s.nombre }}</div>
+              <div class="small text-muted">
+                <a href="https://wa.me/{{ s.numero_whatsapp }}" target="_blank" rel="noopener">
+                  <i class="fa-brands fa-whatsapp text-success"></i> {{ s.telefono }}
+                </a>
+              </div>
+            </td>
+            <td data-label="Edad">{{ s.edad }}</td>
+            <td data-label="Horario">{{ s.categoria.nombre|default:"Cualquiera" }}</td>
+            <td data-label="Mensaje">{{ s.mensaje|default:"-"|truncatechars:60 }}</td>
+            <td data-label="Recibida">{{ s.fecha_creacion|date:"d/m/Y H:i" }}</td>
+            <td data-label="Estado"><span class="badge text-bg-{{ s.color }}">{{ s.get_estado_display }}</span></td>
+            <td class="text-end celda-acciones" data-label="Acciones">
+              <div class="btn-group btn-group-sm">
+                <a class="btn btn-outline-primary" href="#"
+                   data-modal-url="/sistema/adm_solicitud?action=gestionar&amp;id={{ s.id }}" title="Gestionar">
+                  <i class="bi bi-pencil"></i>
+                </a>
+                <a class="btn btn-outline-danger" href="#"
+                   data-modal-url="/sistema/adm_solicitud?action=delete&amp;id={{ s.id }}" title="Eliminar">
+                  <i class="bi bi-trash"></i>
+                </a>
+              </div>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="7" class="text-center text-muted py-4">Todavia no llegan solicitudes.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% include "paginador.html" %}
+{% endblock %}

@@ -1,0 +1,89 @@
+{% extends "base_nueva.html" %}
+
+{% block pagetitle %}Entrenadores | {{ academia.nombre }}{% endblock %}
+
+{% block canvas %}
+  <div class="modulo-toolbar">
+    <form method="get" class="buscador d-flex gap-2">
+      <input type="text" class="form-control form-control-sm" name="s" value="{{ search }}"
+             placeholder="Buscar por nombre, cedula o telefono">
+      <button class="btn btn-sm btn-outline-secondary btn-touch" type="submit"><i class="bi bi-search"></i></button>
+    </form>
+
+    <span class="modulo-chip"><i class="fa-solid fa-user-check"></i> {{ total_entrenadores }} activos</span>
+
+    <a href="#" data-modal-url="/sistema/adm_entrenador?action=add" class="btn btn-joga btn-sm btn-touch ms-auto">
+      <i class="fa-solid fa-plus me-1"></i> Nuevo entrenador
+    </a>
+  </div>
+
+  <div class="tabla-scroll">
+    <table class="tabla-joga">
+      <thead>
+        <tr>
+          <th>Entrenador</th>
+          <th>Telefono</th>
+          <th>Categorias</th>
+          <th>Acceso</th>
+          <th>Estado</th>
+          <th class="text-end">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in entrenadores %}
+          <tr>
+            <td data-label="Entrenador">
+              <div class="d-flex align-items-center gap-2">
+                {% if e.fotografia %}
+                  <img src="{{ e.fotografia.url }}" class="avatar-jugador" alt="{{ e.nombre_completo }}">
+                {% else %}
+                  <span class="avatar-jugador avatar-vacio"><i class="fa-solid fa-user"></i></span>
+                {% endif %}
+                <div>
+                  <div class="fw-semibold">{{ e.nombre_completo }}</div>
+                  <div class="small text-muted">{{ e.email|default:"" }}</div>
+                </div>
+              </div>
+            </td>
+            <td data-label="Telefono">{{ e.telefono }}</td>
+            <td data-label="Categorias">{{ e.categorias.count }}</td>
+            <td data-label="Acceso">
+              {% if e.usuario %}
+                <span class="badge text-bg-success">{{ e.usuario.username }}</span>
+              {% else %}
+                <span class="badge text-bg-secondary">Sin usuario</span>
+              {% endif %}
+            </td>
+            <td data-label="Estado">
+              {% if e.activo %}
+                <span class="badge text-bg-success">Activo</span>
+              {% else %}
+                <span class="badge text-bg-secondary">Inactivo</span>
+              {% endif %}
+            </td>
+            <td class="text-end celda-acciones" data-label="Acciones">
+              <div class="btn-group btn-group-sm">
+                <a class="btn btn-outline-secondary" href="/sistema/adm_entrenador?action=view&amp;id={{ e.id }}" title="Ver ficha">
+                  <i class="bi bi-eye"></i>
+                </a>
+                <a class="btn btn-outline-primary" href="#" data-modal-url="/sistema/adm_entrenador?action=edit&amp;id={{ e.id }}" title="Editar">
+                  <i class="bi bi-pencil"></i>
+                </a>
+                <a class="btn btn-outline-info" href="#" data-modal-url="/sistema/adm_entrenador?action=usuario&amp;id={{ e.id }}" title="Acceso al sistema">
+                  <i class="bi bi-person-badge"></i>
+                </a>
+                <a class="btn btn-outline-danger" href="#" data-modal-url="/sistema/adm_entrenador?action=delete&amp;id={{ e.id }}" title="Eliminar">
+                  <i class="bi bi-trash"></i>
+                </a>
+              </div>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="6" class="text-center text-muted py-4">No hay entrenadores registrados.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% include "paginador.html" %}
+{% endblock %}

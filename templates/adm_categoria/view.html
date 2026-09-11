@@ -1,0 +1,75 @@
+{% extends "base_nueva.html" %}
+
+{% block pagetitle %}Categorias | {{ academia.nombre }}{% endblock %}
+
+{% block canvas %}
+  <div class="modulo-toolbar">
+    <form method="get" class="buscador d-flex gap-2">
+      <input type="text" class="form-control form-control-sm" name="s" value="{{ search }}"
+             placeholder="Buscar categoria">
+      <button class="btn btn-sm btn-outline-secondary btn-touch" type="submit"><i class="bi bi-search"></i></button>
+    </form>
+
+    <span class="modulo-chip"><i class="fa-solid fa-layer-group"></i> {{ total_categorias }} activas</span>
+
+    <a href="#" data-modal-url="/sistema/adm_categoria?action=add" class="btn btn-joga btn-sm btn-touch ms-auto">
+      <i class="fa-solid fa-plus me-1"></i> Nueva categoria
+    </a>
+  </div>
+
+  <div class="tabla-scroll">
+    <table class="tabla-joga">
+      <thead>
+        <tr>
+          <th>Categoria</th>
+          <th>Dias</th>
+          <th>Horario</th>
+          <th>Entrenadores</th>
+          <th>Jugadores</th>
+          <th>Mensualidad</th>
+          <th>Estado</th>
+          <th class="text-end">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in categorias %}
+          <tr>
+            <td data-label="Categoria">
+              <div class="fw-semibold">{{ c.nombre }}</div>
+              <div class="small text-muted">{{ c.descripcion|truncatechars:50 }}</div>
+            </td>
+            <td data-label="Dias">{{ c.dias_texto }}</td>
+            <td data-label="Horario">{{ c.horario_texto }}</td>
+            <td data-label="Entrenadores">{{ c.entrenadores_texto }}</td>
+            <td data-label="Jugadores">{{ c.total_jugadores_activos }}</td>
+            <td data-label="Mensualidad">$ {{ c.valor_mensual }}</td>
+            <td data-label="Estado">
+              {% if c.activo %}
+                <span class="badge text-bg-success">Activa</span>
+              {% else %}
+                <span class="badge text-bg-secondary">Inactiva</span>
+              {% endif %}
+            </td>
+            <td class="text-end celda-acciones" data-label="Acciones">
+              <div class="btn-group btn-group-sm">
+                <a class="btn btn-outline-secondary" href="/sistema/adm_categoria?action=view&amp;id={{ c.id }}" title="Ver">
+                  <i class="bi bi-eye"></i>
+                </a>
+                <a class="btn btn-outline-primary" href="#" data-modal-url="/sistema/adm_categoria?action=edit&amp;id={{ c.id }}" title="Editar">
+                  <i class="bi bi-pencil"></i>
+                </a>
+                <a class="btn btn-outline-danger" href="#" data-modal-url="/sistema/adm_categoria?action=delete&amp;id={{ c.id }}" title="Eliminar">
+                  <i class="bi bi-trash"></i>
+                </a>
+              </div>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="8" class="text-center text-muted py-4">No hay categorias registradas.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% include "paginador.html" %}
+{% endblock %}

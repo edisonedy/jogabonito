@@ -1,0 +1,42 @@
+{% extends "base_nueva.html" %}
+
+{% block pagetitle %}{{ representante.nombre_completo }} | {{ academia.nombre }}{% endblock %}
+
+{% block canvas %}
+  <div class="row g-4">
+    <div class="col-12 col-md-5">
+      <h5>{{ representante.nombre_completo }}</h5>
+      <div class="ficha-dato"><span>Parentesco</span><span>{{ representante.get_parentesco_display }}</span></div>
+      <div class="ficha-dato"><span>Cedula</span><span>{{ representante.cedula|default:"-" }}</span></div>
+      <div class="ficha-dato"><span>Telefono</span><span>{{ representante.telefono }}</span></div>
+      <div class="ficha-dato"><span>WhatsApp</span><span>{{ representante.numero_whatsapp }}</span></div>
+      <div class="ficha-dato"><span>Correo</span><span>{{ representante.email|default:"-" }}</span></div>
+      <div class="ficha-dato"><span>Direccion</span><span>{{ representante.direccion|default:"-" }}</span></div>
+      <a href="/sistema/adm_representante" class="btn btn-sm btn-outline-secondary btn-touch mt-3">
+        <i class="bi bi-arrow-left me-1"></i> Volver
+      </a>
+    </div>
+
+    <div class="col-12 col-md-7">
+      <h6>Jugadores representados</h6>
+      <div class="tabla-scroll">
+        <table class="tabla-joga">
+          <thead><tr><th>Jugador</th><th>Categoria</th><th>Estado</th></tr></thead>
+          <tbody>
+            {% for j in jugadores %}
+              <tr>
+                <td data-label="Jugador">
+                  <a href="/sistema/adm_jugador?action=view&amp;id={{ j.id }}">{{ j.nombre_completo }}</a>
+                </td>
+                <td data-label="Categoria">{{ j.categoria.nombre }}</td>
+                <td data-label="Estado">{{ j.get_estado_display }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="3" class="text-center text-muted py-3">Sin jugadores asignados.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+{% endblock %}

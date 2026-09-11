@@ -1,0 +1,442 @@
+/* =========================================================
+   Landing publica - Academia Formativa Joga Bonito
+   Verde #0b6b30 / #12a04c · Amarillo #ffd200 · Azul #232069
+   ========================================================= */
+:root{
+  --verde:#0b6b30;
+  --verde-claro:#12a04c;
+  --verde-oscuro:#074a21;
+  --amarillo:#ffd200;
+  --azul:#232069;
+  --tinta:#12261b;
+  --gris:#5f7268;
+  --linea:rgba(11,107,48,.12);
+}
+
+*{ box-sizing:border-box; }
+
+body{
+  margin:0;
+  color:var(--tinta);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  background:#fff;
+  scroll-behavior:smooth;
+}
+
+h1,h2,h3{ font-weight:800; letter-spacing:-.01em; }
+img{ max-width:100%; }
+section{ scroll-margin-top:72px; }
+
+/* ---------------- Botones ---------------- */
+.btn-amarillo{
+  background:var(--amarillo);
+  border:none;
+  color:var(--azul);
+  font-weight:700;
+  border-radius:12px;
+}
+.btn-amarillo:hover,
+.btn-amarillo:focus{ background:#ffdd3a; color:var(--azul); }
+
+.btn-verde{
+  background:linear-gradient(135deg, var(--verde-claro), var(--verde));
+  border:none;
+  color:#fff;
+  font-weight:700;
+  border-radius:12px;
+}
+.btn-verde:hover,
+.btn-verde:focus{ background:linear-gradient(135deg, var(--verde), var(--verde-oscuro)); color:#fff; }
+
+/* ---------------- Balon de marca ---------------- */
+.lp-ball{
+  width:44px;
+  height:44px;
+  border-radius:50%;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  background:var(--amarillo);
+  color:var(--azul);
+  font-size:22px;
+  flex:0 0 auto;
+}
+.lp-ball-sm{ width:34px; height:34px; font-size:17px; }
+.lp-ball-xl{ width:120px; height:120px; font-size:62px; }
+
+/* ---------------- Navbar ---------------- */
+.lp-nav{
+  background:rgba(255,255,255,.94);
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--linea);
+  padding:.6rem 0;
+}
+.lp-brand-name{
+  font-weight:900;
+  letter-spacing:.08em;
+  color:var(--azul);
+  font-size:19px;
+}
+.lp-nav .nav-link{
+  color:var(--tinta);
+  font-weight:600;
+  font-size:15px;
+}
+.lp-nav .nav-link:hover{ color:var(--verde); }
+
+/* ---------------- Hero ---------------- */
+.lp-hero{
+  position:relative;
+  padding:76px 0 88px;
+  color:#fff;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(255,210,0,.22), transparent 45%),
+    radial-gradient(circle at 85% 80%, rgba(35,32,105,.35), transparent 50%),
+    linear-gradient(135deg, #0b6b30 0%, #12a04c 55%, #074a21 100%);
+  overflow:hidden;
+}
+.lp-kicker{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  background:rgba(255,255,255,.16);
+  border:1px solid rgba(255,255,255,.25);
+  padding:6px 14px;
+  border-radius:999px;
+  font-size:13px;
+  font-weight:600;
+}
+.lp-title{
+  font-size:clamp(2.4rem, 7vw, 4.2rem);
+  line-height:1.03;
+  margin:18px 0 14px;
+  text-transform:uppercase;
+}
+.lp-title span{
+  color:var(--amarillo);
+  font-style:italic;
+  text-transform:none;
+}
+.lp-lead{
+  font-size:1.08rem;
+  max-width:34rem;
+  color:rgba(255,255,255,.9);
+  margin:0;
+}
+.lp-stats{
+  display:flex;
+  flex-wrap:wrap;
+  gap:26px;
+  padding-top:22px;
+  border-top:1px solid rgba(255,255,255,.2);
+  margin-top:26px;
+}
+.lp-stat b{
+  display:block;
+  font-size:2rem;
+  line-height:1;
+  color:var(--amarillo);
+}
+.lp-stat span{ font-size:13px; color:rgba(255,255,255,.82); }
+
+.lp-hero-badge{
+  background:rgba(255,255,255,.1);
+  border:1px solid rgba(255,255,255,.22);
+  border-radius:28px;
+  padding:28px;
+  display:inline-flex;
+  flex-direction:column;
+  align-items:center;
+  gap:14px;
+}
+.lp-hero-badge-txt span{
+  display:block;
+  letter-spacing:.34em;
+  font-size:12px;
+  color:rgba(255,255,255,.75);
+}
+.lp-hero-badge-txt strong{
+  display:block;
+  font-size:26px;
+  font-weight:900;
+  letter-spacing:.04em;
+  color:var(--amarillo);
+}
+
+/* ---------------- Secciones ---------------- */
+.lp-section{ padding:72px 0; }
+.lp-section-alt{ background:#f3fcf7; }
+.lp-section-verde{
+  background:
+    radial-gradient(circle at 80% 15%, rgba(255,210,0,.16), transparent 45%),
+    linear-gradient(135deg, #0b6b30, #074a21);
+}
+.lp-section-head{ max-width:46rem; margin:0 auto 42px; text-align:center; }
+.lp-section-head h2{ font-size:clamp(1.7rem, 4vw, 2.4rem); margin:10px 0 12px; }
+.lp-section-head p{ color:var(--gris); margin:0; }
+
+.lp-eyebrow{
+  display:inline-block;
+  text-transform:uppercase;
+  letter-spacing:.16em;
+  font-size:12px;
+  font-weight:800;
+  color:var(--verde-claro);
+}
+.lp-eyebrow-claro{ color:var(--amarillo); }
+
+/* ---------------- Tarjetas de fortalezas ---------------- */
+.lp-card{
+  background:#fff;
+  border:1px solid var(--linea);
+  border-radius:20px;
+  padding:26px 22px;
+  box-shadow:0 10px 30px rgba(11,107,48,.05);
+  transition:transform .18s ease, box-shadow .18s ease;
+}
+.lp-card:hover{
+  transform:translateY(-4px);
+  box-shadow:0 18px 44px rgba(11,107,48,.12);
+}
+.lp-card-icon{
+  width:52px;
+  height:52px;
+  border-radius:16px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  background:linear-gradient(135deg, var(--verde-claro), var(--verde));
+  color:var(--amarillo);
+  font-size:22px;
+  margin-bottom:16px;
+}
+.lp-card h3{ font-size:1.12rem; margin:0 0 8px; }
+.lp-card p{ color:var(--gris); font-size:.95rem; margin:0; }
+
+/* ---------------- Horarios ---------------- */
+.lp-horario{
+  background:#fff;
+  border:1px solid var(--linea);
+  border-radius:20px;
+  padding:24px 22px;
+  display:flex;
+  flex-direction:column;
+  box-shadow:0 10px 30px rgba(11,107,48,.05);
+}
+.lp-horario header{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:10px;
+  justify-content:space-between;
+  margin-bottom:12px;
+}
+.lp-horario h3{ font-size:1.3rem; margin:0; color:var(--verde); }
+.lp-hora{
+  background:var(--amarillo);
+  color:var(--azul);
+  font-weight:700;
+  font-size:13px;
+  padding:5px 12px;
+  border-radius:999px;
+  white-space:nowrap;
+}
+.lp-dias, .lp-desc{ color:var(--gris); font-size:.94rem; margin:0 0 8px; }
+.lp-precio{
+  margin-top:auto;
+  padding-top:12px;
+  font-size:1.7rem;
+  font-weight:800;
+  color:var(--verde);
+}
+.lp-precio span{ font-size:.9rem; font-weight:600; color:var(--gris); }
+
+/* ---------------- Director ---------------- */
+.lp-director-foto{
+  width:min(320px, 100%);
+  aspect-ratio:1;
+  margin:0 auto;
+  border-radius:28px;
+  background:linear-gradient(135deg, var(--verde-claro), var(--verde-oscuro));
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:var(--amarillo);
+  font-size:96px;
+  overflow:hidden;
+  box-shadow:0 20px 50px rgba(11,107,48,.22);
+}
+.lp-director-foto img{ width:100%; height:100%; object-fit:cover; }
+.lp-director-nombre{ font-size:clamp(1.8rem, 4vw, 2.5rem); margin:8px 0 4px; }
+.lp-director-cargo{ color:var(--verde-claro); font-weight:700; margin:0 0 14px; }
+.lp-director-bio{ color:var(--gris); font-size:1rem; }
+.lp-credenciales{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin:0 0 16px;
+  padding:0;
+  list-style:none;
+}
+.lp-credenciales li{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  background:#eefaf2;
+  border:1px solid var(--linea);
+  color:var(--verde);
+  font-weight:600;
+  font-size:13px;
+  padding:7px 13px;
+  border-radius:999px;
+}
+
+/* ---------------- Formulario ---------------- */
+.lp-form-card{
+  background:#fff;
+  border-radius:24px;
+  padding:30px 26px;
+  box-shadow:0 24px 60px rgba(4,40,18,.28);
+}
+.lp-form-card h3{ font-size:1.3rem; }
+.lp-form-card .form-label{ font-weight:600; font-size:.92rem; margin-bottom:4px; }
+.lp-form-card .form-control,
+.lp-form-card .form-select{
+  border-radius:12px;
+  padding:.62rem .85rem;
+  border-color:#d6f0e0;
+}
+.lp-form-card .form-control:focus,
+.lp-form-card .form-select:focus{
+  border-color:var(--verde-claro);
+  box-shadow:0 0 0 .2rem rgba(18,160,76,.18);
+}
+.lp-error{ color:#b02a37; font-size:.83rem; margin-top:4px; }
+.lp-legal{ font-size:.78rem; color:var(--gris); text-align:center; margin:12px 0 0; }
+
+.lp-exito{ text-align:center; padding:22px 6px; }
+.lp-exito i{ font-size:56px; color:var(--verde-claro); }
+.lp-exito h3{ margin:14px 0 6px; }
+.lp-exito p{ color:var(--gris); }
+
+.lp-lista-check{ list-style:none; padding:0; margin:22px 0; }
+.lp-lista-check li{
+  display:flex;
+  gap:10px;
+  align-items:flex-start;
+  color:rgba(255,255,255,.92);
+  padding:7px 0;
+  font-size:.97rem;
+}
+.lp-lista-check i{ color:var(--amarillo); font-size:19px; line-height:1.35; }
+
+/* ---------------- Contacto ---------------- */
+.lp-contacto{ list-style:none; padding:0; margin:0; }
+.lp-contacto li{
+  display:flex;
+  gap:14px;
+  align-items:flex-start;
+  padding:14px 0;
+  border-bottom:1px solid var(--linea);
+}
+.lp-contacto i{
+  width:42px;
+  height:42px;
+  border-radius:13px;
+  background:#eefaf2;
+  color:var(--verde);
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  font-size:18px;
+  flex:0 0 auto;
+}
+.lp-contacto b{ display:block; font-size:.82rem; text-transform:uppercase; letter-spacing:.05em; color:var(--gris); }
+.lp-contacto span,
+.lp-contacto a{ color:var(--tinta); font-weight:600; text-decoration:none; }
+.lp-contacto a:hover{ color:var(--verde); }
+
+.lp-redes{ display:flex; gap:10px; margin-top:20px; }
+.lp-redes a{
+  width:46px;
+  height:46px;
+  border-radius:14px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  background:linear-gradient(135deg, var(--verde-claro), var(--verde));
+  color:#fff;
+  font-size:19px;
+  text-decoration:none;
+}
+.lp-redes a:hover{ background:linear-gradient(135deg, var(--verde), var(--verde-oscuro)); }
+
+.lp-mapa{
+  border-radius:22px;
+  overflow:hidden;
+  border:1px solid var(--linea);
+  min-height:320px;
+  background:#eefaf2;
+}
+.lp-mapa iframe{ width:100%; height:380px; border:0; display:block; }
+.lp-mapa-link{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+  height:320px;
+  color:var(--verde);
+  font-weight:700;
+  text-decoration:none;
+}
+.lp-mapa-link i{ font-size:46px; }
+
+/* ---------------- Footer y WhatsApp ---------------- */
+.lp-footer{
+  background:var(--azul);
+  color:#fff;
+  padding:26px 0;
+}
+.lp-footer a{ color:var(--amarillo); text-decoration:none; }
+
+.lp-wa-flotante{
+  position:fixed;
+  right:18px;
+  bottom:18px;
+  width:58px;
+  height:58px;
+  border-radius:50%;
+  background:#25d366;
+  color:#fff;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  font-size:29px;
+  box-shadow:0 12px 28px rgba(37,211,102,.42);
+  z-index:1030;
+  text-decoration:none;
+}
+.lp-wa-flotante:hover{ background:#1fb457; color:#fff; }
+
+@media (max-width: 991.98px){
+  .lp-hero{ padding:52px 0 64px; text-align:center; }
+  .lp-lead{ margin:0 auto; }
+  .lp-stats{ justify-content:center; }
+  .lp-section{ padding:56px 0; }
+  .lp-director-nombre, .lp-director-cargo, .lp-director-bio, .lp-credenciales{ text-align:center; justify-content:center; }
+  .lp-eyebrow{ display:block; text-align:center; }
+  .lp-section-verde .col-lg-5{ text-align:center; }
+  .lp-lista-check li{ text-align:left; }
+}
+
+.lp-comollegar{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  margin-top:4px;
+  font-size:.85rem;
+  font-weight:700;
+  color:var(--verde-claro) !important;
+}
+.lp-comollegar:hover{ color:var(--verde) !important; }

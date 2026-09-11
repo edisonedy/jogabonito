@@ -1,0 +1,139 @@
+{% extends "base_nueva.html" %}
+
+{% block pagetitle %}Progreso de {{ jugador.nombre_completo }} | {{ academia.nombre }}{% endblock %}
+
+{% block canvas %}
+  <div class="modulo-toolbar">
+    <div class="d-flex align-items-center gap-2">
+      {% if jugador.fotografia %}
+        <img src="{{ jugador.fotografia.url }}" class="avatar-jugador" alt="">
+      {% else %}
+        <span class="avatar-jugador avatar-vacio"><i class="fa-solid fa-futbol"></i></span>
+      {% endif %}
+      <div>
+        <h5 class="mb-0">{{ jugador.nombre_completo }}</h5>
+        <div class="small text-muted">
+          {{ jugador.categoria.nombre }} &middot; {{ jugador.edad }} anios
+          {% if jugador.posicion %} &middot; {{ jugador.posicion.nombre }}{% endif %}
+          {% if jugador.pie_habil %} &middot; pie {{ jugador.get_pie_habil_display|lower }}{% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="ms-auto d-flex gap-2">
+      <a href="/sistema/adm_jugador?action=view&amp;id={{ jugador.id }}"
+         class="btn btn-sm btn-outline-secondary btn-touch">
+        <i class="bi bi-person-badge me-1"></i> Ficha
+      </a>
+      <a href="/sistema/adm_evaluacion" class="btn btn-sm btn-outline-secondary btn-touch">
+        <i class="bi bi-arrow-left me-1"></i> Volver
+      </a>
+    </div>
+  </div>
+
+  <div class="resumen-asistencia mb-4">
+    <span class="res-item res-total"><b>{{ progreso|length }}</b> indicadores medidos</span>
+    <span class="res-item text-bg-success"><b>{{ fortalezas|length }}</b> fortalezas</span>
+    <span class="res-item text-bg-warning"><b>{{ a_mejorar|length }}</b> por mejorar</span>
+    <span class="res-item res-pendientes"><b>{{ resumen_asistencia.porcentaje }}%</b> de asistencia</span>
+  </div>
+
+  {% if not progreso %}
+    <div class="alert alert-info mb-0">
+      A este jugador todavia no se le ha tomado ninguna prueba.
+      Crea una evaluacion en su grupo y anota los valores.
+    </div>
+  {% else %}
+
+    <div class="row g-3 mb-4">
+      <div class="col-12 col-lg-6">
+        <div class="bloque-resumen bloque-fortalezas">
+          <h6><i class="bi bi-star-fill me-1"></i> Donde destaca en su grupo</h6>
+          {% for f in fortalezas %}
+            <div class="ficha-dato">
+              <span>{{ f.indicador.nombre }}</span>
+              <span>{{ f.valor_texto }} <small class="text-muted">(grupo: {{ f.promedio_texto }})</small></span>
+            </div>
+          {% empty %}
+            <p class="small text-muted mb-0">
+              Todavia no hay con quien comparar: hace falta medir a mas companieros del grupo.
+            </p>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="col-12 col-lg-6">
+        <div class="bloque-resumen bloque-mejorar">
+          <h6><i class="bi bi-arrow-up-right-circle-fill me-1"></i> Lo que hay que trabajar</h6>
+          {% for m in a_mejorar %}
+            <div class="ficha-dato">
+              <span>{{ m.indicador.nombre }}</span>
+              <span>{{ m.valor_texto }} <small class="text-muted">(grupo: {{ m.promedio_texto }})</small></span>
+            </div>
+          {% empty %}
+            <p class="small text-muted mb-0">Nada por debajo del promedio del grupo.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <h6 class="mb-2">Evolucion indicador por indicador</h6>
+    <div class="tabla-scroll">
+      <table class="tabla-joga">
+        <thead>
+          <tr>
+            <th>Indicador</th>
+            <th>Area</th>
+            <th>Tomas</th>
+            <th>Primera</th>
+            <th>Ultima</th>
+            <th>Mejor marca</th>
+            <th>Evolucion</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in progreso %}
+            <tr>
+              <td data-label="Indicador">
+                <div class="fw-semibold">{{ p.indicador.nombre }}</div>
+                {% if p.indicador.descripcion %}
+                  <div class="small text-muted">{{ p.indicador.descripcion|truncatechars:60 }}</div>
+                {% endif %}
+              </td>
+              <td data-label="Area">
+                <span class="badge text-bg-{{ p.indicador.color_area }}">{{ p.indicador.get_area_display }}</span>
+              </td>
+              <td data-label="Tomas">{{ p.tomas }}</td>
+              <td data-label="Primera">
+                {{ p.primera.texto }}
+                <div class="small text-muted">{{ p.primera.evaluacion.fecha|date:"d/m/Y" }}</div>
+              </td>
+              <td data-label="Ultima">
+                <b>{{ p.ultima.texto }}</b>
+                <div class="small text-muted">{{ p.ultima.evaluacion.fecha|date:"d/m/Y" }}</div>
+              </td>
+              <td data-label="Mejor marca">{{ p.mejor_texto }}</td>
+              <td data-label="Evolucion">
+                {% if p.mejoro is True %}
+                  <span class="badge text-bg-success"><i class="bi bi-arrow-up"></i> Mejoro</span>
+                {% elif p.mejoro is False %}
+                  <span class="badge text-bg-danger"><i class="bi bi-arrow-down"></i> Bajo</span>
+                {% elif p.tomas > 1 %}
+                  <span class="badge text-bg-secondary">Igual</span>
+                {% else %}
+                  <span class="badge text-bg-light">Primera toma</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="alert alert-light border mt-4 small mb-0">
+      <i class="bi bi-robot me-1"></i>
+      Estos datos quedan guardados con fecha, asi que mas adelante el asistente de IA podra
+      leerlos y redactar el informe del jugador con sus fortalezas.
+    </div>
+  {% endif %}
+{% endblock %}

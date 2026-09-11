@@ -1,0 +1,11 @@
+{% extends "form_modal.html" %}
+{% block form_action %}/sistema/adm_evaluacion{% endblock %}
+{% block formextra %}
+  <input type="hidden" name="action" value="edit">
+  <input type="hidden" name="id" value="{{ evaluacion.id }}">
+  <div class="alert alert-light border py-2 small">
+    Si quitas un indicador que ya tiene valores anotados, esos valores se mantienen
+    guardados pero dejan de aparecer en la planilla.
+  </div>
+{% endblock %}
+{% block save_label %}Guardar cambios{% endblock %}

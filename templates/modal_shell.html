@@ -1,0 +1,18 @@
+{# templates/modal_shell.html #}
+{% load static %}
+<div hidden>{% block marker %}{% endblock %}</div>
+
+<div class="modal-header">
+  <h5 class="modal-title mb-0">{% block titulo %}{% endblock %}</h5>
+  <button type="button" class="btn-close js-modal-close" aria-label="Cerrar"></button>
+</div>
+
+<div class="modal-body p-3">
+  {% block body %}{% endblock %}
+</div>
+
+<div class="modal-footer d-flex gap-2 justify-content-end">
+  {% block footer %}{% endblock %}
+</div>
+
+{% block script %}{% endblock %}

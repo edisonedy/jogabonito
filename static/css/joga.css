@@ -1,0 +1,341 @@
+/* =========================================================
+   Joga Bonito - complementos de marca sobre app_new.css
+   Verde #0b6b30 / #12a04c, amarillo #ffd200, azul #232069
+   ========================================================= */
+:root{
+  --joga-verde:#0b6b30;
+  --joga-verde-claro:#12a04c;
+  --joga-amarillo:#ffd200;
+  --joga-azul:#232069;
+}
+
+.btn-joga{
+  background:linear-gradient(135deg, var(--joga-verde-claro), var(--joga-verde));
+  border:none;
+  color:#fff;
+  font-weight:600;
+}
+.btn-joga:hover,
+.btn-joga:focus{
+  background:linear-gradient(135deg, var(--joga-verde), #084d23);
+  color:#fff;
+}
+
+.brand-ball{
+  width:38px;
+  height:38px;
+  border-radius:50%;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  background:var(--joga-amarillo);
+  color:var(--joga-azul);
+  font-size:20px;
+  flex:0 0 auto;
+}
+
+/* ---------------- Sidebar: lista de modulos ---------------- */
+.rail-nav{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+.rail-link{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:9px 12px;
+  border-radius:12px;
+  color:var(--ink);
+  font-size:14px;
+  font-weight:500;
+  border:1px solid transparent;
+}
+.rail-link i{
+  width:18px;
+  text-align:center;
+  color:var(--joga-verde);
+}
+.rail-link:hover{
+  background:var(--accent-soft);
+  border-color:var(--line);
+}
+.rail-link.active{
+  background:linear-gradient(135deg, var(--joga-verde-claro), var(--joga-verde));
+  color:#fff;
+}
+.rail-link.active i{
+  color:var(--joga-amarillo);
+}
+
+/* ---------------- Barra de acciones de cada modulo ---------------- */
+.modulo-toolbar{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  align-items:center;
+  margin-bottom:14px;
+}
+.modulo-toolbar .buscador{
+  flex:1 1 220px;
+  min-width:180px;
+}
+.modulo-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:4px 10px;
+  border-radius:999px;
+  background:var(--accent-soft);
+  color:var(--joga-verde);
+  font-size:12px;
+  font-weight:600;
+}
+
+/* ---------------- Tablas legibles en telefono ---------------- */
+.tabla-joga{
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0;
+  font-size:14px;
+}
+.tabla-joga thead th{
+  background:var(--accent-soft);
+  color:var(--joga-verde);
+  font-size:12px;
+  text-transform:uppercase;
+  letter-spacing:.03em;
+  padding:10px;
+  white-space:nowrap;
+}
+.tabla-joga tbody td{
+  padding:10px;
+  border-top:1px solid var(--line);
+  vertical-align:middle;
+}
+.tabla-scroll{
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+}
+
+@media (max-width: 767.98px){
+  .tabla-joga thead{ display:none; }
+  .tabla-joga,
+  .tabla-joga tbody,
+  .tabla-joga tr,
+  .tabla-joga td{ display:block; width:100%; }
+  .tabla-joga tr{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:14px;
+    margin-bottom:10px;
+    padding:6px 4px;
+    box-shadow:var(--shadow3);
+  }
+  .tabla-joga tbody td{
+    border-top:none;
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    padding:6px 12px;
+  }
+  .tabla-joga tbody td::before{
+    content:attr(data-label);
+    font-size:12px;
+    font-weight:700;
+    color:var(--muted);
+    text-transform:uppercase;
+  }
+  .tabla-joga td.celda-acciones{ justify-content:flex-end; }
+  .tabla-joga td.celda-acciones::before{ content:""; }
+}
+
+/* Botones grandes: pensados para marcar asistencia desde el telefono */
+.btn-touch{
+  min-height:44px;
+  min-width:44px;
+  font-weight:600;
+}
+
+.avatar-jugador{
+  width:42px;
+  height:42px;
+  border-radius:50%;
+  object-fit:cover;
+  border:2px solid var(--joga-amarillo);
+}
+.avatar-jugador-lg{
+  width:120px;
+  height:120px;
+  border-radius:18px;
+  object-fit:cover;
+  border:3px solid var(--joga-amarillo);
+}
+.avatar-vacio{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  background:var(--accent-soft);
+  color:var(--joga-verde);
+}
+
+.ficha-dato{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  padding:7px 0;
+  border-bottom:1px dashed var(--line);
+  font-size:14px;
+}
+.ficha-dato span:first-child{ color:var(--muted); }
+.ficha-dato span:last-child{ font-weight:600; text-align:right; }
+
+/* ---------------- Login ---------------- */
+.login-body{
+  min-height:100vh;
+  margin:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(255,210,0,.18), transparent 40%),
+    linear-gradient(135deg, #0b6b30 0%, #12a04c 55%, #0a5a29 100%);
+}
+.login-wrap{ width:100%; max-width:420px; }
+.login-card{
+  background:#fff;
+  border-radius:22px;
+  padding:32px 26px;
+  box-shadow:0 24px 60px rgba(4,40,18,.35);
+}
+.login-brand{ text-align:center; margin-bottom:22px; }
+.login-ball{
+  width:66px;
+  height:66px;
+  border-radius:50%;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  background:var(--joga-amarillo);
+  color:var(--joga-azul);
+  font-size:32px;
+  margin-bottom:10px;
+}
+.login-title{
+  font-size:26px;
+  font-weight:800;
+  letter-spacing:.06em;
+  color:var(--joga-azul);
+  margin:0;
+}
+.login-sub{ color:#6b7280; font-size:13px; margin:4px 0 0; }
+.login-card .input-group-text{
+  background:#f2faf4;
+  border-color:#d6f0e0;
+  color:var(--joga-verde);
+}
+
+/* Grupos de checkboxes (dias de entrenamiento): el atributo class cae
+   tanto en el <div> contenedor como en cada <input>, por eso se separan. */
+div.check-group{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px 18px;
+  padding:2px 0;
+}
+div.check-group > div{ margin:0; }
+div.check-group label{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  font-size:14px;
+  cursor:pointer;
+  min-height:32px;
+}
+input.check-group{
+  width:1.1em;
+  height:1.1em;
+  margin:0;
+  float:none;
+  accent-color:var(--joga-verde-claro);
+}
+
+/* =========================================================
+   FASE 2 - pantalla de asistencia (mobile first)
+   ========================================================= */
+.resumen-asistencia{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-bottom:6px;
+}
+.resumen-asistencia .res-item{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  padding:5px 11px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:600;
+}
+.resumen-asistencia .res-item b{ font-size:14px; }
+.resumen-asistencia .res-total{
+  background:linear-gradient(135deg, var(--joga-verde-claro), var(--joga-verde));
+  color:#fff;
+}
+.resumen-asistencia .res-pendientes{
+  background:var(--accent-soft);
+  color:var(--joga-verde);
+}
+
+.lista-asistencia{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.fila-asistencia{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:10px 12px;
+  box-shadow:var(--shadow3);
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.fila-asistencia .fila-jugador{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+}
+.btn-group-asistencia{
+  display:grid;
+  grid-template-columns:repeat(4, 1fr);
+  gap:6px;
+  width:100%;
+}
+.btn-group-asistencia .btn{
+  border-radius:12px !important;
+  font-size:13px;
+  padding:10px 4px;
+}
+.btn-group-asistencia .btn.active{
+  color:#fff;
+  font-weight:700;
+}
+.btn-group-asistencia .btn-outline-success.active{ background:#12a04c; border-color:#12a04c; }
+.btn-group-asistencia .btn-outline-danger.active{ background:#dc3545; border-color:#dc3545; }
+.btn-group-asistencia .btn-outline-warning.active{ background:#e39c00; border-color:#e39c00; }
+.btn-group-asistencia .btn-outline-info.active{ background:#0d8ba1; border-color:#0d8ba1; }
+
+@media (min-width: 768px){
+  .fila-asistencia{
+    flex-direction:row;
+    align-items:center;
+  }
+  .fila-asistencia .fila-jugador{ flex:1 1 auto; }
+  .btn-group-asistencia{ width:auto; grid-template-columns:repeat(4, minmax(96px, 1fr)); }
+}

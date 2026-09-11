@@ -1,0 +1,54 @@
+{% load static %}
+<!doctype html>
+<html lang="es" data-bs-theme="light">
+<head>
+  <meta charset="utf-8">
+  <title>Ingreso | {{ academia.nombre }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link href="{% static 'css/joga.css' %}?v=1" rel="stylesheet">
+</head>
+<body class="login-body">
+
+<div class="login-wrap">
+  <div class="login-card">
+    <div class="login-brand">
+      <span class="login-ball"><i class="fa-solid fa-futbol"></i></span>
+      <h1 class="login-title">JOGA BONITO</h1>
+      <p class="login-sub">{{ academia.lema }}</p>
+    </div>
+
+    {% if error %}
+      <div class="alert alert-danger py-2 small">{{ error }}</div>
+    {% endif %}
+
+    <form method="post" autocomplete="off" novalidate>
+      {% csrf_token %}
+
+      <label class="form-label small fw-semibold" for="username">Usuario</label>
+      <div class="input-group mb-3">
+        <span class="input-group-text"><i class="fa-solid fa-user"></i></span>
+        <input type="text" class="form-control" id="username" name="username" required autofocus>
+      </div>
+
+      <label class="form-label small fw-semibold" for="password">Clave</label>
+      <div class="input-group mb-4">
+        <span class="input-group-text"><i class="fa-solid fa-lock"></i></span>
+        <input type="password" class="form-control" id="password" name="password" required>
+      </div>
+
+      <button type="submit" class="btn btn-joga w-100 btn-lg">
+        <i class="fa-solid fa-right-to-bracket me-2"></i>Ingresar
+      </button>
+    </form>
+
+    <div class="text-center small text-muted mt-4">
+      {{ academia.direccion }}
+      {% if academia.telefono %}<br>{{ academia.telefono }}{% endif %}
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

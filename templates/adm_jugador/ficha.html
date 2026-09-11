@@ -1,0 +1,110 @@
+{% extends "base_nueva.html" %}
+
+{% block pagetitle %}{{ jugador.nombre_completo }} | {{ academia.nombre }}{% endblock %}
+
+{% block canvas %}
+  <div class="row g-4">
+    <div class="col-12 col-md-4 text-center">
+      {% if jugador.fotografia %}
+        <img src="{{ jugador.fotografia.url }}" class="avatar-jugador-lg" alt="{{ jugador.nombre_completo }}">
+      {% else %}
+        <span class="avatar-jugador-lg avatar-vacio"><i class="fa-solid fa-futbol fa-2x"></i></span>
+      {% endif %}
+      <h5 class="mt-3 mb-1">{{ jugador.nombre_completo }}</h5>
+      <div class="small text-muted">{{ jugador.categoria.nombre }} &middot; {{ jugador.get_estado_display }}</div>
+
+      {% if not solo_lectura %}
+        <a href="#" data-modal-url="/sistema/adm_jugador?action=edit&amp;id={{ jugador.id }}"
+           class="btn btn-joga btn-sm btn-touch mt-3">
+          <i class="bi bi-pencil me-1"></i> Editar ficha
+        </a>
+      {% endif %}
+    </div>
+
+    <div class="col-12 col-md-8">
+      <h6>Datos personales</h6>
+      <div class="ficha-dato"><span>Cedula</span><span>{{ jugador.cedula|default:"-" }}</span></div>
+      <div class="ficha-dato"><span>Fecha de nacimiento</span><span>{{ jugador.fecha_nacimiento|date:"d/m/Y" }} ({{ jugador.edad }} anios)</span></div>
+      <div class="ficha-dato"><span>Telefono</span><span>{{ jugador.telefono|default:"-" }}</span></div>
+      <div class="ficha-dato"><span>Direccion</span><span>{{ jugador.direccion|default:"-" }}</span></div>
+      <div class="ficha-dato"><span>Fecha de ingreso</span><span>{{ jugador.fecha_ingreso|date:"d/m/Y" }}</span></div>
+
+      <h6 class="mt-4">Academia</h6>
+      <div class="ficha-dato"><span>Categoria</span><span>{{ jugador.categoria.nombre }} ({{ jugador.categoria.horario_texto }})</span></div>
+      <div class="ficha-dato"><span>Dias</span><span>{{ jugador.categoria.dias_texto }}</span></div>
+      <div class="ficha-dato">
+        <span>Entrenador(es)</span>
+        <span>
+          {% for e in entrenadores %}{{ e.nombre_completo }}{% if not forloop.last %}, {% endif %}{% empty %}Sin entrenador{% endfor %}
+        </span>
+      </div>
+      <div class="ficha-dato"><span>Mensualidad</span><span>$ {{ jugador.valor_mensual_vigente }}</span></div>
+
+      <h6 class="mt-4">Representante</h6>
+      {% if jugador.representante %}
+        <div class="ficha-dato"><span>Nombre</span><span>{{ jugador.representante.nombre_completo }}</span></div>
+        <div class="ficha-dato"><span>Parentesco</span><span>{{ jugador.representante.get_parentesco_display }}</span></div>
+        <div class="ficha-dato"><span>Telefono</span><span>{{ jugador.representante.telefono }}</span></div>
+        <div class="ficha-dato">
+          <span>WhatsApp</span>
+          <span>
+            <a href="https://wa.me/{{ jugador.representante.numero_whatsapp }}" target="_blank" rel="noopener">
+              <i class="fa-brands fa-whatsapp text-success"></i> {{ jugador.representante.numero_whatsapp }}
+            </a>
+          </span>
+        </div>
+      {% else %}
+        <div class="text-muted small">Sin representante registrado.</div>
+      {% endif %}
+
+      {% if jugador.observacion %}
+        <h6 class="mt-4">Observacion</h6>
+        <p class="small">{{ jugador.observacion|linebreaksbr }}</p>
+      {% endif %}
+
+      <h6 class="mt-4 d-flex align-items-center gap-2">
+        Asistencia
+        <a href="/sistema/adm_asistencia?action=historial&amp;id={{ jugador.id }}"
+           class="btn btn-sm btn-outline-secondary ms-auto">
+          <i class="bi bi-clock-history me-1"></i> Ver historial
+        </a>
+      </h6>
+
+      <div class="resumen-asistencia mb-3">
+        <span class="res-item res-total"><b>{{ resumen.porcentaje }}%</b> de asistencia</span>
+        <span class="res-item text-bg-success"><b>{{ resumen.presentes }}</b> presentes</span>
+        <span class="res-item text-bg-danger"><b>{{ resumen.faltas }}</b> faltas</span>
+        <span class="res-item text-bg-warning"><b>{{ resumen.atrasos }}</b> atrasos</span>
+        <span class="res-item text-bg-info"><b>{{ resumen.justificados }}</b> justificados</span>
+      </div>
+
+      {% if asistencias %}
+        <div class="tabla-scroll">
+          <table class="tabla-joga">
+            <thead><tr><th>Fecha</th><th>Estado</th><th>Observacion</th></tr></thead>
+            <tbody>
+              {% for a in asistencias %}
+                <tr>
+                  <td data-label="Fecha">{{ a.fecha|date:"d/m/Y" }}</td>
+                  <td data-label="Estado"><span class="badge text-bg-{{ a.color }}">{{ a.get_estado_display }}</span></td>
+                  <td data-label="Observacion">{{ a.observacion|default:"-" }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="text-muted small">Todavia no tiene asistencias registradas.</div>
+      {% endif %}
+
+      <div class="alert alert-light border mt-4 small mb-0">
+        <i class="bi bi-info-circle me-1"></i>
+        Las mensualidades y las observaciones del entrenador se activan en las siguientes fases.
+      </div>
+
+      <a href="/sistema/adm_jugador" class="btn btn-sm btn-outline-secondary btn-touch mt-3">
+        <i class="bi bi-arrow-left me-1"></i> Volver
+      </a>
+    </div>
+  </div>
+{% endblock %}

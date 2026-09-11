@@ -1,0 +1,5 @@
+{% extends "delete_modal.html" %}
+{% block formaction %}/sistema/adm_jugador{% endblock %}
+{% block formactionvalue %}delete{% endblock %}
+{% block formobjectid %}{{ jugador.id }}{% endblock %}
+{% block formobjectrepr %}<b>{{ jugador.nombre_completo }}</b>{% endblock %}

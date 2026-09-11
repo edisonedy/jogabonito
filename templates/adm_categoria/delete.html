@@ -1,0 +1,5 @@
+{% extends "delete_modal.html" %}
+{% block formaction %}/sistema/adm_categoria{% endblock %}
+{% block formactionvalue %}delete{% endblock %}
+{% block formobjectid %}{{ categoria.id }}{% endblock %}
+{% block formobjectrepr %}<b>{{ categoria.nombre }}</b>{% endblock %}

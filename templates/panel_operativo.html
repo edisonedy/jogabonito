@@ -1,0 +1,42 @@
+{% if perfil %}
+  <div class="rail-card op-usercard">
+    <div class="d-flex gap-2 align-items-center">
+      <div class="rail-avatar"><i class="fa-solid fa-user"></i></div>
+      <div class="min-w-0 op-user-meta">
+        <div class="rail-user-name" title="{{ perfil.nombre_completo }}">{{ perfil.nombre_completo }}</div>
+        <div class="small text-muted text-truncate">@{{ perfil.usuario.username }} &middot; {{ perfil.get_rol_display }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="rail-actions op-actions">
+    <a class="btn btn-warning btn-rail" href="{% url 'micuenta' %}" title="Mi cuenta">
+      <i class="fa-solid fa-id-badge me-1"></i><span class="op-txt">Cuenta</span>
+    </a>
+    <a class="btn btn-info btn-rail" href="#" data-modal-url="{% url 'passwd' %}" title="Cambiar clave">
+      <i class="fa-solid fa-key me-1"></i><span class="op-txt">Clave</span>
+    </a>
+    {% if perfil.usuario.is_superuser %}
+      <a class="btn btn-light btn-rail" href="/admin/" target="_blank" title="Administracion">
+        <i class="fa-solid fa-screwdriver-wrench me-1"></i><span class="op-txt">Admin</span>
+      </a>
+    {% endif %}
+    <a class="btn btn-danger btn-rail" href="{% url 'logout' %}" title="Salir"
+       {% if not perfil.usuario.is_superuser %}style="grid-column: 1 / -1;"{% endif %}>
+      <i class="fa-solid fa-right-from-bracket me-1"></i><span class="op-txt">Salir</span>
+    </a>
+  </div>
+{% endif %}
+
+<div class="rail-title mt-3">Modulos</div>
+
+<nav class="rail-nav">
+  {% for m in mismodulos %}
+    <a class="rail-link {% if modulo_actual.id == m.id %}active{% endif %}" href="/sistema/{{ m.url }}" title="{{ m.nombre }}">
+      <i class="{{ m.icono }}"></i>
+      <span class="op-txt">{{ m.nombre }}</span>
+    </a>
+  {% empty %}
+    <div class="small text-muted px-2">Sin modulos asignados.</div>
+  {% endfor %}
+</nav>

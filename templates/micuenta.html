@@ -1,0 +1,35 @@
+{% extends "base_nueva.html" %}
+
+{% block pagetitle %}Mi cuenta | {{ academia.nombre }}{% endblock %}
+
+{% block canvas %}
+  <div class="row g-3">
+    <div class="col-12 col-lg-6">
+      <h5 class="mb-3">Datos del usuario</h5>
+      <div class="ficha-dato"><span>Usuario</span><span>{{ perfil.usuario.username }}</span></div>
+      <div class="ficha-dato"><span>Nombre</span><span>{{ perfil.nombre_completo }}</span></div>
+      <div class="ficha-dato"><span>Rol</span><span>{{ perfil.get_rol_display }}</span></div>
+      <div class="ficha-dato"><span>Telefono</span><span>{{ perfil.telefono|default:"-" }}</span></div>
+      <div class="ficha-dato"><span>Correo</span><span>{{ perfil.usuario.email|default:"-" }}</span></div>
+      <div class="ficha-dato"><span>Ultimo acceso</span><span>{{ request.session.ultimo_acceso|default:"-" }}</span></div>
+
+      <a href="#" data-modal-url="{% url 'passwd' %}" class="btn btn-joga btn-touch mt-3">
+        <i class="fa-solid fa-key me-2"></i>Cambiar mi clave
+      </a>
+    </div>
+
+    {% if entrenador %}
+      <div class="col-12 col-lg-6">
+        <h5 class="mb-3">Mis categorias</h5>
+        {% for c in entrenador.categorias_activas %}
+          <div class="ficha-dato">
+            <span>{{ c.nombre }}</span>
+            <span>{{ c.horario_texto }} &middot; {{ c.total_jugadores_activos }} jugadores</span>
+          </div>
+        {% empty %}
+          <div class="text-muted small">Todavia no tienes categorias asignadas.</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}

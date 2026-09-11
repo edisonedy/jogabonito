@@ -1,0 +1,13 @@
+{% extends "form_modal.html" %}
+{% block form_action %}/sistema/adm_asistencia{% endblock %}
+{% block formextra %}
+  <input type="hidden" name="action" value="detalle">
+  <input type="hidden" name="categoria" value="{{ categoria.id }}">
+  <input type="hidden" name="fecha" value="{{ fecha|date:'Y-m-d' }}">
+  <input type="hidden" name="jugador" value="{{ jugador.id }}">
+  <div class="alert alert-light border py-2 small">
+    <b>{{ jugador.nombre_completo }}</b><br>
+    {{ categoria.nombre }} &middot; {{ fecha|date:"l d/m/Y" }}
+  </div>
+{% endblock %}
+{% block save_label %}Guardar asistencia{% endblock %}

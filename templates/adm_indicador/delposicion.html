@@ -1,0 +1,5 @@
+{% extends "delete_modal.html" %}
+{% block formaction %}/sistema/adm_indicador{% endblock %}
+{% block formactionvalue %}delposicion{% endblock %}
+{% block formobjectid %}{{ posicion.id }}{% endblock %}
+{% block formobjectrepr %}la posicion <b>{{ posicion.nombre }}</b>{% endblock %}

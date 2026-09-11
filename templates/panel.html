@@ -1,0 +1,32 @@
+{% extends "base_nueva.html" %}
+
+{% block pagetitle %}Panel principal | {{ academia.nombre }}{% endblock %}
+
+{% block canvas %}
+  <div class="panel-head mb-3">
+    <div>
+      <h4 class="mb-0">Hola, {{ perfil.nombre_completo }}</h4>
+      <div class="text-muted small">Selecciona un modulo para ingresar.</div>
+    </div>
+  </div>
+
+  {% if mismodulos %}
+    <div class="mod-group">
+      <div class="mod-group-title">Modulos disponibles</div>
+      <div class="mod-grid">
+        {% for m in mismodulos %}
+          <a class="mod-card" href="/sistema/{{ m.url }}" title="{{ m.nombre }}">
+            <div class="mod-card-icon"><i class="{{ m.icono }}"></i></div>
+            <div class="mod-card-body">
+              <div class="mod-card-title">{{ m.nombre }}</div>
+              <div class="mod-card-sub">{{ m.descripcion|default:"Abrir modulo"|truncatechars:70 }}</div>
+            </div>
+            <div class="mod-card-go"><i class="fa-solid fa-chevron-right"></i></div>
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+  {% else %}
+    <div class="alert alert-warning mb-0">No hay modulos asignados a tu usuario.</div>
+  {% endif %}
+{% endblock %}

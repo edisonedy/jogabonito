@@ -1,0 +1,5 @@
+{% extends "delete_modal.html" %}
+{% block formaction %}/sistema/adm_solicitud{% endblock %}
+{% block formactionvalue %}delete{% endblock %}
+{% block formobjectid %}{{ solicitud.id }}{% endblock %}
+{% block formobjectrepr %}la solicitud de <b>{{ solicitud.nombre }}</b>{% endblock %}

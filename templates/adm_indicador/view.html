@@ -1,0 +1,159 @@
+{% extends "base_nueva.html" %}
+
+{% block pagetitle %}Que medimos | {{ academia.nombre }}{% endblock %}
+
+{% block canvas %}
+  <ul class="nav nav-tabs mb-3" role="tablist">
+    <li class="nav-item">
+      <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabIndicadores" type="button">
+        <i class="fa-solid fa-ruler-combined me-1"></i> Indicadores
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabPosiciones" type="button">
+        <i class="fa-solid fa-location-dot me-1"></i> Posiciones
+      </button>
+    </li>
+  </ul>
+
+  <div class="tab-content">
+    <!-- ------------------------- INDICADORES ------------------------- -->
+    <div class="tab-pane fade show active" id="tabIndicadores">
+      <div class="alert alert-light border py-2 small">
+        <i class="bi bi-info-circle me-1"></i>
+        Esta es la lista de lo que se le puede medir a un jugador. Al crear una evaluacion
+        eliges cuales de estos se van a tomar ese dia.
+      </div>
+
+      <form method="get" class="modulo-toolbar">
+        <div class="buscador d-flex gap-2">
+          <input type="text" class="form-control form-control-sm" name="s" value="{{ search }}"
+                 placeholder="Buscar indicador">
+          <button class="btn btn-sm btn-outline-secondary btn-touch" type="submit"><i class="bi bi-search"></i></button>
+        </div>
+
+        <select name="area" class="form-select form-select-sm" style="max-width:180px" onchange="this.form.submit()">
+          <option value="">Todas las areas</option>
+          {% for valor, etiqueta in areas %}
+            <option value="{{ valor }}" {% if area_id == valor %}selected{% endif %}>{{ etiqueta }}</option>
+          {% endfor %}
+        </select>
+
+        <span class="modulo-chip"><i class="fa-solid fa-ruler"></i> {{ total_activos }} activos</span>
+
+        <a href="#" data-modal-url="/sistema/adm_indicador?action=add" class="btn btn-joga btn-sm btn-touch ms-auto">
+          <i class="fa-solid fa-plus me-1"></i> Nuevo indicador
+        </a>
+      </form>
+
+      <div class="tabla-scroll">
+        <table class="tabla-joga">
+          <thead>
+            <tr>
+              <th>Que se mide</th>
+              <th>Area</th>
+              <th>Como se mide</th>
+              <th>Mejorar es</th>
+              <th>Tomas</th>
+              <th>Estado</th>
+              <th class="text-end">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for i in indicadores %}
+              <tr>
+                <td data-label="Que se mide">
+                  <div class="fw-semibold">{{ i.nombre }}</div>
+                  {% if i.descripcion %}<div class="small text-muted">{{ i.descripcion }}</div>{% endif %}
+                </td>
+                <td data-label="Area">
+                  <span class="badge text-bg-{{ i.color_area }}">{{ i.get_area_display }}</span>
+                </td>
+                <td data-label="Como se mide">
+                  {{ i.get_tipo_medida_display|title }}
+                  {% if i.sufijo %}<div class="small text-muted">en {{ i.sufijo }}</div>{% endif %}
+                </td>
+                <td data-label="Mejorar es">
+                  {% if i.mejor_es == 1 %}
+                    <span class="badge text-bg-success"><i class="bi bi-arrow-up"></i> subir</span>
+                  {% else %}
+                    <span class="badge text-bg-info"><i class="bi bi-arrow-down"></i> bajar</span>
+                  {% endif %}
+                </td>
+                <td data-label="Tomas">{{ i.mediciones.count }}</td>
+                <td data-label="Estado">
+                  {% if i.activo %}
+                    <span class="badge text-bg-success">Activo</span>
+                  {% else %}
+                    <span class="badge text-bg-secondary">Inactivo</span>
+                  {% endif %}
+                </td>
+                <td class="text-end celda-acciones" data-label="Acciones">
+                  <div class="btn-group btn-group-sm">
+                    <a class="btn btn-outline-primary" href="#"
+                       data-modal-url="/sistema/adm_indicador?action=edit&amp;id={{ i.id }}" title="Editar">
+                      <i class="bi bi-pencil"></i></a>
+                    <a class="btn btn-outline-danger" href="#"
+                       data-modal-url="/sistema/adm_indicador?action=delete&amp;id={{ i.id }}" title="Eliminar">
+                      <i class="bi bi-trash"></i></a>
+                  </div>
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="7" class="text-center text-muted py-4">No hay indicadores registrados.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% include "paginador.html" %}
+    </div>
+
+    <!-- -------------------------- POSICIONES ------------------------- -->
+    <div class="tab-pane fade" id="tabPosiciones">
+      <div class="modulo-toolbar">
+        <span class="modulo-chip"><i class="fa-solid fa-location-dot"></i> {{ posiciones.count }} posiciones</span>
+        <a href="#" data-modal-url="/sistema/adm_indicador?action=addposicion"
+           class="btn btn-joga btn-sm btn-touch ms-auto">
+          <i class="fa-solid fa-plus me-1"></i> Nueva posicion
+        </a>
+      </div>
+
+      <div class="tabla-scroll">
+        <table class="tabla-joga">
+          <thead>
+            <tr><th>Posicion</th><th>Abreviatura</th><th>Jugadores</th><th>Estado</th><th class="text-end">Acciones</th></tr>
+          </thead>
+          <tbody>
+            {% for p in posiciones %}
+              <tr>
+                <td data-label="Posicion">{{ p.nombre }}</td>
+                <td data-label="Abreviatura">{{ p.abreviatura|default:"-" }}</td>
+                <td data-label="Jugadores">{{ p.jugadores.count }}</td>
+                <td data-label="Estado">
+                  {% if p.activo %}
+                    <span class="badge text-bg-success">Activa</span>
+                  {% else %}
+                    <span class="badge text-bg-secondary">Inactiva</span>
+                  {% endif %}
+                </td>
+                <td class="text-end celda-acciones" data-label="Acciones">
+                  <div class="btn-group btn-group-sm">
+                    <a class="btn btn-outline-primary" href="#"
+                       data-modal-url="/sistema/adm_indicador?action=editposicion&amp;id={{ p.id }}" title="Editar">
+                      <i class="bi bi-pencil"></i></a>
+                    <a class="btn btn-outline-danger" href="#"
+                       data-modal-url="/sistema/adm_indicador?action=delposicion&amp;id={{ p.id }}" title="Eliminar">
+                      <i class="bi bi-trash"></i></a>
+                  </div>
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="5" class="text-center text-muted py-4">No hay posiciones registradas.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+{% endblock %}

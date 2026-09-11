@@ -1,0 +1,107 @@
+{% extends "base_nueva.html" %}
+
+{% block pagetitle %}Jugadores | {{ academia.nombre }}{% endblock %}
+
+{% block canvas %}
+  <form method="get" class="modulo-toolbar">
+    <div class="buscador d-flex gap-2">
+      <input type="text" class="form-control form-control-sm" name="s" value="{{ search }}"
+             placeholder="Buscar por nombre o cedula">
+      <button class="btn btn-sm btn-outline-secondary btn-touch" type="submit"><i class="bi bi-search"></i></button>
+    </div>
+
+    <select name="categoria" class="form-select form-select-sm" style="max-width:190px" onchange="this.form.submit()">
+      <option value="">Todas las categorias</option>
+      {% for c in categorias %}
+        <option value="{{ c.id }}" {% if categoria_id == c.id %}selected{% endif %}>{{ c.nombre }}</option>
+      {% endfor %}
+    </select>
+
+    <select name="estado" class="form-select form-select-sm" style="max-width:160px" onchange="this.form.submit()">
+      <option value="">Todos los estados</option>
+      {% for valor, etiqueta in estados %}
+        <option value="{{ valor }}" {% if estado_id == valor %}selected{% endif %}>{{ etiqueta }}</option>
+      {% endfor %}
+    </select>
+
+    <span class="modulo-chip"><i class="fa-solid fa-user-group"></i> {{ total_jugadores }} activos</span>
+
+    {% if not solo_lectura %}
+      <a href="#" data-modal-url="/sistema/adm_jugador?action=add" class="btn btn-joga btn-sm btn-touch ms-auto">
+        <i class="fa-solid fa-plus me-1"></i> Nuevo jugador
+      </a>
+    {% endif %}
+  </form>
+
+  <div class="tabla-scroll">
+    <table class="tabla-joga">
+      <thead>
+        <tr>
+          <th>Jugador</th>
+          <th>Edad</th>
+          <th>Categoria</th>
+          <th>Representante</th>
+          <th>Mensualidad</th>
+          <th>Estado</th>
+          <th class="text-end">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for j in jugadores %}
+          <tr>
+            <td data-label="Jugador">
+              <div class="d-flex align-items-center gap-2">
+                {% if j.fotografia %}
+                  <img src="{{ j.fotografia.url }}" class="avatar-jugador" alt="{{ j.nombre_completo }}">
+                {% else %}
+                  <span class="avatar-jugador avatar-vacio"><i class="fa-solid fa-futbol"></i></span>
+                {% endif %}
+                <div>
+                  <div class="fw-semibold">{{ j.nombre_completo }}</div>
+                  <div class="small text-muted">{{ j.cedula|default:"" }}</div>
+                </div>
+              </div>
+            </td>
+            <td data-label="Edad">{{ j.edad }}</td>
+            <td data-label="Categoria">{{ j.categoria.nombre }}</td>
+            <td data-label="Representante">
+              {% if j.representante %}
+                {{ j.representante.nombre_completo }}
+                <div class="small text-muted">{{ j.representante.numero_whatsapp }}</div>
+              {% else %}-{% endif %}
+            </td>
+            <td data-label="Mensualidad">$ {{ j.valor_mensual_vigente }}</td>
+            <td data-label="Estado">
+              {% if j.estado == 1 %}
+                <span class="badge text-bg-success">Activo</span>
+              {% elif j.estado == 2 %}
+                <span class="badge text-bg-warning">Inactivo</span>
+              {% else %}
+                <span class="badge text-bg-secondary">Retirado</span>
+              {% endif %}
+            </td>
+            <td class="text-end celda-acciones" data-label="Acciones">
+              <div class="btn-group btn-group-sm">
+                <a class="btn btn-outline-secondary" href="/sistema/adm_jugador?action=view&amp;id={{ j.id }}" title="Ver ficha">
+                  <i class="bi bi-eye"></i>
+                </a>
+                {% if not solo_lectura %}
+                  <a class="btn btn-outline-primary" href="#" data-modal-url="/sistema/adm_jugador?action=edit&amp;id={{ j.id }}" title="Editar">
+                    <i class="bi bi-pencil"></i>
+                  </a>
+                  <a class="btn btn-outline-danger" href="#" data-modal-url="/sistema/adm_jugador?action=delete&amp;id={{ j.id }}" title="Eliminar">
+                    <i class="bi bi-trash"></i>
+                  </a>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="7" class="text-center text-muted py-4">No hay jugadores registrados.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% include "paginador.html" %}
+{% endblock %}

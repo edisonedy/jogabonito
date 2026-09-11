@@ -1,0 +1,6 @@
+{% extends "delete_modal.html" %}
+{% block formaction %}/sistema/adm_evaluacion{% endblock %}
+{% block formactionvalue %}delete{% endblock %}
+{% block formobjectid %}{{ evaluacion.id }}{% endblock %}
+{% block formobjectrepr %}<b>{{ evaluacion.titulo }}</b> ({{ evaluacion.categoria.nombre }},
+  {{ evaluacion.fecha|date:"d/m/Y" }}) y sus {{ evaluacion.total_registrado }} mediciones{% endblock %}

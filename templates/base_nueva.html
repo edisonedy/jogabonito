@@ -1,0 +1,164 @@
+{% load static %}
+<!doctype html>
+<html lang="es" data-bs-theme="light">
+<head>
+  <meta charset="utf-8">
+  <title>{% block pagetitle %}{{ academia.nombre }}{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <meta name="description" content="Sistema de gestion de {{ academia.nombre }}">
+
+  <script>
+    var csrftoken = (document.querySelector('meta[name="csrf-token"]') || {}).content || '';
+    window.csrftoken = csrftoken;
+  </script>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link href="{% static 'css/app_new.css' %}?v=1" rel="stylesheet">
+  <link href="{% static 'css/joga.css' %}?v=1" rel="stylesheet">
+
+  {% block extracss %}{% endblock %}
+</head>
+<body class="{% block contentextraclass %}{% endblock %}">
+
+<script>
+  window.__SERVER_DATE__ = new Date(
+    {{ currenttime.year }}, {{ currenttime.month }} - 1, {{ currenttime.day }},
+    {{ currenttime.hour }}, {{ currenttime.minute }}, {{ currenttime.second }}, 0
+  );
+</script>
+
+<div class="app" id="appRoot">
+  <aside class="app-sidebar" id="appSidebar">
+    <div class="sidebar-top">
+      <a class="brand" href="/sistema/" title="Inicio del sistema">
+        <span class="brand-ball"><i class="fa-solid fa-futbol"></i></span>
+        <div class="brand-txt">
+          <div class="brand-name">JOGA BONITO</div>
+          <div class="brand-sub">Sistema de gestion deportiva</div>
+        </div>
+      </a>
+
+      <button class="btn btn-sm btn-ghost d-none d-lg-inline-flex sidebar-toggle"
+              id="opToggle" type="button" aria-label="Contraer o expandir panel">
+        <i class="fa-solid fa-angles-left" id="opToggleIcon"></i>
+      </button>
+
+      <button class="btn btn-sm btn-ghost d-lg-none" id="sidebarClose" type="button" aria-label="Cerrar menu">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="sidebar-panel">
+      {% include "panel_operativo.html" %}
+    </div>
+
+    <div class="sidebar-bottom">
+      <button class="btn btn-outline-secondary btn-sm w-100" id="themeToggle" type="button">
+        <i class="fa-solid fa-moon me-2"></i><span id="themeToggleText">Modo oscuro</span>
+      </button>
+      <div class="small text-muted mt-2">
+        &copy; {% now "Y" %} {{ academia.nombre }}
+        {% if remoteaddr %}<br>{{ remoteaddr }}{% endif %}
+      </div>
+    </div>
+  </aside>
+
+  <div class="app-main">
+    <header class="app-topbar">
+      <div class="d-flex align-items-center gap-2">
+        <button class="btn btn-sm btn-soft d-lg-none" id="sidebarOpen" type="button">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="top-title">
+          <div class="top-title-1 text-truncate">{{ title|default:"Panel principal" }}</div>
+          <div class="top-title-2 text-truncate">{% block topsubtitle %}{{ academia.lema }}{% endblock %}</div>
+        </div>
+      </div>
+
+      <div class="ms-auto d-flex align-items-center gap-2 topbar-utility">
+        {% if perfil %}
+          <span class="badge rounded-pill text-bg-light d-none d-md-inline-flex align-items-center gap-1">
+            <i class="fa-solid fa-user-shield"></i> {{ perfil.get_rol_display }}
+          </span>
+
+          <div class="topbar-mobile-actions d-flex d-lg-none align-items-center gap-2">
+            <a href="{% url 'micuenta' %}" class="btn btn-sm btn-soft topbar-action-btn icon-only" aria-label="Cuenta">
+              <i class="fa-solid fa-id-badge"></i>
+            </a>
+            <a href="#" data-modal-url="{% url 'passwd' %}" class="btn btn-sm btn-soft topbar-action-btn icon-only" aria-label="Clave">
+              <i class="fa-solid fa-key"></i>
+            </a>
+            <a href="{% url 'logout' %}" class="btn btn-sm btn-danger topbar-action-btn icon-only" aria-label="Salir">
+              <i class="fa-solid fa-right-from-bracket"></i>
+            </a>
+          </div>
+        {% endif %}
+        <div class="clock px-2 py-1" id="clock">--:--</div>
+      </div>
+    </header>
+
+    {% if ruta %}
+      <div class="app-breadcrumb">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb mb-0">
+            {% for r in ruta %}
+              <li class="breadcrumb-item {% if forloop.last %}active{% endif %}">
+                {% if forloop.last %}{{ r.1 }}{% else %}<a href="{{ r.0 }}">{{ r.1 }}</a>{% endif %}
+              </li>
+            {% endfor %}
+          </ol>
+        </nav>
+        <a href="/sistema/" class="btn btn-sm btn-soft d-inline-flex align-items-center gap-2 flex-shrink-0">
+          <i class="bi bi-arrow-left"></i><span>Atras</span>
+        </a>
+      </div>
+    {% endif %}
+
+    <main class="app-content" id="contenidocentral">
+      <section class="cardx">
+        {% block headcanvas %}{% endblock %}
+        {% block canvas %}{% endblock %}
+      </section>
+    </main>
+
+    <footer class="app-footer">
+      <div class="small text-muted d-flex justify-content-between flex-wrap gap-2">
+        <span>&copy; {% now "Y" %} {{ academia.nombre }}</span>
+        <span>{{ academia.direccion }}</span>
+      </div>
+    </footer>
+  </div>
+</div>
+
+<div class="modal fade" id="formulariomodaldinamico" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered" id="formulariomodalDialog">
+    <div class="modal-content">
+      <div id="formulariomodaldinamicobody"></div>
+    </div>
+  </div>
+</div>
+
+<div id="globalLoader" class="app-loader" aria-hidden="true" aria-live="polite" aria-busy="false">
+  <div class="app-loader-panel">
+    <div class="spinner-border app-loader-spinner" role="status" aria-hidden="true"></div>
+    <div class="app-loader-title" id="globalLoaderTitle">Procesando solicitud</div>
+    <div class="app-loader-copy" id="globalLoaderMessage">Espere un momento...</div>
+  </div>
+</div>
+
+<script>
+  window.APP_BASE_PATH = '/sistema';
+  window.APP_LOGOUT_URL = '/sistema/logout/';
+</script>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{% static 'js/app_new.js' %}?v=1"></script>
+
+{% block moreblock %}{% endblock %}
+{% block heading %}{% endblock %}
+</body>
+</html>

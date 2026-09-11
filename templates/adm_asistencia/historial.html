@@ -1,0 +1,49 @@
+{% extends "base_nueva.html" %}
+
+{% block pagetitle %}Asistencia de {{ jugador.nombre_completo }} | {{ academia.nombre }}{% endblock %}
+
+{% block canvas %}
+  <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+    <h5 class="mb-0">{{ jugador.nombre_completo }}</h5>
+    <span class="modulo-chip">{{ jugador.categoria.nombre }}</span>
+    <a href="/sistema/adm_jugador?action=view&amp;id={{ jugador.id }}"
+       class="btn btn-sm btn-outline-secondary btn-touch ms-auto">
+      <i class="bi bi-person-badge me-1"></i> Ver ficha
+    </a>
+  </div>
+
+  <div class="resumen-asistencia mb-3">
+    <span class="res-item res-total"><b>{{ resumen.porcentaje }}%</b> de asistencia</span>
+    <span class="res-item text-bg-success"><b>{{ resumen.presentes }}</b> presentes</span>
+    <span class="res-item text-bg-danger"><b>{{ resumen.faltas }}</b> faltas</span>
+    <span class="res-item text-bg-warning"><b>{{ resumen.atrasos }}</b> atrasos</span>
+    <span class="res-item text-bg-info"><b>{{ resumen.justificados }}</b> justificados</span>
+    <span class="res-item res-pendientes"><b>{{ resumen.total }}</b> clases</span>
+  </div>
+
+  <div class="tabla-scroll">
+    <table class="tabla-joga">
+      <thead>
+        <tr><th>Fecha</th><th>Grupo</th><th>Estado</th><th>Observacion</th><th>Registro</th></tr>
+      </thead>
+      <tbody>
+        {% for a in registros %}
+          <tr>
+            <td data-label="Fecha">{{ a.fecha|date:"d/m/Y" }}</td>
+            <td data-label="Grupo">{{ a.categoria.nombre }}</td>
+            <td data-label="Estado"><span class="badge text-bg-{{ a.color }}">{{ a.get_estado_display }}</span></td>
+            <td data-label="Observacion">{{ a.observacion|default:"-" }}</td>
+            <td data-label="Registro">
+              {{ a.usuario_registro.username|default:"-" }}
+              <div class="small text-muted">{{ a.fecha_modificacion|default:a.fecha_creacion|date:"d/m/Y H:i" }}</div>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="5" class="text-center text-muted py-4">Todavia no hay asistencias registradas.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% include "paginador.html" %}
+{% endblock %}

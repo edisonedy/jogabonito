@@ -1,0 +1,48 @@
+{% extends "base_nueva.html" %}
+
+{% block pagetitle %}{{ entrenador.nombre_completo }} | {{ academia.nombre }}{% endblock %}
+
+{% block canvas %}
+  <div class="row g-4">
+    <div class="col-12 col-md-4 text-center">
+      {% if entrenador.fotografia %}
+        <img src="{{ entrenador.fotografia.url }}" class="avatar-jugador-lg" alt="{{ entrenador.nombre_completo }}">
+      {% else %}
+        <span class="avatar-jugador-lg avatar-vacio"><i class="fa-solid fa-user fa-2x"></i></span>
+      {% endif %}
+      <h5 class="mt-3 mb-0">{{ entrenador.nombre_completo }}</h5>
+      <div class="small text-muted">{% if entrenador.activo %}Activo{% else %}Inactivo{% endif %}</div>
+    </div>
+
+    <div class="col-12 col-md-8">
+      <div class="ficha-dato"><span>Cedula</span><span>{{ entrenador.cedula|default:"-" }}</span></div>
+      <div class="ficha-dato"><span>Telefono</span><span>{{ entrenador.telefono }}</span></div>
+      <div class="ficha-dato"><span>Correo</span><span>{{ entrenador.email|default:"-" }}</span></div>
+      <div class="ficha-dato"><span>Usuario del sistema</span><span>{{ entrenador.usuario.username|default:"Sin acceso" }}</span></div>
+      <div class="ficha-dato"><span>Jugadores activos</span><span>{{ entrenador.total_jugadores }}</span></div>
+
+      <h6 class="mt-4">Categorias a cargo</h6>
+      <div class="tabla-scroll">
+        <table class="tabla-joga">
+          <thead><tr><th>Categoria</th><th>Dias</th><th>Horario</th><th>Jugadores</th></tr></thead>
+          <tbody>
+            {% for c in categorias %}
+              <tr>
+                <td data-label="Categoria">{{ c.nombre }}</td>
+                <td data-label="Dias">{{ c.dias_texto }}</td>
+                <td data-label="Horario">{{ c.horario_texto }}</td>
+                <td data-label="Jugadores">{{ c.total_jugadores_activos }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="4" class="text-center text-muted py-3">Sin categorias asignadas.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <a href="/sistema/adm_entrenador" class="btn btn-sm btn-outline-secondary btn-touch mt-3">
+        <i class="bi bi-arrow-left me-1"></i> Volver
+      </a>
+    </div>
+  </div>
+{% endblock %}

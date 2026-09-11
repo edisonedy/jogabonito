@@ -1,0 +1,19 @@
+{% extends "confirm_modal.html" %}
+
+{% block marker %}delete_modal{% endblock %}
+{% block titulo %}{{ title|default:"Eliminar" }}{% endblock %}
+{% block body_alert_class %}alert-danger{% endblock %}
+
+{% block mensaje %}
+<div class="d-flex flex-column gap-2">
+  <div class="fw-semibold">Esta accion eliminara el registro seleccionado.</div>
+  <div class="small opacity-75">{% block detalle %}Esta seguro(a) que desea eliminar {% block formobjectname %}{% endblock %} {% block formobjectrepr %}{% endblock %}?{% endblock %}</div>
+</div>
+{% endblock %}
+
+{% block footer %}
+<button type="button" class="btn btn-sm btn-unified btn-action btn-action-delete" id="horusConfirmOk">
+  <i class="bi bi-trash"></i> {% block ok_label %}Eliminar{% endblock %}
+</button>
+<button type="button" class="btn btn-sm btn-unified btn-cancel js-modal-close">Cancelar</button>
+{% endblock %}
