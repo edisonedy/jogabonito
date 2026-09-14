@@ -330,10 +330,17 @@
           </a>
           {% if not solo_lectura %}
             <span class="ms-auto d-flex gap-1">
-              <a href="#" class="btn btn-sm btn-joga accion-directa"
-                 data-url="/sistema/adm_mensualidad" data-accion="siguiente"
-                 data-id="{{ jugador.id }}"
-                 title="Un clic y queda abierto{% if proximo_cobro %}: del {{ proximo_cobro.0|date:'d/m/Y' }} al {{ proximo_cobro.1|date:'d/m/Y' }}{% endif %}"><i class="bi bi-arrow-right-circle"></i> Siguiente mes</a>
+              {% if mes_adelantado %}
+                <span class="btn btn-sm btn-outline-secondary disabled"
+                      title="Ya tiene abierto {{ mes_adelantado.periodo }}, del {{ mes_adelantado.periodo_inicio|date:'d/m/Y' }} al {{ mes_adelantado.periodo_fin|date:'d/m/Y' }}. Para cobrarle otro mes mas adelante usa el +.">
+                  <i class="bi bi-check2-circle"></i> Siguiente mes listo
+                </span>
+              {% else %}
+                <a href="#" class="btn btn-sm btn-joga accion-directa"
+                   data-url="/sistema/adm_mensualidad" data-accion="siguiente"
+                   data-id="{{ jugador.id }}"
+                   title="Un clic y queda abierto{% if proximo_cobro %}: del {{ proximo_cobro.0|date:'d/m/Y' }} al {{ proximo_cobro.1|date:'d/m/Y' }}{% endif %}"><i class="bi bi-arrow-right-circle"></i> Siguiente mes</a>
+              {% endif %}
               <a href="#" class="btn btn-sm btn-outline-success"
                  data-modal-url="/sistema/adm_mensualidad?action=add&amp;jugador={{ jugador.id }}"
                  title="Cobrarle un mes con otras fechas o valor"><i class="bi bi-plus-lg"></i></a>

@@ -40,12 +40,19 @@
           <td data-label="Valor">$ {{ fila.jugador.valor_mensual_vigente }}</td>
           <td data-label="Acciones" class="text-end">
             <div class="btn-group btn-group-sm">
-              <a class="btn btn-outline-primary accion-directa" href="#"
-                 data-url="/sistema/adm_mensualidad" data-accion="siguiente"
-                 data-id="{{ fila.jugador.id }}"
-                 title="Abrirle ese mes, de un clic">
-                <i class="bi bi-arrow-right-circle"></i>
-              </a>
+              {% if fila.adelantado %}
+                <span class="btn btn-outline-secondary disabled"
+                      title="Ya tiene abierto {{ fila.adelantado.periodo }}. Para otro mes mas adelante, usa el +.">
+                  <i class="bi bi-check2-circle"></i>
+                </span>
+              {% else %}
+                <a class="btn btn-outline-primary accion-directa" href="#"
+                   data-url="/sistema/adm_mensualidad" data-accion="siguiente"
+                   data-id="{{ fila.jugador.id }}"
+                   title="Abrirle ese mes, de un clic">
+                  <i class="bi bi-arrow-right-circle"></i>
+                </a>
+              {% endif %}
               <a class="btn btn-outline-secondary" href="#"
                  data-modal-url="/sistema/adm_mensualidad?action=add&amp;jugador={{ fila.jugador.id }}"
                  title="Cobrarle con otras fechas o con descuento">

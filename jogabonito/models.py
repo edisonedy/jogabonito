@@ -1080,6 +1080,20 @@ class Jugador(ModeloBase):
         inicio = ultima.periodo_fin + timedelta(days=1)
         return inicio, un_mes_despues(inicio) - timedelta(days=1)
 
+    def meses_adelantados(self, referencia=None):
+        """Los meses que ya se le abrieron y todavia no empiezan.
+
+        Estando en septiembre lo normal es tener abierto el mes que corre y,
+        como mucho, el siguiente. Si ya hay uno que arranca en el futuro,
+        abrir otro seria irse dos meses adelante.
+        """
+        referencia = referencia or date.today()
+        return self.mensualidades.filter(periodo_inicio__gt=referencia).order_by('periodo_inicio')
+
+    def mes_ya_adelantado(self, referencia=None):
+        """El mes que ya tiene abierto por delante, si hay alguno."""
+        return self.meses_adelantados(referencia).first()
+
     def se_le_cobra(self):
         """Solo se le generan meses nuevos si esta activo y con el cobro prendido."""
         return self.estado == JUGADOR_ACTIVO and self.cobro_activo

@@ -189,6 +189,9 @@ def view(request):
         data['mensualidades'] = jugador.mensualidades.order_by(
             F('periodo_inicio').desc(nulls_last=True), '-anio', '-mes')[:3]
         data['proximo_cobro'] = jugador.proximo_periodo()
+        # El mes que ya se le abrio y todavia no empieza: si hay uno, el
+        # boton de "siguiente mes" no debe volver a usarse.
+        data['mes_adelantado'] = jugador.mes_ya_adelantado()
         data['controles'] = list(jugador.controles_fisicos())[::-1][:6]
         data['ultimo_control'] = jugador.ultimo_control()
         data['crecimiento'] = jugador.crecimiento()

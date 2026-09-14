@@ -140,6 +140,9 @@ def proximos_cobros():
             'fin': fin,
             'ya_toca': inicio <= hoy,
             'faltan': (inicio - hoy).days,
+            # Si ya tiene abierto un mes que ni siquiera empieza, abrir otro
+            # de un clic lo dejaria cobrado dos meses adelante.
+            'adelantado': jugador.mes_ya_adelantado(hoy),
         })
 
     filas.sort(key=lambda x: x['inicio'])

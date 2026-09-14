@@ -211,6 +211,20 @@ def view(request):
                 if Mensualidad.objects.filter(jugador=jugador, periodo_inicio=inicio).exists():
                     return bad_json(mensaje='Ese mes ya esta abierto.')
 
+                # De un clic solo se adelanta UN mes. Si ya tiene abierto uno
+                # que ni siquiera ha empezado, abrir otro lo dejaria cobrado
+                # dos meses adelante, que casi siempre es un dedazo. Con
+                # fechas a mano ("+") si se puede, ahi es a proposito.
+                adelantado = jugador.mes_ya_adelantado()
+                if adelantado is not None:
+                    return bad_json(mensaje=(
+                        'A %s ya se le abrio el mes que sigue: %s, del %s al %s. '
+                        'Si de verdad quieres cobrarle otro mes mas adelante, '
+                        'usa el boton "+" y pon las fechas a mano.' % (
+                            jugador.nombre_completo(), adelantado.periodo(),
+                            adelantado.periodo_inicio.strftime('%d/%m/%Y'),
+                            adelantado.periodo_fin.strftime('%d/%m/%Y'))))
+
                 form = DescuentoDelMesForm(request.POST, jugador=jugador)
                 if not form.is_valid():
                     return bad_json(mensaje=primer_error(form))
