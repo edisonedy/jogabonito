@@ -135,9 +135,13 @@
                     {% elif celda.mejoro is False %}<i class="bi bi-arrow-down-circle-fill text-danger"></i>{% endif %}
                   </span>
                 </span>
-                <span class="planilla-dia">
-                  {% if celda.dia %}{{ celda.dia|date:"d/m/Y" }}{% endif %}
-                </span>
+                {% if evaluacion.dura_varios_dias %}
+                  {# Solo estorba cuando la prueba es de un dia: ahi la fecha
+                     de cada marca es siempre la misma que la de la prueba. #}
+                  <span class="planilla-dia">
+                    {% if celda.dia %}{{ celda.dia|date:"d/m/Y" }}{% endif %}
+                  </span>
+                {% endif %}
               </label>
             {% endfor %}
           </div>
