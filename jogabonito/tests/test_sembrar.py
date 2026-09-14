@@ -5,14 +5,16 @@ Es la prueba que importa para el despliegue: sobre una base VACIA tiene que
 dejar el sistema usable, y correrlo dos veces no puede duplicar nada.
 """
 import io
+from datetime import date, timedelta
+from unittest.mock import patch
 
 from django.contrib.auth.models import User
 from django.core.management import call_command
 from django.test import TestCase
 
 from jogabonito.models import (
-    Asistencia, Categoria, Entrenador, Evaluacion, Indicador, Jugador, Medicion,
-    Mensualidad, Modulo, Nota, Posicion,
+    Asistencia, Categoria, ControlFisico, Entrenador, Evaluacion, Indicador, Jugador,
+    Medicion, Mensualidad, Modulo, Nota, Posicion,
 )
 
 CLAVE = 'clave-de-prueba-2026'
@@ -84,6 +86,37 @@ class SembrarTodoTest(TestCase):
         self.assertEqual(Mensualidad.objects.count(), cuentas['mensualidades'])
         self.assertEqual(Nota.objects.count(), cuentas['notas'])
         self.assertEqual(Posicion.objects.count(), cuentas['posiciones'])
+
+    def test_kevyn_entra_con_su_propio_usuario(self):
+        """Es el duenio y ademas entrena: entra como administrador."""
+        self.sembrar(clave_kevyn='kevinsupe')
+
+        self.assertTrue(self.client.login(username='ksupe', password='kevinsupe'))
+
+        kevyn = User.objects.get(username='ksupe')
+        self.assertTrue(kevyn.perfil.es_administrador())
+        self.assertEqual(Entrenador.objects.get(apellidos='SUPE').usuario, kevyn)
+
+        # Y ve lo que un entrenador no ve: la plata.
+        self.assertEqual(self.client.get('/sistema/adm_mensualidad').status_code, 200)
+
+    def test_sin_clave_no_se_le_inventa_acceso_a_kevyn(self):
+        self.sembrar()
+        self.assertFalse(User.objects.filter(username='ksupe').exists())
+
+    def test_correrlo_otro_dia_tampoco_duplica(self):
+        """Las notas y las medidas van contadas desde hoy: si el comando se
+        corre maniana caerian en fechas nuevas. No deben repetirse."""
+        self.sembrar()
+        notas = Nota.objects.count()
+        controles = ControlFisico.objects.count()
+
+        with patch('jogabonito.management.commands.cargar_academia.HOY',
+                   date.today() + timedelta(days=40)):
+            self.sembrar()
+
+        self.assertEqual(Nota.objects.count(), notas)
+        self.assertEqual(ControlFisico.objects.count(), controles)
 
     def test_el_resumen_dice_como_quedo(self):
         salida = self.sembrar()

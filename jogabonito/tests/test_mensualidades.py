@@ -126,6 +126,72 @@ class PrecioDelJugadorTest(BaseMensualidad):
         self.assertEqual(json.loads(respuesta.content)['result'], 'bad')
 
 
+class AbrirSiguienteMesTest(BaseMensualidad):
+    """El modal confirma el periodo y permite una rebaja de un solo mes."""
+
+    def setUp(self):
+        self.client.force_login(self.admin)
+
+    def test_muestra_el_periodo_y_precio_antes_de_abrir(self):
+        respuesta = self.client.get('/sistema/adm_mensualidad?action=siguiente&id=%s' % self.jugador.id)
+
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertContains(respuesta, 'Precio sugerido:')
+        self.assertContains(respuesta, 'Descuento en porcentaje')
+        self.assertContains(respuesta, 'id="id_descuento_aplicado"', html=False)
+
+    def test_el_boton_de_la_lista_abre_el_modal_del_siguiente_mes(self):
+        Mensualidad.objects.create(
+            jugador=self.jugador, mes=9, anio=2026, valor=Decimal('25.00'),
+            fecha_vencimiento=date(2026, 9, 10),
+            periodo_inicio=date(2026, 9, 10), periodo_fin=date(2026, 10, 9),
+        )
+
+        respuesta = self.client.get('/sistema/adm_mensualidad?mes=9&anio=2026')
+
+        self.assertContains(
+            respuesta,
+            'data-modal-url="/sistema/adm_mensualidad?action=siguiente&amp;id=%s"' % self.jugador.id,
+            html=False,
+        )
+
+    def test_abre_el_mes_con_descuento_solo_para_ese_periodo(self):
+        respuesta = self.client.post('/sistema/adm_mensualidad', {
+            'action': 'siguiente', 'id': self.jugador.id,
+            'descuento_aplicado': '20', 'descuento_monto': '',
+            'motivo_descuento': 'Beca de este mes',
+        })
+
+        self.assertEqual(json.loads(respuesta.content)['result'], 'ok')
+        mensualidad = Mensualidad.objects.get(jugador=self.jugador)
+        self.assertEqual(mensualidad.valor_completo, Decimal('25.00'))
+        self.assertEqual(mensualidad.valor, Decimal('20.00'))
+        self.assertEqual(mensualidad.descuento_aplicado, Decimal('20'))
+        self.assertEqual(mensualidad.motivo_descuento, 'Beca de este mes')
+        self.jugador.refresh_from_db()
+        self.assertEqual(self.jugador.descuento, Decimal('0'))
+
+    def test_permite_ajustar_el_precio_para_ese_mes(self):
+        respuesta = self.client.post('/sistema/adm_mensualidad', {
+            'action': 'siguiente', 'id': self.jugador.id,
+            'valor_completo': '18.50',
+        })
+
+        self.assertEqual(json.loads(respuesta.content)['result'], 'ok')
+        mensualidad = Mensualidad.objects.get(jugador=self.jugador)
+        self.assertEqual(mensualidad.valor_completo, Decimal('18.50'))
+        self.assertEqual(mensualidad.valor, Decimal('18.50'))
+
+    def test_requiere_motivo_si_hay_descuento(self):
+        respuesta = self.client.post('/sistema/adm_mensualidad', {
+            'action': 'siguiente', 'id': self.jugador.id,
+            'descuento_aplicado': '20', 'motivo_descuento': '',
+        })
+
+        self.assertEqual(json.loads(respuesta.content)['result'], 'bad')
+        self.assertFalse(Mensualidad.objects.filter(jugador=self.jugador).exists())
+
+
 class GenerarMensualidadesTest(BaseMensualidad):
     def setUp(self):
         self.client.force_login(self.admin)

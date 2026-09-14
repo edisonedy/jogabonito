@@ -347,22 +347,36 @@ class Command(BaseCommand):
             self.stdout.write('  prueba %s (%s)' % (titulo, fecha.strftime('%d/%m/%Y')))
 
     def crear_medidas(self, alumnos):
+        """Las fechas van contadas desde hoy, asi que si el comando se corre
+        otro dia caerian en fechas nuevas y se duplicarian. Por eso al que ya
+        tiene medidas no se le agregan mas."""
+        ya_tienen = {j.id for j in alumnos if j.controles.exists()}
+
         for posicion, dias_atras, peso, estatura in MEDIDAS:
             if posicion >= len(alumnos):
                 continue
-            ControlFisico.objects.get_or_create(
-                jugador=alumnos[posicion], fecha=HOY - timedelta(days=dias_atras),
-                defaults={'peso': Decimal(peso), 'estatura': estatura}
+            jugador = alumnos[posicion]
+            if jugador.id in ya_tienen:
+                continue
+            ControlFisico.objects.create(
+                jugador=jugador, fecha=HOY - timedelta(days=dias_atras),
+                peso=Decimal(peso), estatura=estatura
             )
         self.stdout.write('  peso y estatura: %s controles' % ControlFisico.objects.count())
 
     def crear_notas(self, alumnos, kevyn):
+        """Igual que las medidas: al que ya tiene notas no se le inventan mas."""
+        ya_tienen = {j.id for j in alumnos if j.notas.exists()}
+
         for posicion, dias_atras, tipo, texto in NOTAS:
             if posicion >= len(alumnos):
                 continue
-            Nota.objects.get_or_create(
-                jugador=alumnos[posicion], fecha=HOY - timedelta(days=dias_atras),
-                defaults={'tipo': tipo, 'texto': texto, 'entrenador': kevyn}
+            jugador = alumnos[posicion]
+            if jugador.id in ya_tienen:
+                continue
+            Nota.objects.create(
+                jugador=jugador, fecha=HOY - timedelta(days=dias_atras),
+                tipo=tipo, texto=texto, entrenador=kevyn
             )
         self.stdout.write('  notas del profe: %s' % Nota.objects.count())
 

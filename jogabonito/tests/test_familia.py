@@ -227,6 +227,8 @@ class EncargadoDelGrupoTest(BaseFamilia):
 
     def test_los_grupos_de_hoy_dicen_quien_esta_a_cargo(self):
         self.asignar(self.profe)
+        # El objeto en memoria quedo con el encargado viejo: lo asigno la vista.
+        self.categoria.refresh_from_db()
         de_hoy = grupos_de_hoy([self.categoria], HOY)
 
         if self.categoria.entrena_hoy(HOY):

@@ -302,6 +302,24 @@ class HistorialDePagosTest(BaseDescuentos):
         self.assertEqual(respuesta.status_code, 200)
         self.assertEqual(respuesta.context['jugador'], self.jugador)
 
+    def test_en_el_historial_solo_se_puede_eliminar_la_pendiente(self):
+        from jogabonito.models import MENSUALIDAD_PAGADO
+
+        pendiente = Mensualidad.objects.create(
+            jugador=self.jugador, mes=1, anio=2026, valor=Decimal('25.00'),
+            fecha_vencimiento=date(2026, 1, 10), estado=1
+        )
+        pagada = Mensualidad.objects.create(
+            jugador=self.jugador, mes=2, anio=2026, valor=Decimal('25.00'),
+            fecha_vencimiento=date(2026, 2, 10), estado=MENSUALIDAD_PAGADO
+        )
+
+        respuesta = self.client.get(
+            '/sistema/adm_mensualidad?action=historial&id=%s' % self.jugador.id)
+
+        self.assertContains(respuesta, 'action=delete&amp;id=%s' % pendiente.id, html=False)
+        self.assertNotContains(respuesta, 'action=delete&amp;id=%s' % pagada.id, html=False)
+
 
 class AQuienLeTocaPagarTest(BaseDescuentos):
     """La lista de a quien se le viene el mes encima."""

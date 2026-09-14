@@ -264,3 +264,23 @@ class PantallaAsistenciaTest(BaseAsistencia):
         respuesta = self.client.get('/sistema/adm_asistencia?action=historial&id=%s' % self.jugador.id)
         self.assertEqual(respuesta.status_code, 200)
         self.assertEqual(respuesta.context['resumen']['porcentaje'], 100.0)
+
+    def test_el_historial_conserva_el_jugador_al_cambiar_de_pagina(self):
+        for indice in range(31):
+            Asistencia.objects.create(
+                jugador=self.jugador, categoria=self.mi_categoria,
+                fecha=HOY - timedelta(days=indice), estado=ASISTENCIA_PRESENTE,
+            )
+
+        self.client.force_login(self.usuario_entrenador)
+        respuesta = self.client.get(
+            '/sistema/adm_asistencia?action=historial&id=%s&page=2' % self.jugador.id)
+
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertEqual(respuesta.context['jugador'], self.jugador)
+        self.assertEqual(respuesta.context['page'].number, 2)
+        self.assertContains(
+            respuesta,
+            'action=historial&amp;id=%s&amp;page=1' % self.jugador.id,
+            html=False,
+        )
