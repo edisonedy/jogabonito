@@ -636,3 +636,14 @@ section{ scroll-margin-top:76px; }
 @media (max-width: 575.98px){
   .row{ --bs-gutter-x: 1.5rem; }
 }
+
+/* En el pie si hay sitio para el logo entero, que ya trae el nombre y el
+   lema: por eso ahi no se repiten en texto. Va en negativo, porque el pie
+   es azul marino. */
+.lp-horus{ flex-direction:column; gap:4px; align-items:flex-start; }
+.lp-horus-logo{
+  width:150px;
+  max-width:100%;
+  height:auto;
+  display:block;
+}

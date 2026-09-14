@@ -1121,3 +1121,16 @@ input.check-group{
   .bloque h6{ flex-wrap:wrap; }
   .bloque h6 > .ms-auto{ margin-left:0 !important; width:100%; margin-top:6px; }
 }
+
+/* ------------------------------------------------------------------
+   El logo de HORUS. El logo completo trae las letras debajo del
+   halcon, asi que al lado de un texto va solo el halcon: a 26 px las
+   letras no se leerian.
+------------------------------------------------------------------ */
+.horus-halcon{
+  width:30px;
+  height:30px;
+  object-fit:contain;
+  flex:0 0 auto;
+}
+.app.op-mini .horus-credito{ justify-content:center; padding:7px 4px; }

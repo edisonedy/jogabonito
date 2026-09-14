@@ -17,7 +17,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <link href="{% static 'css/app_new.css' %}?v=1" rel="stylesheet">
-  <link href="{% static 'css/joga.css' %}?v=27" rel="stylesheet">
+  <link href="{% static 'css/joga.css' %}?v=28" rel="stylesheet">
 
   {% block extracss %}{% endblock %}
 </head>
@@ -70,8 +70,12 @@
            {% elif desarrollador.whatsapp_link %}href="https://wa.me/{{ desarrollador.whatsapp_link }}" target="_blank" rel="noopener"
            {% else %}href="#"{% endif %}
            title="Soporte del sistema: {{ desarrollador.nombre }}">
-          {% if desarrollador.logo %}
-            <img src="{% static desarrollador.logo %}" alt="{{ desarrollador.nombre }}" height="26">
+          {% if desarrollador.marca %}
+            <img class="horus-halcon" src="{% static desarrollador.marca %}"
+                 alt="{{ desarrollador.nombre }}">
+          {% elif desarrollador.logo %}
+            <img class="horus-halcon" src="{% static desarrollador.logo %}"
+                 alt="{{ desarrollador.nombre }}">
           {% else %}
             <span class="horus-marca">&#9670;</span>
           {% endif %}

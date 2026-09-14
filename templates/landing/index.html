@@ -21,7 +21,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <link href="{% static 'css/landing.css' %}?v=6" rel="stylesheet">
+  <link href="{% static 'css/landing.css' %}?v=7" rel="stylesheet">
 </head>
 <body>
 
@@ -485,15 +485,21 @@
          {% else %}href="#"{% endif %}
          title="Sistema desarrollado por {{ desarrollador.nombre }}">
         {% if desarrollador.logo %}
-          <img src="{% static desarrollador.logo %}" alt="{{ desarrollador.nombre }}" height="34">
+          {# Aqui si hay espacio: va el logo entero, que ya trae el nombre. #}
+          <span class="lp-horus-txt">
+            <small>Sistema desarrollado por</small>
+          </span>
+          <img class="lp-horus-logo"
+               src="{% static desarrollador.logo_blanco|default:desarrollador.logo %}"
+               alt="{{ desarrollador.nombre }} - {{ desarrollador.lema }}">
         {% else %}
           <span class="lp-horus-marca">&#9670;</span>
+          <span class="lp-horus-txt">
+            <small>Sistema desarrollado por</small>
+            <b>{{ desarrollador.nombre }}</b>
+            {% if desarrollador.lema %}<em>{{ desarrollador.lema }}</em>{% endif %}
+          </span>
         {% endif %}
-        <span class="lp-horus-txt">
-          <small>Sistema desarrollado por</small>
-          <b>{{ desarrollador.nombre }}</b>
-          {% if desarrollador.lema %}<em>{{ desarrollador.lema }}</em>{% endif %}
-        </span>
       </a>
     {% endif %}
 

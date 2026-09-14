@@ -1,5 +1,19 @@
 logo.png   -> escudo de la Academia Joga Bonito (tambien sirve .jpg o .webp).
               Si no esta, la pagina dibuja un escudo de respaldo con los
               colores de la marca.
-horus.svg  -> logo de HORUS para el credito del desarrollador (o .png/.jpg).
-              Si no esta, se dibuja un rombo azul.
+
+Logo de HORUS (el credito del desarrollador). Son tres archivos porque el
+logo completo trae las letras debajo del halcon y a 26 px no se leen:
+
+horus.png        -> el logo completo, tal cual el manual de marca.
+horus-marca.png  -> solo el halcon. Es el que va al lado de un texto
+                    ("Desarrollado por HORUS") y en la barra encogida.
+horus-blanco.png -> el mismo logo completo en negativo, para los fondos
+                    oscuros: las letras son gris oscuro y sobre el azul
+                    marino del pie de pagina desaparecerian.
+
+Los tres aceptan .svg, .png o .webp. Si no esta ninguno, se dibuja un
+rombo azul de respaldo.
+
+director.jpg -> foto del director para la pagina publica.
+galeria/     -> fotos de la academia para la galeria de la landing.

@@ -10,6 +10,12 @@ from jogabonito.models import numero_para_whatsapp
 # Nombres que se buscan en static/images/ para usar como logo.
 POSIBLES_LOGOS = ('logo.png', 'logo.jpg', 'logo.jpeg', 'logo.webp', 'logo.svg')
 POSIBLES_LOGOS_HORUS = ('horus.svg', 'horus.png', 'horus.jpg', 'horus.webp')
+# El halcon solo, sin las letras: es el que entra donde el logo completo no
+# se leeria (al lado de un texto, en la barra encogida).
+POSIBLES_MARCAS_HORUS = ('horus-marca.svg', 'horus-marca.png', 'horus-marca.webp')
+# El mismo logo en negativo, para los fondos oscuros: las letras son gris
+# oscuro y sobre el azul marino del pie de pagina no se verian.
+POSIBLES_LOGOS_HORUS_BLANCO = ('horus-blanco.svg', 'horus-blanco.png', 'horus-blanco.webp')
 POSIBLES_DIRECTOR = ('director.jpg', 'director.jpeg', 'director.png', 'director.webp')
 
 
@@ -65,6 +71,8 @@ def academia(request):
             'email': settings.DESARROLLADOR_EMAIL,
             'color': settings.DESARROLLADOR_COLOR,
             'logo': buscar_imagen(POSIBLES_LOGOS_HORUS),
+            'marca': buscar_imagen(POSIBLES_MARCAS_HORUS),
+            'logo_blanco': buscar_imagen(POSIBLES_LOGOS_HORUS_BLANCO),
         },
         'academia': {
             'nombre': settings.ACADEMIA_NOMBRE,
