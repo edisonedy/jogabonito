@@ -177,10 +177,9 @@
                    title="Precio y descuento">
                   <i class="bi bi-tag"></i>
                 </a>
-                <a class="btn btn-outline-primary accion-directa" href="#"
-                   data-url="/sistema/adm_mensualidad" data-accion="siguiente"
-                   data-id="{{ m.jugador.id }}"
-                   title="Abrirle el siguiente mes, de un clic">
+                <a class="btn btn-outline-primary" href="#"
+                   data-modal-url="/sistema/adm_mensualidad?action=siguiente&amp;id={{ m.jugador.id }}"
+                   title="Abrir el siguiente mes">
                   <i class="bi bi-arrow-right-circle"></i>
                 </a>
                 <a class="btn btn-outline-danger" href="#"
