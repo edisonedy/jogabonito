@@ -24,6 +24,11 @@
          title="Dia siguiente"><i class="bi bi-chevron-right"></i></a>
     </div>
 
+    <a href="/sistema/adm_asistencia?action=todas{% if categoria %}&amp;categoria={{ categoria.id }}{% endif %}"
+       class="btn btn-sm btn-outline-secondary btn-touch">
+      <i class="bi bi-clock-history me-1"></i> Ver todas
+    </a>
+
     {% if categoria %}
       <span class="dia-de-lista {% if fecha == fecha_maxima %}dia-de-hoy{% endif %}">
         <i class="fa-solid fa-calendar-day"></i>
@@ -108,7 +113,7 @@
                   {% if fila.jugador.apodo %}"{{ fila.jugador.apodo }}" &middot; {% endif %}
                   {{ fila.jugador.edad }} anios &middot; {{ fila.jugador.division_texto }}
                   {% if fila.jugador.tiene_cuidados %}
-                    <span class="badge text-bg-warning" title="{{ fila.jugador.cuidados }}">
+                    <span class="badge text-bg-warning" title="{{ fila.jugador.resumen_salud }}">
                       <i class="bi bi-heart-pulse"></i> cuidado
                     </span>
                   {% endif %}
@@ -178,11 +183,8 @@
     }
 
     function avisar(data) {
-      if (typeof NotificacionAlerta === 'function') {
-        NotificacionAlerta(data.icono || 'warning', data.titulo || 'Advertencia', data.mensaje);
-      } else {
-        alert(data.mensaje || 'No se pudo guardar');
-      }
+      NotificacionAlerta(data.icono || 'warning', data.titulo || 'Advertencia',
+                         data.mensaje || 'No se pudo guardar.');
     }
 
     $(document).on('click', '.btn-marcar', function () {

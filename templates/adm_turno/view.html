@@ -117,11 +117,11 @@
       }).done(function (data) {
         if (data.result === 'ok') {
           location.reload();
-        } else if (typeof NotificacionAlerta === 'function') {
+        } else {
           NotificacionAlerta('warning', 'Advertencia', data.mensaje || 'No se pudo guardar.');
         }
       }).fail(function () {
-        alert('Error de conexion. Revisa la senal.');
+        NotificacionError('Sin conexion', 'Revisa la senal y vuelve a intentar.');
       });
     });
   });

@@ -1,5 +1,27 @@
-{% extends "delete_modal.html" %}
-{% block formaction %}/sistema/adm_jugador{% endblock %}
-{% block formactionvalue %}delete{% endblock %}
-{% block formobjectid %}{{ jugador.id }}{% endblock %}
-{% block formobjectrepr %}<b>{{ jugador.nombre_completo }}</b>{% endblock %}
+{% extends "modal_shell.html" %}
+
+{% block marker %}info_modal{% endblock %}
+{% block titulo %}Los jugadores no se eliminan{% endblock %}
+
+{% block body %}
+  <div class="alert alert-warning mb-0">
+    <p>
+      Si se borra a <b>{{ jugador.nombre_completo }}</b> se irian con el sus
+      asistencias, sus pagos y todo lo que se le ha medido. Ese historial es de
+      la academia, no de un boton.
+    </p>
+    <p class="mb-0">
+      Cuando alguien deja de venir, lo que se hace es <b>desactivarlo</b>: sale
+      de las listas, deja de contarse y no se le abren mas meses, pero todo lo
+      suyo se queda por si vuelve.
+    </p>
+  </div>
+{% endblock %}
+
+{% block footer %}
+  <a href="/sistema/adm_jugador?action=view&amp;id={{ jugador.id }}"
+     class="btn btn-sm btn-unified btn-create">
+    <i class="bi bi-person-badge"></i> Ver su ficha
+  </a>
+  <button type="button" class="btn btn-sm btn-unified btn-cancel js-modal-close">Cerrar</button>
+{% endblock %}

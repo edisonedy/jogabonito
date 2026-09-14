@@ -3,7 +3,8 @@
 
 Toda validacion vive aqui o en el modelo: las vistas nunca confian en el POST.
 """
-from datetime import date
+from datetime import date, timedelta
+from decimal import ROUND_HALF_UP, Decimal
 
 from django import forms
 from django.contrib.auth.models import User
@@ -13,7 +14,7 @@ from jogabonito.models import (
     DIAS_SEMANA, JUGADOR_ACTIVO, MEDIDA_NUMERO, MENSUALIDAD_PAGADO, PARENTESCOS, Asistencia, Categoria,
     ControlFisico, Division, Entrenador, Evaluacion, Nota,
     Indicador, Jugador, Mensualidad, PerfilUsuario, Posicion, Representante, SolicitudInscripcion,
-    TipoEvaluacion,
+    TipoEvaluacion, un_mes_despues,
 )
 
 CLASE_INPUT = 'form-control form-control-sm'
@@ -168,7 +169,9 @@ class JugadorForm(BaseForm):
         fields = ['nombre1', 'nombre2', 'apellido1', 'apellido2', 'apodo', 'cedula',
                   'fecha_nacimiento', 'fotografia', 'telefono',
                   'direccion', 'fecha_ingreso', 'categoria', 'representante',
-                  'posicion', 'pie_habil', 'dorsal', 'cuidados', 'observacion', 'estado']
+                  'posicion', 'pie_habil', 'dorsal',
+                  'condicion_medica', 'cuidados', 'alergias', 'tipo_sangre',
+                  'observacion', 'estado']
         widgets = {
             'fecha_nacimiento': forms.DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
             'fecha_ingreso': forms.DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
@@ -183,6 +186,8 @@ class JugadorForm(BaseForm):
         self.fields['posicion'].required = False
         self.fields['posicion'].empty_label = 'Sin definir'
         self.fields['pie_habil'].required = False
+        self.fields['tipo_sangre'].widget.attrs['placeholder'] = 'O+, A-, ...'
+        self.fields['alergias'].widget.attrs['placeholder'] = 'Ninguna conocida'
         self.fields['fecha_nacimiento'].input_formats = ['%Y-%m-%d', '%d-%m-%Y']
         self.fields['fecha_ingreso'].input_formats = ['%Y-%m-%d', '%d-%m-%Y']
 
@@ -488,17 +493,48 @@ class PrecioJugadorForm(BaseForm):
 
     class Meta:
         model = Jugador
-        fields = ['cobro_activo', 'descuento', 'motivo_descuento']
+        fields = ['cobro_activo', 'descuento', 'descuento_monto', 'motivo_descuento']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # El acuerdo se habla de las dos maneras: "hazme el 10 por ciento" o
+        # "cobrame 5 menos". Se puede escribir en cualquiera de las dos.
+        for nombre in ('descuento', 'descuento_monto'):
+            self.fields[nombre].required = False
+            self.fields[nombre].localize = False
+            self.fields[nombre].widget.is_localized = False
+        self.fields['descuento'].label = 'Descuento en porcentaje (%)'
+        self.fields['descuento_monto'].label = 'o descuento en dolares ($)'
 
     def clean_descuento(self):
-        descuento = self.cleaned_data.get('descuento') or 0
+        descuento = self.cleaned_data.get('descuento') or Decimal('0')
         if descuento < 0 or descuento > 100:
             raise forms.ValidationError('El descuento va de 0 a 100 por ciento.')
         return descuento
 
+    def clean_descuento_monto(self):
+        monto = self.cleaned_data.get('descuento_monto') or Decimal('0')
+        if monto < 0:
+            raise forms.ValidationError('El descuento no puede ser negativo.')
+        return monto
+
     def clean(self):
         limpios = super().clean()
-        if limpios.get('descuento') and not (limpios.get('motivo_descuento') or '').strip():
+        monto = limpios.get('descuento_monto') or Decimal('0')
+        porcentaje = limpios.get('descuento') or Decimal('0')
+
+        if monto and self.instance and self.instance.categoria_id:
+            if monto > self.instance.precio_base():
+                self.add_error(
+                    'descuento_monto',
+                    'El descuento no puede ser mayor que el valor del mes (%s).'
+                    % self.instance.precio_base())
+
+        # Si escribio los dolares, el porcentaje sobra: manda la plata.
+        if monto:
+            limpios['descuento'] = Decimal('0')
+
+        if (monto or porcentaje) and not (limpios.get('motivo_descuento') or '').strip():
             self.add_error('motivo_descuento', 'Escribe por que se le hace el descuento.')
         return limpios
 
@@ -537,6 +573,7 @@ class MensualidadForm(BaseForm, CamposDeFecha):
     class Meta:
         model = Mensualidad
         fields = ['periodo_inicio', 'periodo_fin', 'fecha_vencimiento', 'valor_completo',
+                  'descuento_aplicado', 'descuento_monto', 'motivo_descuento',
                   'estado', 'dias_ausente', 'motivo_ajuste', 'fecha_pago', 'forma_pago',
                   'comprobante', 'observacion']
         widgets = {
@@ -568,6 +605,20 @@ class MensualidadForm(BaseForm, CamposDeFecha):
         self.fields['valor_completo'].localize = False
         self.fields['valor_completo'].widget.is_localized = False
         self.fields['valor_completo'].required = False
+        for nombre in ('descuento_aplicado', 'descuento_monto'):
+            self.fields[nombre].required = False
+            self.fields[nombre].localize = False
+            self.fields[nombre].widget.is_localized = False
+        self.fields['descuento_aplicado'].label = 'Descuento en porcentaje (%)'
+        self.fields['descuento_aplicado'].help_text = (
+            'Se descuenta del valor de arriba. 0 = este mes paga completo.')
+        self.fields['descuento_monto'].label = 'o descuento en dolares ($)'
+        self.fields['descuento_monto'].help_text = (
+            'Si se hablo en plata. Manda sobre el porcentaje.')
+        self.fields['motivo_descuento'].required = False
+        self.fields['motivo_descuento'].widget.attrs['placeholder'] = (
+            'Por que se le hizo el descuento este mes')
+
         self.fields['fecha_pago'].required = False
         self.fields['forma_pago'].required = False
         self.fields['comprobante'].required = False
@@ -586,9 +637,22 @@ class MensualidadForm(BaseForm, CamposDeFecha):
             raise forms.ValidationError('El valor no puede ser negativo.')
         return valor
 
-    def clean(self):
-        limpios = super().clean()
-        self.conservar_fechas(limpios)
+    def clean_descuento_aplicado(self):
+        descuento = self.cleaned_data.get('descuento_aplicado')
+        if descuento is None:
+            return Decimal('0')
+        if descuento < 0 or descuento > 100:
+            raise forms.ValidationError('El descuento va de 0 a 100.')
+        return descuento
+
+    def clean_descuento_monto(self):
+        monto = self.cleaned_data.get('descuento_monto')
+        if monto is None:
+            return Decimal('0')
+        if monto < 0:
+            raise forms.ValidationError('El descuento no puede ser negativo.')
+        return monto
+
     def conservar_fechas(self, limpios):
         """Un periodo en blanco no borra el que ya tenia la mensualidad.
 
@@ -680,7 +744,8 @@ class MensualidadNuevaForm(BaseForm, CamposDeFecha):
 
     class Meta:
         model = Mensualidad
-        fields = ['jugador', 'mes', 'anio', 'periodo_inicio', 'periodo_fin', 'valor',
+        fields = ['jugador', 'periodo_inicio', 'periodo_fin', 'valor',
+                  'descuento_aplicado', 'descuento_monto', 'motivo_descuento',
                   'observacion']
         widgets = {
             'periodo_inicio': forms.DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
@@ -693,13 +758,38 @@ class MensualidadNuevaForm(BaseForm, CamposDeFecha):
         self.fields['jugador'].queryset = Jugador.objects.filter(
             estado=JUGADOR_ACTIVO).select_related('categoria').order_by('apellidos', 'nombres')
         self.fields['jugador'].empty_label = 'Elige al jugador...'
+        self.fields['periodo_inicio'].required = False
+        self.fields['periodo_inicio'].label = 'Desde'
         self.fields['periodo_inicio'].help_text = (
-            'Si no pones nada, arranca el dia del mes en que el jugador ingreso.')
+            'Vacio = el mes que le toca, contado desde el dia en que ingreso.')
+        self.fields['periodo_fin'].required = False
+        self.fields['periodo_fin'].label = 'Hasta'
+
+        # El precio del grupo, y aparte el descuento: asi se ve de donde sale
+        # lo que termina pagando (25 menos el 10% = 22,50).
         self.fields['valor'].required = False
         self.fields['valor'].localize = False
         self.fields['valor'].widget.is_localized = False
+        self.fields['valor'].label = 'Precio del mes'
         self.fields['valor'].help_text = (
-            'Vacio = el valor de su grupo, ya con su descuento.')
+            'Vacio = el precio de su grupo. Es el valor ANTES del descuento.')
+
+        for nombre in ('descuento_aplicado', 'descuento_monto'):
+            self.fields[nombre].required = False
+            self.fields[nombre].localize = False
+            self.fields[nombre].widget.is_localized = False
+        self.fields['descuento_aplicado'].label = 'Descuento en porcentaje (%)'
+        self.fields['descuento_aplicado'].help_text = (
+            'Vacio = el que ya tenga el jugador. Pon 0 si este mes paga completo.')
+        self.fields['descuento_monto'].label = 'o descuento en dolares ($)'
+        self.fields['descuento_monto'].help_text = (
+            'Si se hablo en plata: "este mes paga 5 menos". Manda sobre el porcentaje.')
+
+        # El motivo va en el mes: un descuento puede durar dos meses y despues
+        # no, y hay que saber por que se le hizo en cada uno.
+        self.fields['motivo_descuento'].required = False
+        self.fields['motivo_descuento'].widget.attrs['placeholder'] = (
+            'Beca, hermano en la academia, acuerdo de este mes...')
 
     def clean_valor(self):
         valor = self.cleaned_data.get('valor')
@@ -707,29 +797,82 @@ class MensualidadNuevaForm(BaseForm, CamposDeFecha):
             raise forms.ValidationError('El valor no puede ser negativo.')
         return valor
 
+    def clean_descuento_aplicado(self):
+        descuento = self.cleaned_data.get('descuento_aplicado')
+        if descuento is None:
+            return descuento
+        if descuento < 0 or descuento > 100:
+            raise forms.ValidationError('El descuento va de 0 a 100.')
+        return descuento
+
+    def clean_descuento_monto(self):
+        monto = self.cleaned_data.get('descuento_monto')
+        if monto is not None and monto < 0:
+            raise forms.ValidationError('El descuento no puede ser negativo.')
+        return monto
+
     def clean(self):
         limpios = super().clean()
         self.revisar_periodo(limpios)
 
         jugador = limpios.get('jugador')
-        mes = limpios.get('mes')
-        anio = limpios.get('anio')
-        if not (jugador and mes and anio):
+        if not jugador:
             return limpios
 
-        inicio, fin = jugador.periodo_de_cobro(mes, anio)
-        limpios['periodo_inicio'] = limpios.get('periodo_inicio') or inicio
-        limpios['periodo_fin'] = limpios.get('periodo_fin') or fin
+        # Sin fechas se toma el mes que le sigue: es el caso de siempre.
+        if not limpios.get('periodo_inicio'):
+            siguiente = jugador.proximo_periodo()
+            if not siguiente:
+                self.add_error('periodo_inicio', 'Indica desde cuando se le cobra.')
+                return limpios
+            limpios['periodo_inicio'], limpios['periodo_fin'] = siguiente
+        if not limpios.get('periodo_fin'):
+            limpios['periodo_fin'] = un_mes_despues(limpios['periodo_inicio']) - timedelta(days=1)
 
         if Mensualidad.objects.filter(
             jugador=jugador, periodo_inicio=limpios['periodo_inicio']
         ).exists():
-            self.add_error('mes', '%s ya tiene la mensualidad que arranca el %s.' % (
+            self.add_error('periodo_inicio', '%s ya tiene la mensualidad que arranca el %s.' % (
                 jugador.nombre_completo(), limpios['periodo_inicio'].strftime('%d/%m/%Y')))
             return limpios
 
-        if limpios.get('valor') is None:
-            limpios['valor'] = jugador.valor_mensual_vigente()
+        # El precio es el del grupo SIN descuento, para no descontarle dos veces.
+        base = limpios.get('valor')
+        if base is None:
+            base = jugador.precio_base()
+
+        monto = limpios.get('descuento_monto')
+        descuento = limpios.get('descuento_aplicado')
+
+        # Sin tocar nada se hereda el acuerdo que ya tiene el jugador.
+        if monto is None and descuento is None:
+            monto = jugador.descuento_monto or Decimal('0')
+            descuento = jugador.descuento or Decimal('0')
+        monto = monto or Decimal('0')
+        descuento = descuento or Decimal('0')
+
+        if monto > base:
+            self.add_error('descuento_monto',
+                           'El descuento no puede ser mayor que el precio del mes (%s).' % base)
+            return limpios
+
+        if monto:
+            descuento = Decimal('0')  # manda la plata
+            rebaja = monto
+        else:
+            rebaja = (base * descuento / Decimal('100')).quantize(
+                Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+        limpios['valor'] = (base - rebaja).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        limpios['descuento_aplicado'] = descuento
+        limpios['descuento_monto'] = monto
+        limpios['valor_completo'] = base
+
+        # Si le heredamos el acuerdo del jugador, tambien su motivo.
+        if (monto or descuento) and not limpios.get('motivo_descuento'):
+            limpios['motivo_descuento'] = jugador.motivo_descuento
+        if not (monto or descuento):
+            limpios['motivo_descuento'] = ''
         return limpios
 
 

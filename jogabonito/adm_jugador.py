@@ -79,16 +79,14 @@ def view(request):
                 transaction.set_rollback(True)
                 return bad_json(error=1, ex=ex)
 
+        # A un jugador NO se lo borra: con el se irian sus asistencias, sus
+        # pagos y sus mediciones, que son el historial de la academia. El que
+        # deja de venir se DESACTIVA: sale de las listas y no se le cobra mas,
+        # pero todo lo suyo queda.
         if action == 'delete':
-            try:
-                jugador = Jugador.objects.get(pk=int(request.POST['id']))
-                jugador.delete()
-                return ok_json({'mensaje': 'Jugador eliminado.'})
-            except Jugador.DoesNotExist:
-                return bad_json(error=3)
-            except Exception as ex:
-                transaction.set_rollback(True)
-                return bad_json(error=9, ex=ex)
+            return bad_json(mensaje='Los jugadores no se eliminan: se perderia todo su '
+                                    'historial de asistencias, pagos y mediciones. '
+                                    'Usa "Desactivar" y sale de las listas.')
 
         if action == 'representante':
             try:
@@ -154,11 +152,13 @@ def view(request):
         return render(request, 'adm_jugador/edit.html', data)
 
     if action == 'delete':
+        # Ya no existe borrar: si alguien llega con el enlace viejo, se le
+        # explica y se lo manda a desactivar.
         try:
             jugador = permitidos.get(pk=int(request.GET['id']))
         except (Jugador.DoesNotExist, KeyError, ValueError):
             return url_back(request)
-        data['title'] = 'Eliminar jugador'
+        data['title'] = 'Los jugadores no se eliminan'
         data['jugador'] = jugador
         return render(request, 'adm_jugador/delete.html', data)
 
@@ -195,6 +195,14 @@ def view(request):
         data['total_que_debe'] = jugador.total_que_debe()
         data['dias_de_atraso'] = jugador.dias_de_atraso()
         data['posicion_sugerida'] = jugador.posicion_sugerida()
+
+        # La tela de arania y el detalle de donde destaca y donde le falta:
+        # es lo primero que el usuario quiere ver del chico.
+        data['radar'] = jugador.radar()
+        comparativa = jugador.comparativa_categoria()
+        data['fortalezas'] = [x for x in comparativa if x['posicion'] == 'fortaleza'][:3]
+        data['a_mejorar'] = [x for x in comparativa if x['posicion'] == 'mejorar'][:3]
+        data['resumen_base'] = jugador.resumen_desde_la_base()
         return render(request, 'adm_jugador/ficha.html', data)
 
     data['title'] = 'Jugadores'

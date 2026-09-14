@@ -1,0 +1,74 @@
+{% extends "base_nueva.html" %}
+
+{% block pagetitle %}A quien le toca pagar | {{ academia.nombre }}{% endblock %}
+
+{% block canvas %}
+  <div class="modulo-toolbar">
+    <div>
+      <h5 class="mb-0">A quien le toca pagar</h5>
+      <div class="small text-muted">
+        Cada jugador paga el mismo dia del mes en que ingreso. Aqui se ve a
+        quien le cae el cobro y cuando, sin tener que abrir nada.
+      </div>
+    </div>
+    <div class="d-flex gap-2 ms-auto">
+      <a href="/sistema/adm_mensualidad?action=deudores" class="btn btn-sm btn-outline-danger btn-touch">
+        <i class="bi bi-exclamation-circle me-1"></i> Quien debe
+      </a>
+      <a href="/sistema/adm_mensualidad" class="btn btn-sm btn-outline-secondary btn-touch">
+        <i class="bi bi-arrow-left me-1"></i> Volver
+      </a>
+    </div>
+  </div>
+
+  {% if ya_toca %}
+    <section class="bloque">
+      <h6>
+        <i class="bi bi-bell-fill text-danger me-1"></i>
+        Ya les toca ({{ ya_toca|length }})
+        <span class="ms-auto small text-muted">al {{ hoy|date:"d/m/Y" }}</span>
+      </h6>
+      <p class="small text-muted">
+        Su mes anterior ya termino. Se abre solo al entrar a Mensualidades, o
+        de un clic aqui mismo.
+      </p>
+      {% include "adm_mensualidad/_tabla_proximos.html" with filas=ya_toca vencidos=1 %}
+    </section>
+  {% endif %}
+
+  <section class="bloque">
+    <h6><i class="bi bi-calendar-week me-1"></i> Esta semana ({{ esta_semana|length }})</h6>
+    {% if esta_semana %}
+      {% include "adm_mensualidad/_tabla_proximos.html" with filas=esta_semana %}
+    {% else %}
+      <p class="small text-muted mb-0">Nadie cumple mes en los proximos 7 dias.</p>
+    {% endif %}
+  </section>
+
+  <section class="bloque">
+    <h6><i class="bi bi-calendar3 me-1"></i> Mas adelante ({{ despues|length }})</h6>
+    {% if despues %}
+      {% include "adm_mensualidad/_tabla_proximos.html" with filas=despues %}
+    {% else %}
+      <p class="small text-muted mb-0">No hay nadie mas en la lista.</p>
+    {% endif %}
+  </section>
+
+  {% if apagados %}
+    <section class="bloque">
+      <h6><i class="bi bi-pause-circle me-1"></i> No se les cobra ({{ apagados|length }})</h6>
+      <p class="small text-muted">
+        Estan activos pero con el cobro mensual apagado: no se les abre ningun
+        mes. Se prende en su ficha.
+      </p>
+      <div class="d-flex flex-wrap gap-2">
+        {% for jugador in apagados %}
+          <a href="/sistema/adm_jugador?action=view&amp;id={{ jugador.id }}"
+             class="badge text-bg-light border text-decoration-none">
+            {{ jugador.nombre_completo }} &middot; {{ jugador.categoria.nombre }}
+          </a>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+{% endblock %}

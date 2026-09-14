@@ -136,8 +136,6 @@
                   </span>
                 </span>
                 {% if evaluacion.dura_varios_dias %}
-                  {# Solo estorba cuando la prueba es de un dia: ahi la fecha
-                     de cada marca es siempre la misma que la de la prueba. #}
                   <span class="planilla-dia">
                     {% if celda.dia %}{{ celda.dia|date:"d/m/Y" }}{% endif %}
                   </span>
@@ -199,11 +197,8 @@
     var evaluacionId = {{ evaluacion.id }};
 
     function avisar(data) {
-      if (typeof NotificacionAlerta === 'function') {
-        NotificacionAlerta(data.icono || 'warning', data.titulo || 'Advertencia', data.mensaje);
-      } else {
-        alert(data.mensaje || 'No se pudo guardar');
-      }
+      NotificacionAlerta(data.icono || 'warning', data.titulo || 'Advertencia',
+                         data.mensaje || 'No se pudo guardar.');
     }
 
     // Cada jugador puede haber dado la prueba otro dia: ese es el que se

@@ -620,7 +620,9 @@ class CobrarAUnSoloJugadorTest(BaseMensualidad):
         self.jugador.save()
 
     def crear(self, **extra):
-        datos = {'action': 'add', 'jugador': self.jugador.id, 'mes': 9, 'anio': 2026}
+        # El modal manda siempre las fechas: el mes sale de ellas, no al reves.
+        datos = {'action': 'add', 'jugador': self.jugador.id,
+                 'periodo_inicio': '2026-09-18', 'periodo_fin': '2026-10-17'}
         datos.update(extra)
         return self.client.post('/sistema/adm_mensualidad', datos)
 
@@ -640,12 +642,39 @@ class CobrarAUnSoloJugadorTest(BaseMensualidad):
         self.assertEqual(mensualidad.valor, Decimal('25.00'))
         self.assertEqual(mensualidad.estado, MENSUALIDAD_PENDIENTE)
 
-    def test_sin_fechas_usa_las_del_ingreso(self):
+    def test_las_fechas_mandan_sobre_el_mes(self):
         self.crear()
         mensualidad = Mensualidad.objects.get(jugador=self.jugador, mes=9)
         self.assertEqual(mensualidad.periodo_inicio, date(2026, 9, 18))
         self.assertEqual(mensualidad.periodo_fin, date(2026, 10, 17))
         self.assertEqual(mensualidad.fecha_vencimiento, date(2026, 9, 18))
+
+    def test_sin_fechas_toma_el_mes_que_le_sigue(self):
+        """Si no se toca nada, se le abre el mes que le corresponde."""
+        respuesta = self.client.post('/sistema/adm_mensualidad', {
+            'action': 'add', 'jugador': self.jugador.id})
+        self.assertEqual(json.loads(respuesta.content)['result'], 'ok')
+
+        mensualidad = Mensualidad.objects.get(jugador=self.jugador)
+        self.assertEqual(mensualidad.periodo_inicio, date(2026, 6, 18))
+        self.assertEqual(mensualidad.periodo_fin, date(2026, 7, 17))
+
+    def test_se_le_puede_hacer_un_descuento_de_ese_mes(self):
+        """25 con 20%% de rebaja = 20, y queda escrito por que."""
+        self.crear(valor='25.00', descuento_aplicado='20',
+                   motivo_descuento='Se lesiono y vino media jornada')
+
+        mensualidad = Mensualidad.objects.get(jugador=self.jugador, mes=9)
+        self.assertEqual(mensualidad.valor, Decimal('20.00'))
+        self.assertEqual(mensualidad.valor_completo, Decimal('25.00'))
+        self.assertEqual(mensualidad.descuento_aplicado, Decimal('20'))
+        self.assertEqual(mensualidad.motivo_descuento, 'Se lesiono y vino media jornada')
+        self.assertIn('20% de descuento', mensualidad.texto_descuento())
+
+    def test_el_descuento_no_puede_pasar_de_100(self):
+        respuesta = self.crear(descuento_aplicado='150')
+        self.assertEqual(json.loads(respuesta.content)['result'], 'bad')
+        self.assertFalse(Mensualidad.objects.filter(jugador=self.jugador).exists())
 
     def test_se_pueden_poner_otras_fechas(self):
         self.crear(periodo_inicio='2026-09-05', periodo_fin='2026-09-25')
@@ -656,7 +685,7 @@ class CobrarAUnSoloJugadorTest(BaseMensualidad):
         self.assertEqual(mensualidad.dias_del_periodo(), 21)
 
     def test_se_puede_cobrar_otro_valor(self):
-        self.crear(valor='12.50')
+        self.crear(valor='12.50', descuento_aplicado='0')
         mensualidad = Mensualidad.objects.get(jugador=self.jugador, mes=9)
         self.assertEqual(mensualidad.valor, Decimal('12.50'))
         self.assertEqual(mensualidad.valor_completo, Decimal('12.50'))

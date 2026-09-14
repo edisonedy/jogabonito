@@ -1,0 +1,149 @@
+{% extends "base_nueva.html" %}
+
+{% block pagetitle %}Pagos de {{ jugador.nombre_completo }} | {{ academia.nombre }}{% endblock %}
+
+{% block canvas %}
+  <div class="modulo-toolbar">
+    <div class="d-flex align-items-center gap-2">
+      {% if jugador.fotografia %}
+        <img src="{{ jugador.fotografia.url }}" class="avatar-jugador" alt="">
+      {% else %}
+        <span class="avatar-jugador avatar-vacio"><i class="fa-solid fa-futbol"></i></span>
+      {% endif %}
+      <div>
+        <h5 class="mb-0">{{ jugador.nombre_completo }}</h5>
+        <div class="small text-muted">
+          {{ jugador.categoria.nombre }} &middot; entro el {{ jugador.fecha_ingreso|date:"d/m/Y" }}
+          &middot; {{ jugador.estado_de_cuenta }}
+        </div>
+      </div>
+    </div>
+
+    <div class="ms-auto d-flex flex-wrap gap-2">
+      {% if jugador.whatsapp_de_contacto %}
+        <a href="https://wa.me/{{ jugador.whatsapp_de_contacto }}" target="_blank" rel="noopener"
+           class="btn btn-sm btn-outline-success btn-touch">
+          <i class="fa-brands fa-whatsapp me-1"></i> Escribir
+        </a>
+      {% endif %}
+      <a href="/sistema/adm_jugador?action=view&amp;id={{ jugador.id }}"
+         class="btn btn-sm btn-outline-secondary btn-touch">
+        <i class="bi bi-person-badge me-1"></i> Ficha
+      </a>
+      <a href="/sistema/adm_mensualidad" class="btn btn-sm btn-outline-secondary btn-touch">
+        <i class="bi bi-arrow-left me-1"></i> Volver
+      </a>
+    </div>
+  </div>
+
+  <div class="tablero-cifras mb-3">
+    <article class="cifra">
+      <span class="cifra-icono bg-joga"><i class="fa-solid fa-sack-dollar"></i></span>
+      <div><b>$ {{ historial.total_pagado }}</b><span>pagado en total</span></div>
+    </article>
+    <article class="cifra">
+      <span class="cifra-icono bg-rojo"><i class="fa-solid fa-hand-holding-dollar"></i></span>
+      <div><b>$ {{ historial.total_pendiente }}</b><span>lo que debe</span></div>
+    </article>
+    <article class="cifra">
+      <span class="cifra-icono bg-azul"><i class="fa-solid fa-calendar-check"></i></span>
+      <div><b>{{ historial.cuantos }}</b><span>meses en la academia</span></div>
+    </article>
+    {% if proximo %}
+      <article class="cifra">
+        <span class="cifra-icono bg-oro"><i class="fa-solid fa-arrow-right"></i></span>
+        <div>
+          <b>{{ proximo.0|date:"d/m" }}</b>
+          <span>arranca su proximo mes</span>
+        </div>
+      </article>
+    {% endif %}
+  </div>
+
+  {% for anio in historial.anios %}
+    <section class="bloque mb-3">
+      <h6>
+        <i class="bi bi-calendar3 me-1"></i> {{ anio.anio }}
+        <span class="ms-auto d-flex flex-wrap gap-2">
+          <span class="res-item text-bg-success">$ {{ anio.pagado }} pagado</span>
+          {% if anio.pendiente %}
+            <span class="res-item text-bg-danger">$ {{ anio.pendiente }} debe</span>
+          {% endif %}
+          <span class="res-item res-pendientes">
+            {{ anio.cuantos_pagados }}/{{ anio.meses|length }} meses
+          </span>
+        </span>
+      </h6>
+
+      <div class="tabla-scroll">
+        <table class="tabla-joga">
+          <thead>
+            <tr>
+              <th>Mes</th>
+              <th>Periodo</th>
+              <th>Valor</th>
+              <th>Estado</th>
+              <th>Como y cuando pago</th>
+              <th class="text-end">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for m in anio.meses %}
+              <tr>
+                <td data-label="Mes"><b>{{ m.nombre_mes|title }}</b></td>
+                <td data-label="Periodo">
+                  {% if m.periodo_inicio %}
+                    {{ m.periodo_inicio|date:"d/m" }} al {{ m.periodo_fin|date:"d/m/Y" }}
+                    <div class="small text-muted">{{ m.dias_del_periodo }} dias</div>
+                  {% else %}-{% endif %}
+                  {% if m.tiene_ajuste %}
+                    <div class="small text-muted">{{ m.texto_ajuste }}</div>
+                  {% endif %}
+                </td>
+                <td data-label="Valor">
+                  <b>$ {{ m.valor }}</b>
+                  {% if m.tiene_descuento %}
+                    <div class="small text-muted">{{ m.texto_descuento }}</div>
+                  {% endif %}
+                </td>
+                <td data-label="Estado">
+                  <span class="badge text-bg-{{ m.color }}">{{ m.estado_visible }}</span>
+                  {% if m.esta_atrasada %}
+                    <div class="small text-danger">
+                      {{ m.dias_de_atraso }} dia{{ m.dias_de_atraso|pluralize }} de atraso
+                    </div>
+                  {% endif %}
+                </td>
+                <td data-label="Como y cuando pago">
+                  {% if m.esta_pagada %}
+                    {{ m.fecha_pago|date:"d/m/Y" }}
+                    <div class="small text-muted">
+                      {{ m.get_forma_pago_display|default:"" }}
+                      {% if m.comprobante %}&middot; {{ m.comprobante }}{% endif %}
+                    </div>
+                  {% else %}-{% endif %}
+                </td>
+                <td class="text-end celda-acciones" data-label="Acciones">
+                  <div class="btn-group btn-group-sm">
+                    {% if not m.esta_pagada %}
+                      <a class="btn btn-joga" href="#"
+                         data-modal-url="/sistema/adm_mensualidad?action=cobrar&amp;id={{ m.id }}"
+                         title="Cobrar"><i class="bi bi-cash-coin"></i></a>
+                    {% endif %}
+                    <a class="btn btn-outline-secondary" href="#"
+                       data-modal-url="/sistema/adm_mensualidad?action=pagar&amp;id={{ m.id }}"
+                       title="Editar el mes"><i class="bi bi-pencil"></i></a>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  {% empty %}
+    <div class="alert alert-info mb-0">
+      A {{ jugador.como_le_dicen }} todavia no se le ha generado ninguna mensualidad.
+    </div>
+  {% endfor %}
+{% endblock %}

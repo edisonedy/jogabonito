@@ -19,9 +19,10 @@ from django.db import transaction
 
 from jogabonito.cobros import poner_al_dia_jugador
 from jogabonito.models import (
+    ASISTENCIA_ATRASO, ASISTENCIA_FALTA, ASISTENCIA_JUSTIFICADO, ASISTENCIA_PRESENTE,
     JUGADOR_ACTIVO, MENSUALIDAD_PAGADO, NOTA_ATENCION, NOTA_FELICITACION, NOTA_GENERAL,
-    PAGO_EFECTIVO, Categoria, ControlFisico, Entrenador, Evaluacion, Indicador, Jugador,
-    Medicion, Nota, Posicion, Representante, TipoEvaluacion,
+    PAGO_EFECTIVO, Asistencia, Categoria, ControlFisico, Entrenador, Evaluacion, Indicador,
+    Jugador, Medicion, Nota, Posicion, Representante, TipoEvaluacion,
 )
 
 HOY = date.today()
@@ -46,10 +47,27 @@ GRUPO = {
 ALUMNOS = [
     ('EDISON', 'ROLANDO', 'MOYOLEMA', 'MOYOLEMA', '1804290490', '0999955936',
      'Picaihua, Tangaiche', date(1989, 3, 13), date(2026, 9, 2), 'VOLANTE MIXTO', 1),
+    # El que lleva mas tiempo entrenando: por el se ve un historial largo
+    # de pagos y de asistencias, que es como se ve un alumno al anio.
     ('CHRISTIAN', '', 'MOYOLEMA', '', '', '', '',
-     date(1998, 8, 9), HOY - timedelta(days=70), 'DELANTERO', 1),
+     date(1998, 8, 9), HOY - timedelta(days=190), 'DELANTERO', 1),
     ('LUIS', 'MIGUEL', 'SAILEMA', 'MORALES', '1804358925', '0984538221', '',
      date(1993, 9, 23), HOY - timedelta(days=40), 'DEFENSA CENTRAL', 2),
+]
+
+APODOS = {0: 'EDY'}
+
+# Lo que hay que saberle a cada uno antes de exigirle en la cancha.
+# (alumno, que tiene, que se le cuida, alergias, tipo de sangre)
+SALUD = [
+    (0, 'Condromalacia rotuliana en la rodilla derecha y fascitis plantar.',
+     'Nada de saltos repetidos ni correr en piso duro. Estirar la planta antes '
+     'y despues. Si le duele el talon, para.',
+     '', 'O+'),
+    (1, 'Asma leve desde ninio. Usa inhalador.',
+     'Que traiga el inhalador a cada clase. En los trabajos de resistencia, '
+     'pausas mas seguido. Si le silba el pecho, sale.',
+     'Polen', 'A+'),
 ]
 
 # Que se le midio a cada uno en cada prueba: (indicador, valor de cada alumno).
@@ -80,7 +98,7 @@ PRUEBAS = [
 # (alumno, dias atras, peso, estatura)
 MEDIDAS = [
     (0, 60, '38.50', 148), (0, 5, '39.20', 150),
-    (1, 60, '31.00', 132), (1, 5, '31.80', 134),
+    (1, 180, '69.00', 173), (1, 60, '70.50', 174), (1, 5, '71.20', 174),
     (2, 60, '45.00', 158), (2, 5, '45.40', 159),
 ]
 
@@ -89,6 +107,17 @@ NOTAS = [
     (0, 45, NOTA_FELICITACION, 'Se le nota mas seguro con el balon y ayuda a los mas pequenios.'),
     (1, 20, NOTA_GENERAL, 'Le esta costando el pase largo; hay que trabajarlo en la semana.'),
     (2, 8, NOTA_ATENCION, 'Vino desanimado las ultimas dos clases. Conversar con la familia.'),
+    (1, 150, NOTA_GENERAL, 'Entro con miedo al contacto; de a poco se esta soltando.'),
+    (1, 60, NOTA_FELICITACION, 'De los mas constantes del grupo. Casi no falta.'),
+]
+
+# Como viene cada uno a entrenar. Es de cada 10 clases, cuantas falta y
+# cuantas llega tarde: asi el historial no sale perfecto, que no es real.
+# (alumno, de cada cuantas clases falta, de cada cuantas llega tarde)
+RITMO_ASISTENCIA = [
+    (0, 9, 5),    # Edison: falta poco, a veces llega tarde del trabajo
+    (1, 11, 9),   # Christian: casi no falta, por eso lleva tanto tiempo
+    (2, 5, 8),    # Luis: el que mas falta
 ]
 
 
@@ -113,6 +142,7 @@ class Command(BaseCommand):
         self.crear_pruebas(grupo, alumnos)
         self.crear_medidas(alumnos)
         self.crear_notas(alumnos, kevyn)
+        self.crear_asistencias(grupo, alumnos)
         self.crear_mensualidades(alumnos)
 
         self.stdout.write(self.style.SUCCESS(
@@ -172,8 +202,32 @@ class Command(BaseCommand):
             self.stdout.write('  alumno %s %s' % (jugador.nombre_completo(),
                                                   '(creado)' if creado else '(ya estaba)'))
 
+        self.ponerles_apodo(alumnos)
+        self.ponerles_salud(alumnos)
         self.crear_representante(alumnos)
         return alumnos
+
+    def ponerles_apodo(self, alumnos):
+        """Como le dicen en la cancha; es lo primero que pregunta el profe."""
+        for posicion, apodo in APODOS.items():
+            if posicion < len(alumnos) and not alumnos[posicion].apodo:
+                alumnos[posicion].apodo = apodo
+                alumnos[posicion].save()
+
+    def ponerles_salud(self, alumnos):
+        """Lo que tiene cada uno y que hay que cuidarle en la cancha."""
+        for posicion, condicion, cuidados, alergias, sangre in SALUD:
+            if posicion >= len(alumnos):
+                continue
+            jugador = alumnos[posicion]
+            if jugador.condicion_medica:
+                continue  # ya lo llenaron a mano: no se pisa
+            jugador.condicion_medica = condicion
+            jugador.cuidados = cuidados
+            jugador.alergias = alergias
+            jugador.tipo_sangre = sangre
+            jugador.save()
+        self.stdout.write('  fichas de salud puestas')
 
     def crear_representante(self, alumnos):
         """Los dos Moyolema comparten representante; es lo normal en hermanos."""
@@ -265,18 +319,110 @@ class Command(BaseCommand):
             )
         self.stdout.write('  notas del profe: %s' % Nota.objects.count())
 
+    def crear_asistencias(self, grupo, alumnos):
+        """Marca todas las clases desde que entro cada uno.
+
+        No es al azar: cada alumno tiene su ritmo (RITMO_ASISTENCIA) y se
+        repite igual cada vez que se corre el comando, para que la pantalla
+        no cambie sola de un dia para otro.
+        """
+        dias_de_clase = grupo.dias_lista()
+        if not dias_de_clase:
+            return
+
+        creadas = 0
+        for posicion, cada_cuantas_falta, cada_cuantas_tarde in RITMO_ASISTENCIA:
+            if posicion >= len(alumnos):
+                continue
+            jugador = alumnos[posicion]
+
+            if jugador.asistencias.exists():
+                continue  # ya tiene historial: no se le inventa mas
+
+            fecha = jugador.fecha_ingreso
+            clase = 0
+            marcas = []
+            while fecha <= HOY:
+                if str(fecha.isoweekday()) in dias_de_clase:
+                    clase += 1
+                    if clase % cada_cuantas_falta == 0:
+                        # Una de cada tantas la falta; una de esas la justifica.
+                        estado = (ASISTENCIA_JUSTIFICADO if clase % (cada_cuantas_falta * 2) == 0
+                                  else ASISTENCIA_FALTA)
+                    elif clase % cada_cuantas_tarde == 0:
+                        estado = ASISTENCIA_ATRASO
+                    else:
+                        estado = ASISTENCIA_PRESENTE
+                    marcas.append(Asistencia(jugador=jugador, categoria=grupo,
+                                             fecha=fecha, estado=estado))
+                fecha += timedelta(days=1)
+
+            Asistencia.objects.bulk_create(marcas)
+            creadas += len(marcas)
+            resumen = jugador.resumen_asistencia()
+            self.stdout.write('  %s: %s clases, %s%% de asistencia' % (
+                jugador.nombre_completo(), len(marcas), resumen['porcentaje']))
+
+        self.stdout.write('  asistencias cargadas: %s' % creadas)
+
     def crear_mensualidades(self, alumnos):
-        """Se abren los meses que le tocan a cada uno desde su ingreso."""
+        """Abre los meses de cada uno desde su ingreso y los deja pagados.
+
+        El unico que queda debiendo es el mes en curso: es la foto normal de
+        una academia, el que viene hace rato esta al dia y debe el de ahora.
+        """
         for jugador in alumnos:
             poner_al_dia_jugador(jugador)
 
-        # El primer mes de cada uno queda pagado: asi se ve cobrado y pendiente.
         for jugador in alumnos:
-            primera = jugador.mensualidades_en_orden().first()
-            if primera and not primera.esta_pagada():
-                primera.estado = MENSUALIDAD_PAGADO
-                primera.fecha_pago = primera.periodo_inicio
-                primera.forma_pago = PAGO_EFECTIVO
-                primera.save()
+            meses = list(jugador.mensualidades_en_orden())
+            if not meses:
+                continue
 
-        self.stdout.write('  mensualidades abiertas para los tres alumnos')
+            # Todos menos el ultimo: ya los pago, dos o tres dias despues de
+            # que le tocaba, que es como pasa de verdad.
+            for mensualidad in meses[:-1]:
+                if mensualidad.esta_pagada():
+                    continue
+                mensualidad.estado = MENSUALIDAD_PAGADO
+                mensualidad.fecha_pago = min(
+                    mensualidad.periodo_inicio + timedelta(days=2), HOY)
+                mensualidad.forma_pago = PAGO_EFECTIVO
+                mensualidad.save()
+
+            self.stdout.write('  %s: %s meses, debe %s' % (
+                jugador.nombre_completo(), len(meses), jugador.total_que_debe()))
+
+        self.ponerle_un_descuento(alumnos)
+
+    def ponerle_un_descuento(self, alumnos):
+        """Un mes con rebaja, para que se vea de donde sale lo que paga.
+
+        Pasa seguido: un mes le hacen precio por algo y al siguiente vuelve a
+        pagar completo. Por eso el motivo se guarda en el mes.
+        """
+        if len(alumnos) < 2:
+            return
+        christian = alumnos[1]
+        meses = list(christian.mensualidades_en_orden())
+        if len(meses) < 4:
+            return
+
+        # Uno en porcentaje y otro en plata: las dos maneras en que se habla
+        # un descuento en la cancha.
+        rebajado = meses[2]
+        if not rebajado.tiene_descuento():
+            rebajado.descuento_aplicado = Decimal('20.00')
+            rebajado.motivo_descuento = 'Se lesiono y entreno media jornada ese mes'
+            rebajado.recalcular_por_ausencia()
+            rebajado.save()
+
+        en_plata = meses[3]
+        if not en_plata.tiene_descuento():
+            en_plata.descuento_monto = Decimal('5.00')
+            en_plata.motivo_descuento = 'Acuerdo de ese mes: 5 menos'
+            en_plata.recalcular_por_ausencia()
+            en_plata.save()
+
+        self.stdout.write('  %s tuvo dos meses con rebaja (%s y %s)' % (
+            christian.nombre_completo(), rebajado.valor, en_plata.valor))

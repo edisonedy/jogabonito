@@ -1,0 +1,121 @@
+{% extends "base_nueva.html" %}
+
+{% block pagetitle %}Todas las asistencias | {{ academia.nombre }}{% endblock %}
+
+{% block canvas %}
+  <form method="get" class="modulo-toolbar">
+    <input type="hidden" name="action" value="todas">
+
+    <div class="input-group input-group-sm" style="max-width:330px">
+      <span class="input-group-text">Del</span>
+      <input type="date" class="form-control" name="desde" value="{{ desde|date:'Y-m-d' }}">
+      <span class="input-group-text">al</span>
+      <input type="date" class="form-control" name="hasta" value="{{ hasta|date:'Y-m-d' }}">
+    </div>
+
+    <select name="categoria" class="form-select form-select-sm" style="max-width:200px">
+      <option value="">Todos los grupos</option>
+      {% for c in categorias %}
+        <option value="{{ c.id }}" {% if categoria.id == c.id %}selected{% endif %}>{{ c.nombre }}</option>
+      {% endfor %}
+    </select>
+
+    <div class="buscador-lista" style="max-width:220px">
+      <i class="bi bi-search"></i>
+      <input type="search" class="form-control form-control-sm" name="s"
+             value="{{ buscar }}" placeholder="Buscar jugador">
+    </div>
+
+    <button type="submit" class="btn btn-joga btn-sm btn-touch">
+      <i class="bi bi-funnel me-1"></i> Ver
+    </button>
+
+    <a href="/sistema/adm_asistencia" class="btn btn-sm btn-outline-secondary btn-touch ms-auto">
+      <i class="bi bi-arrow-left me-1"></i> Volver a marcar
+    </a>
+  </form>
+
+  <p class="small text-muted mb-3">
+    <i class="bi bi-info-circle me-1"></i>
+    Del <b>{{ desde|date:"d/m/Y" }}</b> al <b>{{ hasta|date:"d/m/Y" }}</b>:
+    {{ dias_distintos }} dia{{ dias_distintos|pluralize }} de clase marcado{{ dias_distintos|pluralize }}.
+  </p>
+
+  <section class="bloque">
+    <h6><i class="bi bi-people me-1"></i> Como vino cada uno</h6>
+    {% if resumen %}
+      <p class="small text-muted">De menos a mas: arriba los que menos vinieron.</p>
+      <div class="tabla-scroll">
+        <table class="tabla-joga">
+          <thead>
+            <tr>
+              <th>Jugador</th><th>Grupo</th><th>Asistencia</th>
+              <th>Vino</th><th>Falto</th><th>Tarde</th><th>Justificado</th>
+              <th class="text-end">Clases</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for fila in resumen %}
+              <tr>
+                <td data-label="Jugador">
+                  <a class="fw-semibold"
+                     href="/sistema/adm_asistencia?action=historial&amp;id={{ fila.jugador.id }}"
+                     title="Ver clase por clase">{{ fila.jugador.nombre_completo }}</a>
+                  {% if fila.jugador.apodo %}
+                    <small class="text-muted d-block">{{ fila.jugador.apodo }}</small>
+                  {% endif %}
+                </td>
+                <td data-label="Grupo">{{ fila.jugador.categoria.nombre }}</td>
+                <td data-label="Asistencia">
+                  <span class="badge text-bg-{% if fila.porcentaje >= 80 %}success{% elif fila.porcentaje >= 60 %}warning{% else %}danger{% endif %}">
+                    {{ fila.porcentaje }}%
+                  </span>
+                </td>
+                <td data-label="Vino">{{ fila.presentes }}</td>
+                <td data-label="Falto">{{ fila.faltas }}</td>
+                <td data-label="Tarde">{{ fila.atrasos }}</td>
+                <td data-label="Justificado">{{ fila.justificados }}</td>
+                <td data-label="Clases" class="text-end">{{ fila.total }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="small text-muted mb-0">
+        No hay nada marcado en esas fechas. Prueba con un rango mas amplio.
+      </p>
+    {% endif %}
+  </section>
+
+  <section class="bloque">
+    <h6><i class="bi bi-list-check me-1"></i> Clase por clase</h6>
+    <div class="tabla-scroll">
+      <table class="tabla-joga">
+        <thead>
+          <tr><th>Fecha</th><th>Jugador</th><th>Grupo</th><th>Estado</th><th>Novedad</th></tr>
+        </thead>
+        <tbody>
+          {% for a in registros %}
+            <tr>
+              <td data-label="Fecha">{{ a.fecha|date:"d/m/Y" }}</td>
+              <td data-label="Jugador">
+                <a href="/sistema/adm_asistencia?action=historial&amp;id={{ a.jugador.id }}">
+                  {{ a.jugador.nombre_completo }}
+                </a>
+              </td>
+              <td data-label="Grupo">{{ a.categoria.nombre }}</td>
+              <td data-label="Estado">
+                <span class="badge text-bg-{{ a.color }}">{{ a.get_estado_display }}</span>
+              </td>
+              <td data-label="Novedad">{{ a.observacion|default:"-" }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="5" class="text-center text-muted small">Nada marcado en esas fechas.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% include "paginador.html" %}
+  </section>
+{% endblock %}

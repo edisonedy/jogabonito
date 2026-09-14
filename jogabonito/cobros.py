@@ -23,14 +23,17 @@ MAXIMO_MESES_ATRASADOS = 24
 
 def crear_mensualidad(jugador, inicio, fin, request=None):
     """Abre el mes del jugador con el precio que tiene hoy."""
-    valor = jugador.valor_mensual_vigente()
+    # El precio del grupo va en valor_completo y la rebaja aparte: asi despues
+    # se puede explicar de donde salio lo que paga (25 menos el 10% = 22,50).
     mensualidad = Mensualidad(
         jugador=jugador,
         mes=inicio.month,
         anio=inicio.year,
-        valor=valor,
-        valor_completo=valor,
+        valor=jugador.valor_mensual_vigente(),
+        valor_completo=jugador.precio_base(),
         descuento_aplicado=jugador.descuento,
+        descuento_monto=jugador.descuento_monto,
+        motivo_descuento=jugador.motivo_descuento,
         periodo_inicio=inicio,
         periodo_fin=fin,
         fecha_vencimiento=inicio,

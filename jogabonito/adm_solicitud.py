@@ -9,7 +9,7 @@ from jogabonito.commonviews import adduserdata
 from jogabonito.decorators import URL_LOGIN, last_access, secure_module, solo_administrador
 from jogabonito.funciones import bad_json, ok_json, paginar, url_back
 from jogabonito.models import (
-    ESTADOS_SOLICITUD, SOLICITUD_NUEVA, Categoria, SolicitudInscripcion,
+    ESTADOS_SOLICITUD, SOLICITUD_INSCRITO, SOLICITUD_NUEVA, Categoria, SolicitudInscripcion,
 )
 
 MODULO = 'adm_solicitud'
@@ -47,7 +47,14 @@ def view(request):
 
         if action == 'delete':
             try:
-                SolicitudInscripcion.objects.get(pk=int(request.POST['id'])).delete()
+                solicitud = SolicitudInscripcion.objects.get(pk=int(request.POST['id']))
+                # La que ya entro a la academia queda como constancia de como
+                # llego ese alumno.
+                if solicitud.estado == SOLICITUD_INSCRITO:
+                    return bad_json(mensaje='No se puede eliminar: esa solicitud ya se '
+                                            'convirtio en alumno. Es la constancia de como '
+                                            'llego.')
+                solicitud.delete()
                 return ok_json({'mensaje': 'Solicitud eliminada.'})
             except SolicitudInscripcion.DoesNotExist:
                 return bad_json(error=3)

@@ -32,6 +32,9 @@
     </select>
 
     <div class="d-flex gap-2 ms-auto">
+      <a href="/sistema/adm_mensualidad?action=proximos" class="btn btn-sm btn-outline-primary btn-touch">
+        <i class="bi bi-calendar-check me-1"></i> A quien le toca
+      </a>
       <a href="/sistema/adm_mensualidad?action=deudores" class="btn btn-sm btn-outline-danger btn-touch">
         <i class="bi bi-exclamation-circle me-1"></i> Quien debe
       </a>
@@ -107,7 +110,8 @@
         {% for m in mensualidades %}
           <tr>
             <td data-label="Jugador">
-              <a class="fw-semibold" href="/sistema/adm_jugador?action=view&amp;id={{ m.jugador.id }}">
+              <a class="fw-semibold" href="/sistema/adm_mensualidad?action=historial&amp;id={{ m.jugador.id }}"
+                 title="Ver todos sus pagos">
                 {{ m.jugador.nombre_completo }}
               </a>
               {% if m.descuento_aplicado %}
@@ -173,9 +177,10 @@
                    title="Precio y descuento">
                   <i class="bi bi-tag"></i>
                 </a>
-                <a class="btn btn-outline-primary" href="#"
-                   data-modal-url="/sistema/adm_mensualidad?action=siguiente&amp;id={{ m.jugador.id }}"
-                   title="Abrir el siguiente mes de este jugador">
+                <a class="btn btn-outline-primary accion-directa" href="#"
+                   data-url="/sistema/adm_mensualidad" data-accion="siguiente"
+                   data-id="{{ m.jugador.id }}"
+                   title="Abrirle el siguiente mes, de un clic">
                   <i class="bi bi-arrow-right-circle"></i>
                 </a>
                 <a class="btn btn-outline-danger" href="#"

@@ -363,6 +363,17 @@ def view(request):
                 evaluacion = evaluacion_permitida(perfil, request.POST.get('id'))
                 if evaluacion is None:
                     return bad_json(error=4)
+
+                # Si ya se le tomo a alguien, eso es historial del chico: se
+                # cierra la prueba, no se la borra.
+                cuantas = evaluacion.mediciones.count()
+                if cuantas:
+                    return bad_json(
+                        mensaje='No se puede eliminar: ya tiene %s medicion%s tomada%s. '
+                                'Si ya no se usa, cierrala.'
+                                % (cuantas, '' if cuantas == 1 else 'es',
+                                   '' if cuantas == 1 else 's'))
+
                 evaluacion.indicadores.clear()
                 evaluacion.delete()
                 return ok_json({'mensaje': 'Evaluacion eliminada.'})

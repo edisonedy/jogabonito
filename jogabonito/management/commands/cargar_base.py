@@ -66,17 +66,31 @@ DIVISIONES = [
     ('ADULTOS', 19, 99, 8),
 ]
 
+# Todos los puestos de una cancha de 11, con la sigla con que se los nombra.
+# (nombre, sigla, orden, peso tecnica, peso fisica, peso tactica, peso actitud)
+# Los pesos van de 0 a 3 y dicen cuanto cuenta cada area para jugar ahi.
 POSICIONES = [
-    ('ARQUERO', 'ARQ', 1, 2, 3, 2, 3),
-    ('DEFENSA CENTRAL', 'DFC', 2, 1, 3, 3, 2),
-    ('LATERAL DERECHO', 'LD', 3, 2, 3, 2, 2),
-    ('LATERAL IZQUIERDO', 'LI', 4, 2, 3, 2, 2),
-    ('VOLANTE DE MARCA', 'MCD', 5, 2, 3, 3, 2),
-    ('VOLANTE MIXTO', 'MC', 6, 3, 2, 3, 2),
-    ('VOLANTE OFENSIVO', 'MCO', 7, 3, 1, 3, 1),
-    ('EXTREMO DERECHO', 'ED', 8, 3, 3, 1, 1),
-    ('EXTREMO IZQUIERDO', 'EI', 9, 3, 3, 1, 1),
-    ('DELANTERO', 'DC', 10, 3, 2, 2, 1),
+    # ---- arco ----
+    ('ARQUERO', 'POR', 1, 2, 3, 2, 3),
+    # ---- defensa ----
+    ('LIBERO', 'LIB', 2, 2, 2, 3, 2),
+    ('DEFENSA CENTRAL', 'DFC', 3, 1, 3, 3, 2),
+    ('LATERAL DERECHO', 'LD', 4, 2, 3, 2, 2),
+    ('LATERAL IZQUIERDO', 'LI', 5, 2, 3, 2, 2),
+    ('CARRILERO DERECHO', 'CAD', 6, 2, 3, 2, 2),
+    ('CARRILERO IZQUIERDO', 'CAI', 7, 2, 3, 2, 2),
+    # ---- medio ----
+    ('VOLANTE DE MARCA', 'MCD', 8, 2, 3, 3, 2),
+    ('VOLANTE MIXTO', 'MC', 9, 3, 2, 3, 2),
+    ('INTERIOR DERECHO', 'MD', 10, 3, 2, 2, 2),
+    ('INTERIOR IZQUIERDO', 'MI', 11, 3, 2, 2, 2),
+    ('VOLANTE OFENSIVO', 'MCO', 12, 3, 1, 3, 1),
+    ('MEDIAPUNTA', 'MP', 13, 3, 1, 3, 1),
+    # ---- ataque ----
+    ('EXTREMO DERECHO', 'ED', 14, 3, 3, 1, 1),
+    ('EXTREMO IZQUIERDO', 'EI', 15, 3, 3, 1, 1),
+    ('SEGUNDO DELANTERO', 'SD', 16, 3, 2, 2, 1),
+    ('DELANTERO', 'DC', 17, 3, 2, 2, 1),
 ]
 
 # Punto de partida sugerido: el administrador agrega, edita o desactiva lo que quiera.

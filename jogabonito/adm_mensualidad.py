@@ -66,12 +66,18 @@ def periodo_del_jugador(jugador, mes, anio):
 
 def ficha_de_precio(jugador):
     """Lo que la pantalla necesita saber del jugador para sugerir fechas."""
+    proximo = jugador.proximo_periodo()
     return {
         'dia': jugador.dia_de_cobro(),
-        'valor': '%s' % jugador.valor_mensual_vigente(),
+        'valor': '%s' % jugador.precio_base(),
+        'descuento': '%s' % (jugador.descuento or 0),
+        'descuento_monto': '%s' % (jugador.descuento_monto or 0),
+        'a_pagar': '%s' % jugador.valor_mensual_vigente(),
         'grupo': jugador.categoria.nombre,
         'explicacion': jugador.explicacion_precio(),
         'ingreso': jugador.fecha_ingreso.strftime('%d/%m/%Y') if jugador.fecha_ingreso else '',
+        'desde': proximo[0].strftime('%Y-%m-%d') if proximo else '',
+        'hasta': proximo[1].strftime('%Y-%m-%d') if proximo else '',
     }
 
 
@@ -145,7 +151,6 @@ def view(request):
                         sin_ingresar += 1
                         continue  # todavia no entraba a la academia ese mes
 
-                    valor = jugador.valor_mensual_vigente()
                     inicio, fin = periodo_del_jugador(jugador, mes, anio)
                     if (jugador.id, inicio) in periodos_abiertos:
                         continue
@@ -153,9 +158,11 @@ def view(request):
                         jugador=jugador,
                         mes=mes,
                         anio=anio,
-                        valor=valor,
-                        valor_completo=valor,
+                        valor=jugador.valor_mensual_vigente(),
+                        valor_completo=jugador.precio_base(),
                         descuento_aplicado=jugador.descuento,
+                        descuento_monto=jugador.descuento_monto,
+                        motivo_descuento=jugador.motivo_descuento,
                         periodo_inicio=inicio,
                         periodo_fin=fin,
                         fecha_vencimiento=inicio,
@@ -226,17 +233,23 @@ def view(request):
                     return bad_json(mensaje=primer_error(form))
 
                 mensualidad = form.save(commit=False)
-                mensualidad.valor_completo = mensualidad.valor
-                mensualidad.descuento_aplicado = mensualidad.jugador.descuento
+                mensualidad.valor_completo = form.cleaned_data['valor_completo']
                 mensualidad.fecha_vencimiento = mensualidad.periodo_inicio
                 mensualidad.estado = MENSUALIDAD_PENDIENTE
                 mensualidad.save(request)
 
-                return ok_json({'mensaje': 'Listo: %s debe %s de %s (%s).' % (
+                rebaja = ''
+                if mensualidad.descuento_aplicado:
+                    rebaja = ' (%s de %s, con %s%% de descuento)' % (
+                        mensualidad.valor, mensualidad.valor_completo,
+                        mensualidad.descuento_aplicado)
+
+                return ok_json({'mensaje': 'Listo: %s debe %s de %s (%s)%s.' % (
                     mensualidad.jugador.nombre_completo(),
                     mensualidad.valor,
                     mensualidad.periodo(),
                     mensualidad.texto_periodo(),
+                    rebaja,
                 )})
             except (KeyError, TypeError, ValueError):
                 return bad_json(error=6)
@@ -385,7 +398,7 @@ def view(request):
     if action == 'add':
         data['title'] = 'Cobrar a un solo jugador'
         activos = Jugador.objects.filter(estado=JUGADOR_ACTIVO).select_related('categoria')
-        inicial = {'mes': mes, 'anio': anio}
+        inicial = {}
 
         try:
             elegido = activos.get(pk=int(request.GET['jugador']))
@@ -393,7 +406,11 @@ def view(request):
             inicial['jugador'] = elegido.id
             inicial['periodo_inicio'] = inicio
             inicial['periodo_fin'] = fin
-            inicial['valor'] = elegido.valor_mensual_vigente()
+            # El precio del grupo va sin descontar; la rebaja se ve aparte.
+            inicial['valor'] = elegido.precio_base()
+            inicial['descuento_aplicado'] = elegido.descuento
+            inicial['descuento_monto'] = elegido.descuento_monto
+            inicial['motivo_descuento'] = elegido.motivo_descuento
         except (Jugador.DoesNotExist, KeyError, TypeError, ValueError):
             pass
 
@@ -421,6 +438,33 @@ def view(request):
         data['resumen'] = resumen_del_mes(mes, anio)
         data['activos'] = Jugador.objects.filter(estado=JUGADOR_ACTIVO).count()
         return render(request, 'adm_mensualidad/generar.html', data)
+
+    if action == 'historial':
+        try:
+            jugador = Jugador.objects.select_related('categoria', 'representante').get(
+                pk=int(request.GET['id']))
+        except (Jugador.DoesNotExist, KeyError, ValueError):
+            return url_back(request)
+
+        data['title'] = 'Pagos de %s' % jugador.nombre_completo()
+        data['jugador'] = jugador
+        data['historial'] = jugador.historial_de_pagos()
+        data['proximo'] = jugador.proximo_periodo()
+        return render(request, 'adm_mensualidad/historial.html', data)
+
+    # ---- a quien le llega el mes de pago ------------------------------
+    if action == 'proximos':
+        data['title'] = 'A quien le toca pagar'
+        hoy = date.today()
+        filas = proximos_cobros()
+
+        data['ya_toca'] = [f for f in filas if f['ya_toca']]
+        data['esta_semana'] = [f for f in filas if not f['ya_toca'] and f['faltan'] <= 7]
+        data['despues'] = [f for f in filas if not f['ya_toca'] and f['faltan'] > 7]
+        data['hoy'] = hoy
+        data['apagados'] = Jugador.objects.filter(
+            estado=JUGADOR_ACTIVO, cobro_activo=False).select_related('categoria')
+        return render(request, 'adm_mensualidad/proximos.html', data)
 
     if action == 'deudores':
         data['title'] = 'Quien debe'

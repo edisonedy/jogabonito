@@ -148,6 +148,8 @@ class HumoTest(TestCase):
             '/sistema/adm_mensualidad?action=precio&id=%s' % self.jugador.id,
             '/sistema/adm_mensualidad?action=generar',
             '/sistema/adm_mensualidad?action=deudores',
+            '/sistema/adm_mensualidad?action=proximos',
+            '/sistema/adm_mensualidad?action=historial&id=%s' % self.jugador.id,
             '/sistema/adm_mensualidad?estado=atrasadas',
             '/sistema/adm_mensualidad?s=vera',
         ]:
@@ -203,6 +205,11 @@ class HumoTest(TestCase):
             '/sistema/adm_asistencia?action=detalle&categoria=%s&fecha=%s&jugador=%s' % (
                 self.categoria.id, HOY.strftime('%Y-%m-%d'), self.jugador.id),
             '/sistema/adm_asistencia?action=historial&id=%s' % self.jugador.id,
+            '/sistema/adm_asistencia?action=todas',
+            '/sistema/adm_asistencia?action=todas&desde=%s&hasta=%s&categoria=%s&s=vera' % (
+                (HOY - timedelta(days=90)).strftime('%Y-%m-%d'),
+                HOY.strftime('%Y-%m-%d'), self.categoria.id),
+            '/sistema/adm_jugador?action=delete&id=%s' % self.jugador.id,
             '/sistema/adm_turno',
         ]:
             self.abrir(url)

@@ -19,6 +19,12 @@
     {% endif %}
   </div>
 
+  {% if mensualidad.tiene_descuento %}
+    <div class="alert alert-light border py-2 small">
+      <i class="bi bi-tag me-1"></i> {{ mensualidad.texto_descuento }}.
+    </div>
+  {% endif %}
+
   {% if mensualidad.tiene_ajuste %}
     <div class="alert alert-light border py-2 small">
       {{ mensualidad.texto_ajuste }} &middot; el mes completo es $ {{ mensualidad.valor_completo }}.

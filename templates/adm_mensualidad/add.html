@@ -6,10 +6,10 @@
   {{ fichas|json_script:"fichasJugadores" }}
 
   <div class="alert alert-light border py-2 small">
-    Para cobrarle a <b>uno solo</b>: el que recien entra, el que se pone al dia
-    o el que se cobra aparte. No toca a los demas.
-    <br>Al elegir al jugador se llenan solas las fechas de su periodo, contadas
-    desde el dia en que ingreso. Si este mes fue distinto, cambialas a mano.
+    Para cobrarle a <b>uno solo</b> con otras fechas o con otro precio: el que
+    recien entra, el que se pone al dia o el que este mes tiene una rebaja.
+    <br>Al elegir al jugador se llenan solas las fechas del mes que le toca y
+    el precio de su grupo. Si este mes fue distinto, cambialo aqui mismo.
   </div>
 
   <div class="alert alert-success py-2 small d-none" id="avisoJugador"></div>
@@ -22,11 +22,11 @@
 (function () {
   var caja = document.getElementById('fichasJugadores');
   var jugador = document.getElementById('id_jugador');
-  var mes = document.getElementById('id_mes');
-  var anio = document.getElementById('id_anio');
   var inicio = document.getElementById('id_periodo_inicio');
   var fin = document.getElementById('id_periodo_fin');
   var valor = document.getElementById('id_valor');
+  var descuento = document.getElementById('id_descuento_aplicado');
+  var monto = document.getElementById('id_descuento_monto');
   var aviso = document.getElementById('avisoJugador');
 
   if (!caja || !jugador || !inicio || !fin) { return; }
@@ -34,17 +34,28 @@
   var fichas = {};
   try { fichas = JSON.parse(caja.textContent); } catch (e) { return; }
 
-  var valorEscritoAMano = false;
+  var aMano = {valor: false, descuento: false, fechas: false};
 
-  function comoTexto(fecha) {
-    var m = fecha.getMonth() + 1;
-    var d = fecha.getDate();
-    return fecha.getFullYear() + '-' + (m < 10 ? '0' : '') + m + '-' + (d < 10 ? '0' : '') + d;
+  function numero(campo) {
+    if (!campo) { return 0; }
+    return parseFloat((campo.value || '0').replace(',', '.')) || 0;
   }
 
-  function diaDelMes(anioPedido, mesPedido, dia) {
-    var ultimo = new Date(anioPedido, mesPedido, 0).getDate();
-    return new Date(anioPedido, mesPedido - 1, Math.min(dia, ultimo));
+  // Se puede escribir el descuento en porcentaje o en dolares; si hay plata
+  // escrita, esa manda, igual que en el servidor.
+  function aPagar() {
+    var base = numero(valor);
+    var enPlata = numero(monto);
+    var rebaja = enPlata ? enPlata : base * numero(descuento) / 100;
+    return Math.max(base - rebaja, 0).toFixed(2);
+  }
+
+  function pintarAviso(ficha) {
+    var texto = 'Grupo ' + ficha.grupo;
+    if (ficha.ingreso) { texto += ' · ingreso el ' + ficha.ingreso; }
+    texto += ' · va a pagar $ ' + aPagar();
+    aviso.textContent = texto;
+    aviso.classList.remove('d-none');
   }
 
   function sugerir() {
@@ -54,34 +65,43 @@
       return;
     }
 
-    var numeroMes = parseInt(mes.value, 10);
-    var numeroAnio = parseInt(anio.value, 10);
-
-    if (numeroMes && numeroAnio) {
-      var desde = diaDelMes(numeroAnio, numeroMes, ficha.dia);
-      var otroMes = numeroMes === 12 ? 1 : numeroMes + 1;
-      var otroAnio = numeroMes === 12 ? numeroAnio + 1 : numeroAnio;
-      var hasta = diaDelMes(otroAnio, otroMes, ficha.dia);
-      hasta.setDate(hasta.getDate() - 1);
-
-      inicio.value = comoTexto(desde);
-      fin.value = comoTexto(hasta);
+    if (!aMano.fechas) {
+      inicio.value = ficha.desde;
+      fin.value = ficha.hasta;
+    }
+    if (valor && !aMano.valor) { valor.value = ficha.valor; }
+    if (!aMano.descuento) {
+      if (descuento) { descuento.value = ficha.descuento; }
+      if (monto) { monto.value = ficha.descuento_monto; }
     }
 
-    if (valor && !valorEscritoAMano) {
-      valor.value = ficha.valor;
-    }
+    pintarAviso(ficha);
+  }
 
-    aviso.textContent = 'Grupo ' + ficha.grupo + ' · ' + ficha.explicacion +
-                        (ficha.ingreso ? ' · ingreso el ' + ficha.ingreso : '');
-    aviso.classList.remove('d-none');
+  function recalcular() {
+    var ficha = fichas[jugador.value];
+    if (ficha) { pintarAviso(ficha); }
   }
 
   jugador.addEventListener('change', sugerir);
-  if (mes) { mes.addEventListener('change', sugerir); }
-  if (anio) { anio.addEventListener('change', sugerir); }
+  inicio.addEventListener('input', function () { aMano.fechas = true; });
+  fin.addEventListener('input', function () { aMano.fechas = true; });
   if (valor) {
-    valor.addEventListener('input', function () { valorEscritoAMano = true; });
+    valor.addEventListener('input', function () { aMano.valor = true; recalcular(); });
+  }
+  if (descuento) {
+    descuento.addEventListener('input', function () {
+      aMano.descuento = true;
+      if (monto && numero(descuento)) { monto.value = '0'; }
+      recalcular();
+    });
+  }
+  if (monto) {
+    monto.addEventListener('input', function () {
+      aMano.descuento = true;
+      if (descuento && numero(monto)) { descuento.value = '0'; }
+      recalcular();
+    });
   }
 
   if (jugador.value) { sugerir(); }

@@ -1,0 +1,60 @@
+{% comment %}La misma tabla para los tres bloques de la pantalla.{% endcomment %}
+<div class="tabla-scroll">
+  <table class="tabla-joga">
+    <thead>
+      <tr>
+        <th>Jugador</th>
+        <th>Grupo</th>
+        <th>Su proximo mes</th>
+        <th>Cuando</th>
+        <th>Valor</th>
+        <th class="text-end">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for fila in filas %}
+        <tr>
+          <td data-label="Jugador">
+            <a class="fw-semibold"
+               href="/sistema/adm_mensualidad?action=historial&amp;id={{ fila.jugador.id }}"
+               title="Ver todos sus pagos">{{ fila.jugador.nombre_completo }}</a>
+            {% if fila.jugador.apodo %}
+              <small class="text-muted d-block">{{ fila.jugador.apodo }}</small>
+            {% endif %}
+          </td>
+          <td data-label="Grupo">{{ fila.jugador.categoria.nombre }}</td>
+          <td data-label="Su proximo mes">
+            del {{ fila.inicio|date:"d/m/Y" }} al {{ fila.fin|date:"d/m/Y" }}
+          </td>
+          <td data-label="Cuando">
+            {% if vencidos %}
+              <span class="badge text-bg-danger">ya le toca</span>
+            {% elif fila.faltan == 0 %}
+              <span class="badge text-bg-warning">hoy</span>
+            {% elif fila.faltan == 1 %}
+              <span class="badge text-bg-warning">maniana</span>
+            {% else %}
+              <span class="badge text-bg-light border">en {{ fila.faltan }} dias</span>
+            {% endif %}
+          </td>
+          <td data-label="Valor">$ {{ fila.jugador.valor_mensual_vigente }}</td>
+          <td data-label="Acciones" class="text-end">
+            <div class="btn-group btn-group-sm">
+              <a class="btn btn-outline-primary accion-directa" href="#"
+                 data-url="/sistema/adm_mensualidad" data-accion="siguiente"
+                 data-id="{{ fila.jugador.id }}"
+                 title="Abrirle ese mes, de un clic">
+                <i class="bi bi-arrow-right-circle"></i>
+              </a>
+              <a class="btn btn-outline-secondary" href="#"
+                 data-modal-url="/sistema/adm_mensualidad?action=add&amp;jugador={{ fila.jugador.id }}"
+                 title="Cobrarle con otras fechas o con descuento">
+                <i class="bi bi-plus-lg"></i>
+              </a>
+            </div>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

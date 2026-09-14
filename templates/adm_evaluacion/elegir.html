@@ -58,15 +58,11 @@
         if (data.result === 'ok') {
           window.location.href = data.redirect_url;
         } else {
-          if (typeof NotificacionAlerta === 'function') {
-            NotificacionAlerta('warning', 'Advertencia', data.mensaje || 'No se pudo guardar.');
-          } else {
-            alert(data.mensaje || 'No se pudo guardar.');
-          }
+          NotificacionAlerta('warning', 'Advertencia', data.mensaje || 'No se pudo guardar.');
           boton.prop('disabled', false);
         }
       }).fail(function () {
-        alert('Error de conexion. Revisa la senal.');
+        NotificacionError('Sin conexion', 'Revisa la senal y vuelve a intentar.');
         boton.prop('disabled', false);
       });
     });

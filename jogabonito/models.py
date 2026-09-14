@@ -566,12 +566,33 @@ class Jugador(ModeloBase):
         verbose_name='Descuento (%)',
         help_text='Beca, hermano en la academia, convenio... Se aplica sobre el valor del mes.'
     )
+    descuento_monto = models.DecimalField(
+        max_digits=8, decimal_places=2, default=0,
+        verbose_name='Descuento (en dolares)',
+        help_text='Si el acuerdo fue "paga 5 menos" en vez de un porcentaje. '
+                  'Si pones los dos, manda este.'
+    )
     motivo_descuento = models.CharField(max_length=120, blank=True, verbose_name='Motivo del descuento')
+    # ---- salud: lo que el profe tiene que saber antes de exigirle ----
+    condicion_medica = models.TextField(
+        blank=True, verbose_name='Enfermedad o condicion',
+        help_text='Lo que tiene: del corazon, asma, epilepsia, diabetes, '
+                  'condromalacia, fascitis plantar, una lesion vieja... '
+                  'Se anota al inscribirlo y se va actualizando.'
+    )
     cuidados = models.TextField(
-        blank=True, verbose_name='Que hay que cuidarle',
-        help_text='Asma, alergias, fascitis, una lesion vieja... Lo que el profe '
-                  'tiene que saber para no exigirle de mas. Sale marcado en su ficha '
-                  'y en la lista de asistencia.'
+        blank=True, verbose_name='Que puede hacer y que no',
+        help_text='Lo que hay que cuidarle por esa condicion: nada de saltos, '
+                  'no doble jornada, que avise si le duele... Sale marcado en su '
+                  'ficha y en la lista de asistencia.'
+    )
+    alergias = models.CharField(
+        max_length=200, blank=True, verbose_name='Alergias',
+        help_text='A medicinas, comidas, picaduras. Vacio = ninguna conocida.'
+    )
+    tipo_sangre = models.CharField(
+        max_length=5, blank=True, verbose_name='Tipo de sangre',
+        help_text='Por si pasa algo en la cancha. Ejemplo: O+, A-.'
     )
     cobro_activo = models.BooleanField(
         default=True, verbose_name='Cobrarle cada mes',
@@ -622,7 +643,19 @@ class Jugador(ModeloBase):
         return self.numero_whatsapp()
 
     def tiene_cuidados(self):
-        return bool((self.cuidados or '').strip())
+        return bool((self.cuidados or '').strip()
+                    or (self.condicion_medica or '').strip())
+
+    def resumen_salud(self):
+        """Una linea con lo que hay que saber de su salud, para las listas."""
+        partes = []
+        if (self.condicion_medica or '').strip():
+            partes.append(self.condicion_medica.strip())
+        if (self.cuidados or '').strip():
+            partes.append(self.cuidados.strip())
+        if (self.alergias or '').strip():
+            partes.append('alergico a %s' % self.alergias.strip())
+        return ' · '.join(partes)
 
     def division(self):
         """La categoria por edad que le toca hoy. Sale sola de su edad."""
@@ -665,11 +698,30 @@ class Jugador(ModeloBase):
         return self.categoria.valor_mensual
 
     def valor_descuento(self):
-        """Cuanto se le rebaja en dolares."""
+        """Cuanto se le rebaja en dolares.
+
+        El acuerdo se pudo hacer de dos maneras: "el 10 por ciento" o "5
+        dolares menos". Si estan los dos, manda el de dolares, que es como la
+        gente lo dice en voz alta.
+        """
+        if self.descuento_monto:
+            return min(Decimal(self.descuento_monto), self.precio_base()).quantize(
+                Decimal('0.01'), rounding=ROUND_HALF_UP)
         if not self.descuento:
             return Decimal('0.00')
         rebaja = self.precio_base() * Decimal(self.descuento) / Decimal('100')
         return rebaja.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+    def texto_rebaja(self):
+        """Como se dice el descuento: en porcentaje o en plata."""
+        if self.descuento_monto:
+            return '$ %s' % normalizar_decimal(self.descuento_monto)
+        if self.descuento:
+            return '%s%%' % normalizar_decimal(self.descuento)
+        return ''
+
+    def tiene_rebaja(self):
+        return bool(self.descuento_monto or self.descuento)
 
     def valor_mensual_vigente(self):
         """Lo que realmente paga este jugador cada mes."""
@@ -681,8 +733,8 @@ class Jugador(ModeloBase):
     def explicacion_precio(self):
         """Texto corto para mostrar de donde sale el valor."""
         partes = ['valor de %s' % self.categoria.nombre]
-        if self.descuento:
-            detalle = '%s%% de descuento' % normalizar_decimal(self.descuento)
+        if self.tiene_rebaja():
+            detalle = '%s de descuento' % self.texto_rebaja()
             if self.motivo_descuento:
                 detalle += ' (%s)' % self.motivo_descuento
             partes.append(detalle)
@@ -1061,6 +1113,41 @@ class Jugador(ModeloBase):
             return None
         return primera.periodo_inicio or primera.fecha_vencimiento
 
+    def historial_de_pagos(self):
+        """Todo lo que se le cobro, agrupado por anio y del mas nuevo al mas viejo.
+
+        Devuelve una lista de anios con sus meses y los totales de cada uno,
+        mas el total general. Es lo que se le muestra al representante cuando
+        pregunta "cuanto he pagado".
+        """
+        por_anio = {}
+        for mensualidad in self.mensualidades_en_orden():
+            anio = por_anio.setdefault(mensualidad.anio, {
+                'anio': mensualidad.anio,
+                'meses': [],
+                'pagado': Decimal('0.00'),
+                'pendiente': Decimal('0.00'),
+                'cuantos_pagados': 0,
+            })
+            anio['meses'].append(mensualidad)
+
+            if mensualidad.esta_pagada():
+                anio['pagado'] += mensualidad.valor
+                anio['cuantos_pagados'] += 1
+            elif mensualidad.estado == MENSUALIDAD_PENDIENTE:
+                anio['pendiente'] += mensualidad.valor
+
+        anios = sorted(por_anio.values(), key=lambda x: -x['anio'])
+        for anio in anios:
+            anio['meses'].reverse()
+
+        return {
+            'anios': anios,
+            'total_pagado': sum((a['pagado'] for a in anios), Decimal('0.00')),
+            'total_pendiente': sum((a['pendiente'] for a in anios), Decimal('0.00')),
+            'cuantos': sum(len(a['meses']) for a in anios),
+        }
+
     def estado_de_cuenta(self):
         """Una frase que resume como va con los pagos."""
         if not self.mensualidades.exists():
@@ -1397,6 +1484,16 @@ class Mensualidad(ModeloBase):
     descuento_aplicado = models.DecimalField(
         max_digits=5, decimal_places=2, default=0, verbose_name='Descuento aplicado (%)'
     )
+    descuento_monto = models.DecimalField(
+        max_digits=8, decimal_places=2, default=0,
+        verbose_name='Descuento de este mes (en dolares)',
+        help_text='Para cuando el acuerdo se hablo en plata: "este mes paga 5 menos".'
+    )
+    motivo_descuento = models.CharField(
+        max_length=120, blank=True, verbose_name='Por que el descuento',
+        help_text='El descuento puede ser de unos meses y despues no: por eso el '
+                  'motivo se guarda en el mes, no en la persona.'
+    )
     motivo_ajuste = models.CharField(max_length=150, blank=True, verbose_name='Motivo del ajuste')
     periodo_inicio = models.DateField(blank=True, null=True, verbose_name='El periodo arranca el')
     periodo_fin = models.DateField(blank=True, null=True, verbose_name='y termina el')
@@ -1433,6 +1530,7 @@ class Mensualidad(ModeloBase):
     def save(self, *args, **kwargs):
         self.observacion = texto_limpio(self.observacion)
         self.motivo_ajuste = texto_limpio(self.motivo_ajuste)
+        self.motivo_descuento = texto_limpio(self.motivo_descuento)
         self.comprobante = texto_limpio(self.comprobante, mayusculas=True)
         if not self.valor_completo:
             self.valor_completo = self.valor
@@ -1460,22 +1558,57 @@ class Mensualidad(ModeloBase):
         return (self.valor_completo / Decimal(dias)).quantize(
             Decimal('0.01'), rounding=ROUND_HALF_UP)
 
+    def valor_con_descuento(self):
+        """El precio del mes ya con la rebaja de ESE mes, sin contar ausencias."""
+        valor = self.valor_completo - self.rebaja_del_mes()
+        return max(valor, Decimal('0.00')).quantize(
+            Decimal('0.01'), rounding=ROUND_HALF_UP)
+
     def recalcular_por_ausencia(self):
         """Cobra solo los dias del periodo en que el jugador si entrena.
 
-        Se prorratea sobre los dias REALES del periodo, no sobre un mes
-        teorico: si el periodo tiene 31 dias y avisa que falta 7, paga 24/31.
+        Primero se le hace el descuento del mes y sobre eso se prorratea, que
+        es el orden en que se explica: 25 menos el 10%% es 22,50, y de ahi se
+        bajan los dias que aviso. Los dias son los REALES del periodo, no los
+        de un mes teorico: si tiene 31 y falta 7, paga 24/31.
         """
         dias = self.dias_del_periodo() or 1
         ausente = min(max(self.dias_ausente or 0, 0), dias)
         self.dias_ausente = ausente
         proporcion = Decimal(dias - ausente) / Decimal(dias)
-        self.valor = (self.valor_completo * proporcion).quantize(
+        self.valor = (self.valor_con_descuento() * proporcion).quantize(
             Decimal('0.01'), rounding=ROUND_HALF_UP)
         return self.valor
 
     def tiene_ajuste(self):
         return bool(self.dias_ausente)
+
+    def tiene_descuento(self):
+        return bool(self.descuento_monto or self.descuento_aplicado)
+
+    def rebaja_del_mes(self):
+        """Cuanto se le baja este mes, en dolares."""
+        if self.descuento_monto:
+            return min(Decimal(self.descuento_monto), self.valor_completo).quantize(
+                Decimal('0.01'), rounding=ROUND_HALF_UP)
+        if not self.descuento_aplicado:
+            return Decimal('0.00')
+        rebaja = self.valor_completo * Decimal(self.descuento_aplicado) / Decimal('100')
+        return rebaja.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+    def texto_descuento(self):
+        """De donde sale lo que paga este mes: 25 menos 10 por ciento = 22,50."""
+        if not self.tiene_descuento():
+            return ''
+        if self.descuento_monto:
+            como = '$ %s' % normalizar_decimal(self.descuento_monto)
+        else:
+            como = '%s%%' % normalizar_decimal(self.descuento_aplicado)
+        texto = '%s de descuento sobre %s, paga %s' % (
+            como, self.valor_completo, self.valor_con_descuento())
+        if self.motivo_descuento:
+            texto += ' (%s)' % self.motivo_descuento
+        return texto
 
     def texto_periodo(self):
         if not (self.periodo_inicio and self.periodo_fin):

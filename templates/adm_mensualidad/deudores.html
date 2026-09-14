@@ -32,7 +32,8 @@
         {% for d in deudores %}
           <tr>
             <td data-label="Jugador">
-              <a class="fw-semibold" href="/sistema/adm_jugador?action=view&amp;id={{ d.jugador.id }}">
+              <a class="fw-semibold" href="/sistema/adm_mensualidad?action=historial&amp;id={{ d.jugador.id }}"
+                 title="Ver todos sus pagos">
                 {{ d.jugador.nombre_completo }}
               </a>
               <div class="small text-muted">

@@ -1169,6 +1169,152 @@
     });
   }
 
+  // ---------------------------------------------------------------------
+  // Avisos de la casa. El alert() del navegador dice "localhost dice" y corta
+  // la pantalla; esto usa el mismo modal que el resto del sistema.
+  // ---------------------------------------------------------------------
+  const ICONOS_AVISO = {
+    exito: {clase: 'aviso-exito', icono: 'bi-check-circle-fill'},
+    error: {clase: 'aviso-error', icono: 'bi-exclamation-octagon-fill'},
+    alerta: {clase: 'aviso-alerta', icono: 'bi-exclamation-triangle-fill'},
+    pregunta: {clase: 'aviso-pregunta', icono: 'bi-question-circle-fill'},
+    info: {clase: 'aviso-info', icono: 'bi-info-circle-fill'}
+  };
+
+  function mostrarAviso(opciones) {
+    const modalEl = document.getElementById('avisoModal');
+    const tituloEl = document.getElementById('avisoModalTitulo');
+    const textoEl = document.getElementById('avisoModalTexto');
+    const iconoEl = document.getElementById('avisoModalIcono');
+    const okEl = document.getElementById('avisoModalOk');
+    const cancelarEl = document.getElementById('avisoModalCancelar');
+
+    // Sin modal (una pantalla suelta, un test) se cae al aviso del navegador.
+    if (!modalEl || !hasBootstrapModal()) {
+      if (opciones.pregunta) {
+        return Promise.resolve(window.confirm(opciones.mensaje || ''));
+      }
+      window.alert(opciones.mensaje || '');
+      return Promise.resolve(true);
+    }
+
+    const tipo = ICONOS_AVISO[opciones.tipo] || ICONOS_AVISO.info;
+    iconoEl.className = 'aviso-icono ' + tipo.clase;
+    iconoEl.innerHTML = '<i class="bi ' + tipo.icono + '"></i>';
+    tituloEl.textContent = opciones.titulo || 'Aviso';
+    textoEl.textContent = opciones.mensaje || '';
+
+    okEl.textContent = opciones.ok || (opciones.pregunta ? 'Si, hacerlo' : 'Entendido');
+    okEl.className = 'btn ' + (opciones.peligro ? 'btn-danger' : 'btn-joga');
+    cancelarEl.classList.toggle('d-none', !opciones.pregunta);
+
+    const modal = window.bootstrap.Modal.getOrCreateInstance(modalEl);
+
+    return new Promise(function (resolve) {
+      let respuesta = false;
+
+      function alAceptar() {
+        respuesta = true;
+        modal.hide();
+      }
+
+      function alCerrar() {
+        okEl.removeEventListener('click', alAceptar);
+        modalEl.removeEventListener('hidden.bs.modal', alCerrar);
+        resolve(respuesta);
+      }
+
+      okEl.addEventListener('click', alAceptar);
+      modalEl.addEventListener('hidden.bs.modal', alCerrar);
+      modal.show();
+    });
+  }
+
+  window.NotificacionExito = function (titulo, mensaje) {
+    return mostrarAviso({tipo: 'exito', titulo: titulo || 'Listo', mensaje: mensaje});
+  };
+
+  window.NotificacionError = function (titulo, mensaje) {
+    return mostrarAviso({tipo: 'error', titulo: titulo || 'Opss..!!', mensaje: mensaje});
+  };
+
+  window.NotificacionAlerta = function (icono, titulo, mensaje) {
+    // Lo llaman con el icono adelante desde los modales de siempre.
+    const tipo = {success: 'exito', error: 'error', warning: 'alerta'}[icono] || 'info';
+    return mostrarAviso({tipo: tipo, titulo: titulo, mensaje: mensaje});
+  };
+
+  window.Avisar = function (mensaje, titulo) {
+    return mostrarAviso({tipo: 'alerta', titulo: titulo || 'Un momento', mensaje: mensaje});
+  };
+
+  window.Preguntar = function (mensaje, opciones) {
+    opciones = opciones || {};
+    return mostrarAviso({
+      tipo: 'pregunta',
+      pregunta: true,
+      titulo: opciones.titulo || 'Confirma',
+      mensaje: mensaje,
+      ok: opciones.ok,
+      peligro: opciones.peligro
+    });
+  };
+
+  // Botones de un solo clic: mandan un action al modulo y recargan. Son para
+  // lo que no necesita preguntar nada, como abrirle el siguiente mes a un
+  // jugador (las fechas y el precio ya se saben).
+  function initAccionesDirectas() {
+    document.addEventListener('click', function (e) {
+      const boton = e.target.closest('.accion-directa');
+      if (!boton) return;
+
+      e.preventDefault();
+      if (boton.dataset.trabajando === '1') return;
+
+      const url = boton.getAttribute('data-url');
+      const accion = boton.getAttribute('data-accion');
+      if (!url || !accion) return;
+
+      const datos = new FormData();
+      datos.append('action', accion);
+      if (boton.getAttribute('data-id')) {
+        datos.append('id', boton.getAttribute('data-id'));
+      }
+
+      const meta = document.querySelector('meta[name="csrf-token"]');
+      const csrf = window.csrftoken || (meta ? meta.content : '');
+
+      boton.dataset.trabajando = '1';
+      boton.classList.add('disabled');
+
+      fetch(url, {
+        method: 'POST',
+        body: datos,
+        headers: Object.assign(
+          {'X-Requested-With': 'XMLHttpRequest'},
+          csrf ? {'X-CSRFToken': csrf} : {}
+        ),
+        credentials: 'same-origin'
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (data && data.result === 'ok') {
+            window.location.reload();
+            return;
+          }
+          boton.dataset.trabajando = '';
+          boton.classList.remove('disabled');
+          window.NotificacionError('No se pudo',
+            (data && (data.mensaje || data.error)) || 'Intenta de nuevo.');
+        })
+        .catch(function () {
+          boton.dataset.trabajando = '';
+          boton.classList.remove('disabled');
+          window.NotificacionError('Sin conexion', 'Revisa la senal y vuelve a intentar.');
+        });
+    });
+  }
+
   function init() {
     initTheme();
     initClock();
@@ -1184,6 +1330,7 @@
     normalizeLegacyActionButtons(document);
     initTooltips();
     initGenericUX();
+    initAccionesDirectas();
   }
 
   if (document.readyState === 'loading') {

@@ -1056,3 +1056,51 @@ input.check-group{
   margin-top:14px;
   background:linear-gradient(180deg, rgba(255,255,255,0) 0%, var(--fondo, #f6faf7) 35%);
 }
+
+/* ---- Como viene rindiendo: la tela de arania manda en la ficha ---- */
+.bloque-rendimiento{ margin-top:14px; }
+.rendimiento-columnas{
+  display:grid;
+  grid-template-columns:minmax(260px, 360px) minmax(0, 1fr);
+  gap:20px;
+  align-items:start;
+}
+.rendimiento-radar{
+  background:#f7fbf8;
+  border:1px solid var(--linea, #e6e9ef);
+  border-radius:14px;
+  padding:10px;
+}
+.rendimiento-radar .radar{ width:100%; height:auto; }
+.rendimiento-detalle{ min-width:0; }
+.rendimiento-detalle h6{ font-size:.95rem; }
+
+@media (max-width: 767.98px){
+  .rendimiento-columnas{ grid-template-columns:1fr; gap:14px; }
+}
+
+/* ------------------------------------------------------------------
+   El aviso de la casa: lo que antes salia como "localhost dice".
+------------------------------------------------------------------ */
+.modal-sm-joga{ max-width:400px; }
+.aviso-cuerpo{ text-align:center; padding:26px 22px 8px; }
+.aviso-icono{
+  width:58px; height:58px; margin:0 auto 12px;
+  display:flex; align-items:center; justify-content:center;
+  border-radius:50%; font-size:1.7rem;
+}
+.aviso-icono.aviso-exito{ background:#e6f6ec; color:#1b7f47; }
+.aviso-icono.aviso-error{ background:#fdeaea; color:#b32d2d; }
+.aviso-icono.aviso-alerta{ background:#fdf3e2; color:#a76a06; }
+.aviso-icono.aviso-pregunta{ background:#e8f0fd; color:#1f5bb5; }
+.aviso-icono.aviso-info{ background:#eef1f5; color:#4a5568; }
+.aviso-titulo{ font-weight:700; margin-bottom:6px; }
+.aviso-texto{ color:#5b6472; margin-bottom:0; font-size:.94rem; }
+.aviso-pie{ border-top:0; justify-content:center; padding-bottom:20px; gap:8px; }
+.aviso-pie .btn{ min-width:120px; }
+
+@media (max-width: 575.98px){
+  .modal-sm-joga{ max-width:none; }
+  .aviso-pie{ flex-direction:column-reverse; }
+  .aviso-pie .btn{ width:100%; margin:0; }
+}

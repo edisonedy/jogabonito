@@ -165,9 +165,6 @@
                       <i class="bi bi-play-circle"></i>
                     </a>
                   {% endif %}
-                  <a class="btn btn-outline-danger" href="#" data-modal-url="/sistema/adm_jugador?action=delete&amp;id={{ j.id }}" title="Eliminar">
-                    <i class="bi bi-trash"></i>
-                  </a>
                 {% endif %}
               </div>
             </td>
@@ -192,11 +189,21 @@
       var boton = $(this);
       var activando = boton.data('estado') === 1;
 
-      if (!confirm(activando ? 'Volver a activar a este jugador?'
-                             : 'Desactivar a este jugador? Deja de contarse y no se le cobran meses nuevos.')) {
-        return;
-      }
+      var pregunta = activando
+        ? 'Vuelve a contar en las listas y se le abren los meses otra vez.'
+        : 'Deja de contarse en las listas y no se le cobran meses nuevos. Lo que ya debe se queda.';
 
+      window.Preguntar(pregunta, {
+        titulo: activando ? 'Activar a este jugador?' : 'Desactivar a este jugador?',
+        ok: activando ? 'Si, activarlo' : 'Si, desactivarlo',
+        peligro: !activando
+      }).then(function (confirmado) {
+        if (!confirmado) { return; }
+        cambiarEstado(boton);
+      });
+    });
+
+    function cambiarEstado(boton) {
       $.ajax({
         type: 'POST',
         url: '/sistema/adm_jugador',
@@ -210,13 +217,13 @@
       }).done(function (data) {
         if (data.result === 'ok') {
           location.reload();
-        } else if (typeof NotificacionAlerta === 'function') {
+        } else {
           NotificacionAlerta('warning', 'Advertencia', data.mensaje || 'No se pudo cambiar.');
         }
       }).fail(function () {
-        alert('Error de conexion.');
+        NotificacionError('Sin conexion', 'Revisa la senal y vuelve a intentar.');
       });
-    });
+    }
   });
 </script>
 {% endblock %}

@@ -295,3 +295,14 @@ class DetallesDelDiaADiaTest(BaseDiaADia):
         })
         self.jugador.refresh_from_db()
         self.assertEqual(self.jugador.estado, 1)
+
+    def test_a_un_jugador_no_lo_borra_ni_el_administrador(self):
+        """Con el se irian sus asistencias, sus pagos y sus mediciones."""
+        self.client.force_login(self.admin)
+        respuesta = self.client.post('/sistema/adm_jugador', {
+            'action': 'delete', 'id': self.jugador.id,
+        })
+        datos = json.loads(respuesta.content)
+        self.assertEqual(datos['result'], 'bad')
+        self.assertIn('no se eliminan', datos['mensaje'])
+        self.assertTrue(Jugador.objects.filter(pk=self.jugador.pk).exists())

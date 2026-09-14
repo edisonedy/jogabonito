@@ -100,14 +100,125 @@
     {% endif %}
   </div>
 
-  {% if jugador.tiene_cuidados %}
-    <div class="alert alert-warning d-flex align-items-start gap-2 mt-3">
+  {% if jugador.tiene_cuidados or jugador.alergias or jugador.tipo_sangre %}
+    <div class="alert alert-warning d-flex align-items-start gap-2 mt-3 alerta-salud">
       <i class="bi bi-heart-pulse-fill fs-5"></i>
-      <div>
-        <b>Hay que cuidarle:</b> {{ jugador.cuidados|linebreaksbr }}
+      <div class="flex-grow-1">
+        {% if jugador.condicion_medica %}
+          <div><b>Tiene:</b> {{ jugador.condicion_medica|linebreaksbr }}</div>
+        {% endif %}
+        {% if jugador.cuidados %}
+          <div><b>Hay que cuidarle:</b> {{ jugador.cuidados|linebreaksbr }}</div>
+        {% endif %}
+        <div class="small mt-1 d-flex flex-wrap gap-3">
+          {% if jugador.alergias %}
+            <span><b>Alergias:</b> {{ jugador.alergias }}</span>
+          {% endif %}
+          {% if jugador.tipo_sangre %}
+            <span><b>Sangre:</b> {{ jugador.tipo_sangre }}</span>
+          {% endif %}
+        </div>
       </div>
     </div>
   {% endif %}
+
+  <!-- ------------------- como viene rindiendo -------------------- -->
+  <section class="bloque bloque-rendimiento">
+    <h6>
+      <i class="bi bi-bullseye me-1"></i> Como viene rindiendo
+      <span class="ms-auto d-flex flex-wrap gap-1">
+        {% if not solo_lectura %}
+          <a href="#" class="btn btn-sm btn-joga"
+             data-modal-url="/sistema/adm_evaluacion?action=ingreso&amp;jugador={{ jugador.id }}"
+             title="Tomarle la prueba de ingreso, solo a el">
+            <i class="bi bi-flag me-1"></i> Prueba de ingreso
+          </a>
+        {% endif %}
+        <a href="/sistema/adm_evaluacion?action=progreso&amp;id={{ jugador.id }}"
+           class="btn btn-sm btn-outline-secondary">Ver todo el detalle</a>
+      </span>
+    </h6>
+
+    {% if radar.areas_medidas %}
+      <div class="rendimiento-columnas">
+        <div class="rendimiento-radar">
+          {% include "adm_evaluacion/radar.html" %}
+          <p class="small text-muted text-center mb-0">
+            Mientras mas lejos del centro, mejor esta en esa area.
+          </p>
+        </div>
+
+        <div class="rendimiento-detalle">
+          {% if posicion_sugerida %}
+            <div class="ficha-dato">
+              <span>Puesto que mejor le queda</span>
+              <span>
+                <b>{{ posicion_sugerida.posicion.nombre|title }}</b>
+                <small class="text-muted d-block">
+                  afinidad {{ posicion_sugerida.puntaje }}/100
+                  {% if posicion_sugerida.es_la_que_le_gusta %}&middot; y es la que le gusta{% endif %}
+                </small>
+              </span>
+            </div>
+            {% if jugador.posicion and not posicion_sugerida.es_la_que_le_gusta %}
+              <div class="ficha-dato">
+                <span>La que le gusta</span>
+                <span>{{ jugador.posicion.nombre|title }}</span>
+              </div>
+            {% endif %}
+          {% endif %}
+
+          {% if resumen_base %}
+            <div class="ficha-dato">
+              <span>Desde su prueba inicial</span>
+              <span>
+                <span class="badge text-bg-success">{{ resumen_base.mejoraron }} mejoro</span>
+                <span class="badge text-bg-danger">{{ resumen_base.bajaron }} bajo</span>
+                <small class="text-muted d-block">
+                  desde el {{ resumen_base.desde|date:"d/m/Y" }}
+                </small>
+              </span>
+            </div>
+          {% endif %}
+
+          {% if fortalezas %}
+            <h6 class="mt-3"><i class="bi bi-star-fill text-warning me-1"></i> Donde destaca</h6>
+            {% for f in fortalezas %}
+              <div class="ficha-dato">
+                <span>{{ f.indicador.nombre }}</span>
+                <span>
+                  <b>{{ f.valor_texto }}</b>
+                  <small class="text-muted d-block">grupo: {{ f.promedio_texto }}</small>
+                </span>
+              </div>
+            {% endfor %}
+          {% endif %}
+
+          {% if a_mejorar %}
+            <h6 class="mt-3"><i class="bi bi-tools me-1"></i> Lo que hay que trabajarle</h6>
+            {% for f in a_mejorar %}
+              <div class="ficha-dato">
+                <span>{{ f.indicador.nombre }}</span>
+                <span>
+                  <b>{{ f.valor_texto }}</b>
+                  <small class="text-muted d-block">grupo: {{ f.promedio_texto }}</small>
+                </span>
+              </div>
+            {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+    {% else %}
+      <p class="small text-muted mb-0">
+        Todavia no hay con que dibujar su tela de arania: hacen falta pruebas
+        tomadas a el y a sus companieros para poder compararlo.
+        {% if not solo_lectura %}
+          Empieza por su <b>prueba de ingreso</b>: se le toma solo a el, el dia
+          que venga, y queda como su punto de partida.
+        {% endif %}
+      </p>
+    {% endif %}
+  </section>
 
   <div class="row g-3">
     <!-- ----------------------- datos personales ---------------------- -->
@@ -213,11 +324,16 @@
       <section class="bloque bloque-crece {% if meses_que_debe %}bloque-dinero{% endif %}">
         <h6>
           <i class="bi bi-cash-coin me-1"></i> Cuentas
+          <a href="/sistema/adm_mensualidad?action=historial&amp;id={{ jugador.id }}"
+             class="btn btn-sm btn-outline-secondary ms-2" title="Todo el historial de pagos">
+            <i class="bi bi-clock-history"></i>
+          </a>
           {% if not solo_lectura %}
             <span class="ms-auto d-flex gap-1">
-              <a href="#" class="btn btn-sm btn-joga"
-                 data-modal-url="/sistema/adm_mensualidad?action=siguiente&amp;id={{ jugador.id }}"
-                 title="Abrir el siguiente mes"><i class="bi bi-arrow-right-circle"></i> Siguiente mes</a>
+              <a href="#" class="btn btn-sm btn-joga accion-directa"
+                 data-url="/sistema/adm_mensualidad" data-accion="siguiente"
+                 data-id="{{ jugador.id }}"
+                 title="Un clic y queda abierto{% if proximo_cobro %}: del {{ proximo_cobro.0|date:'d/m/Y' }} al {{ proximo_cobro.1|date:'d/m/Y' }}{% endif %}"><i class="bi bi-arrow-right-circle"></i> Siguiente mes</a>
               <a href="#" class="btn btn-sm btn-outline-success"
                  data-modal-url="/sistema/adm_mensualidad?action=add&amp;jugador={{ jugador.id }}"
                  title="Cobrarle un mes con otras fechas o valor"><i class="bi bi-plus-lg"></i></a>
@@ -289,6 +405,9 @@
                       {{ m.periodo_inicio|date:"d/m" }} al {{ m.periodo_fin|date:"d/m" }}
                     </small>
                   {% endif %}
+                  {% if m.tiene_descuento %}
+                    <small class="text-muted d-block">{{ m.texto_descuento }}</small>
+                  {% endif %}
                   {% if m.tiene_ajuste %}
                     <small class="text-muted d-block">{{ m.texto_ajuste }}</small>
                   {% endif %}
@@ -338,55 +457,6 @@
         {% empty %}
           <p class="small text-muted mb-0">Todavia no tiene asistencias registradas.</p>
         {% endfor %}
-      </section>
-    </div>
-
-    <div class="col-12 col-lg-6 columna-bloques">
-      <section class="bloque bloque-crece">
-        <h6>
-          <i class="bi bi-bullseye me-1"></i> Como viene rindiendo
-          <span class="ms-auto d-flex gap-1">
-            {% if not solo_lectura %}
-              <a href="#" class="btn btn-sm btn-joga"
-                 data-modal-url="/sistema/adm_evaluacion?action=ingreso&amp;jugador={{ jugador.id }}"
-                 title="Tomarle la prueba de ingreso, solo a el">
-                <i class="bi bi-flag me-1"></i> Prueba de ingreso
-              </a>
-            {% endif %}
-            <a href="/sistema/adm_evaluacion?action=progreso&amp;id={{ jugador.id }}"
-               class="btn btn-sm btn-outline-secondary">Ver todo</a>
-          </span>
-        </h6>
-
-        {% if posicion_sugerida %}
-          <div class="ficha-dato">
-            <span>Puesto que mejor le queda</span>
-            <span>
-              {{ posicion_sugerida.posicion.nombre|title }}
-              <small class="text-muted d-block">
-                afinidad {{ posicion_sugerida.puntaje }}/100
-                {% if posicion_sugerida.es_la_que_le_gusta %}&middot; y es la que le gusta{% endif %}
-              </small>
-            </span>
-          </div>
-          {% if jugador.posicion and not posicion_sugerida.es_la_que_le_gusta %}
-            <div class="ficha-dato">
-              <span>La que le gusta</span><span>{{ jugador.posicion.nombre|title }}</span>
-            </div>
-          {% endif %}
-          <p class="small text-muted mt-2 mb-0">
-            La sugerencia sale de lo que se le ha medido. Todos deben jugar de todo:
-            esto es solo para saber donde rinde hoy.
-          </p>
-        {% else %}
-          <p class="small text-muted mb-0">
-            Todavia no se le ha tomado ninguna prueba.
-            {% if not solo_lectura %}
-              Empieza por su <b>prueba de ingreso</b>: se le toma solo a el, el
-              dia que venga, y queda como su punto de partida.
-            {% endif %}
-          </p>
-        {% endif %}
       </section>
     </div>
 

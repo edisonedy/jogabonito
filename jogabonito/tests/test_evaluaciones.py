@@ -101,7 +101,7 @@ class IndicadorTest(BaseEvaluacion):
 
     def test_el_catalogo_base_queda_cargado(self):
         self.assertGreaterEqual(Indicador.objects.count(), 13)
-        self.assertEqual(Posicion.objects.filter(activo=True).count(), 10)
+        self.assertEqual(Posicion.objects.filter(activo=True).count(), 17)
 
 
 class MedicionTest(BaseEvaluacion):

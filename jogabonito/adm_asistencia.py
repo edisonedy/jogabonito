@@ -11,6 +11,7 @@ from datetime import date, timedelta
 
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
+from django.db.models import Q
 from django.shortcuts import render
 
 from jogabonito.acceso import (
@@ -258,6 +259,70 @@ def view(request):
         data['fecha'] = fecha
         data['form'] = AsistenciaDetalleForm(instance=asistencia)
         return render(request, 'adm_asistencia/detalle.html', data)
+
+    # ---- todo lo que se ha marcado -----------------------------------
+    if action == 'todas':
+        data['title'] = 'Todas las asistencias'
+
+        hasta, _ = fecha_pedida(request.GET.get('hasta'))
+        hasta = hasta or date.today()
+        desde = convertir_fecha(request.GET.get('desde')) or (hasta - timedelta(days=30))
+        if desde > hasta:
+            desde, hasta = hasta, desde
+
+        registros = Asistencia.objects.filter(
+            fecha__gte=desde, fecha__lte=hasta,
+            categoria__in=categorias_permitidas(perfil),
+        ).select_related('jugador', 'jugador__categoria', 'categoria')
+
+        categoria = None
+        if request.GET.get('categoria'):
+            categoria = categoria_permitida(perfil, request.GET.get('categoria'))
+            if categoria is None:
+                return url_back(request)
+            registros = registros.filter(categoria=categoria)
+
+        buscar = (request.GET.get('s') or '').strip()
+        if buscar:
+            registros = registros.filter(
+                Q(jugador__nombres__icontains=buscar)
+                | Q(jugador__apellidos__icontains=buscar)
+                | Q(jugador__apodo__icontains=buscar)
+            )
+
+        # El resumen por jugador es lo que de verdad se mira: quien vino y
+        # quien no en todo ese tiempo.
+        por_jugador = {}
+        for registro in registros:
+            fila = por_jugador.setdefault(registro.jugador_id, {
+                'jugador': registro.jugador, 'total': 0,
+                ASISTENCIA_PRESENTE: 0, ASISTENCIA_FALTA: 0,
+                ASISTENCIA_ATRASO: 0, ASISTENCIA_JUSTIFICADO: 0,
+            })
+            fila['total'] += 1
+            fila[registro.estado] = fila.get(registro.estado, 0) + 1
+
+        resumen = []
+        for fila in por_jugador.values():
+            vino = fila[ASISTENCIA_PRESENTE] + fila[ASISTENCIA_ATRASO]
+            fila['porcentaje'] = round(vino * 100.0 / fila['total'], 1) if fila['total'] else 0.0
+            fila['presentes'] = fila[ASISTENCIA_PRESENTE]
+            fila['faltas'] = fila[ASISTENCIA_FALTA]
+            fila['atrasos'] = fila[ASISTENCIA_ATRASO]
+            fila['justificados'] = fila[ASISTENCIA_JUSTIFICADO]
+            resumen.append(fila)
+        resumen.sort(key=lambda x: x['porcentaje'])
+
+        data['desde'] = desde
+        data['hasta'] = hasta
+        data['buscar'] = buscar
+        data['categoria'] = categoria
+        data['categorias'] = categorias_permitidas(perfil)
+        data['resumen'] = resumen
+        data['dias_distintos'] = registros.values('fecha').distinct().count()
+        data['registros'] = paginar(request, registros.order_by('-fecha', 'jugador__apellidos'),
+                                    data, MODULO, por_pagina=60)
+        return render(request, 'adm_asistencia/todas.html', data)
 
     # ---- historial de un jugador -------------------------------------
     if action == 'historial':
