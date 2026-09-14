@@ -1134,3 +1134,21 @@ input.check-group{
   flex:0 0 auto;
 }
 .app.op-mini .horus-credito{ justify-content:center; padding:7px 4px; }
+
+/* ------------------------------------------------------------------
+   El escudo de la academia. Es alto y con mucho detalle, asi que se
+   le da aire y nunca se lo deforma.
+------------------------------------------------------------------ */
+.brand-escudo{
+  width:40px;
+  height:40px;
+  object-fit:contain;
+  flex:0 0 auto;
+}
+.login-escudo{
+  width:120px;
+  max-width:60%;
+  height:auto;
+  display:block;
+  margin:0 auto 6px;
+}

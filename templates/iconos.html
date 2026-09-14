@@ -1,0 +1,10 @@
+{% comment %}
+  Los iconos del escudo: la pestania del navegador, el acceso directo de
+  iPhone y el de Android. Va en el <head> de las tres portadas (sistema,
+  ingreso y pagina publica) para que el escudo salga igual en todas.
+{% endcomment %}
+{% load static %}
+<link rel="icon" href="{% static 'images/favicon.ico' %}" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="{% static 'images/favicon-32.png' %}">
+<link rel="apple-touch-icon" href="{% static 'images/apple-touch-icon.png' %}">
+<link rel="manifest" href="{% static 'manifest.webmanifest' %}">

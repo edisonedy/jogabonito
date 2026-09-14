@@ -17,3 +17,10 @@ rombo azul de respaldo.
 
 director.jpg -> foto del director para la pagina publica.
 galeria/     -> fotos de la academia para la galeria de la landing.
+
+Iconos (se generan del escudo; si cambias logo.png, vuelve a generarlos):
+favicon.ico          -> pestania del navegador (lleva 16, 32 y 48 adentro)
+favicon-32.png       -> pestania en pantallas nitidas
+apple-touch-icon.png -> acceso directo en iPhone (180 px)
+icono-192.png        -> acceso directo en Android
+icono-512.png        -> pantalla de arranque en Android
