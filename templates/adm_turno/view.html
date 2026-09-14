@@ -1,0 +1,129 @@
+{% extends "base_nueva.html" %}
+
+{% block pagetitle %}Quien esta a cargo | {{ academia.nombre }}{% endblock %}
+
+{% block canvas %}
+  {% if mis_grupos %}
+    <div class="alert alert-success py-2">
+      <i class="bi bi-megaphone me-1"></i>
+      <b>Estas a cargo de:</b>
+      {% for c in mis_grupos %}
+        {{ c.nombre }} ({{ c.horario_texto }}){% if not forloop.last %}, {% endif %}
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <div class="modulo-toolbar">
+    <div>
+      <h5 class="mb-0">Quien esta a cargo de cada grupo</h5>
+      <div class="small text-muted">
+        Se elige de la lista y se guarda solo. Cuando haga falta, se cambia.
+      </div>
+    </div>
+
+    {% if sin_encargado %}
+      <span class="modulo-chip chip-deuda ms-auto">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        {{ sin_encargado }} grupo{{ sin_encargado|pluralize }} sin encargado
+      </span>
+    {% endif %}
+  </div>
+
+  <div class="tabla-scroll">
+    <table class="tabla-joga" id="tablaEncargados">
+      <thead>
+        <tr>
+          <th>Grupo</th>
+          <th>Dias y horario</th>
+          <th>Jugadores</th>
+          <th>A cargo</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for fila in grupos %}
+          <tr data-categoria="{{ fila.categoria.id }}">
+            <td data-label="Grupo"><b>{{ fila.categoria.nombre }}</b></td>
+            <td data-label="Dias y horario">
+              {{ fila.categoria.dias_texto }}
+              <div class="small text-muted">{{ fila.categoria.horario_texto }}</div>
+            </td>
+            <td data-label="Jugadores">{{ fila.categoria.total_jugadores_activos }}</td>
+            <td data-label="A cargo">
+              {% if solo_lectura %}
+                {% if fila.encargado %}
+                  {{ fila.encargado.nombre_completo }}
+                {% else %}
+                  <span class="badge text-bg-warning">sin encargado</span>
+                {% endif %}
+              {% else %}
+                <select class="form-select form-select-sm select-encargado" style="min-width:200px">
+                  <option value="">Sin encargado...</option>
+                  {% for e in fila.candidatos %}
+                    <option value="{{ e.id }}"
+                      {% if fila.encargado.id == e.id %}selected{% endif %}>
+                      {{ e.nombre_completo }}
+                    </option>
+                  {% endfor %}
+                </select>
+                {% if not fila.candidatos %}
+                  <div class="small text-muted">
+                    Este grupo todavia no tiene entrenadores.
+                    <a href="/sistema/adm_categoria?action=edit&amp;id={{ fila.categoria.id }}">
+                      Agregalos al grupo</a>.
+                  </div>
+                {% endif %}
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="4" class="text-center text-muted py-4">No hay grupos activos.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="alert alert-light border mt-3 small mb-0">
+    <i class="bi bi-info-circle me-1"></i>
+    Aqui solo salen los entrenadores <b>de ese grupo</b>. Quien da clases en cada
+    grupo se define en <a href="/sistema/adm_categoria">Categorias</a>, con el
+    boton de editar; los entrenadores se registran en
+    <a href="/sistema/adm_entrenador">Entrenadores</a>.
+    <br>Esto no manda sobre la asistencia: cualquiera del cuerpo tecnico puede
+    tomar lista cualquier dia, y si un dia lo cubre otro no hay que registrar nada.
+  </div>
+{% endblock %}
+
+{% block heading %}
+<script>
+  $(function () {
+    var tabla = document.getElementById('tablaEncargados');
+    if (!tabla) { return; }
+
+    var csrftoken = $('meta[name="csrf-token"]').attr('content');
+
+    $(document).on('change', '.select-encargado', function () {
+      var fila = $(this).closest('tr');
+
+      $.ajax({
+        type: 'POST',
+        url: '/sistema/adm_turno',
+        data: {
+          action: 'asignar',
+          categoria: fila.data('categoria'),
+          entrenador: $(this).val() || '',
+          csrfmiddlewaretoken: csrftoken
+        },
+        dataType: 'json'
+      }).done(function (data) {
+        if (data.result === 'ok') {
+          location.reload();
+        } else if (typeof NotificacionAlerta === 'function') {
+          NotificacionAlerta('warning', 'Advertencia', data.mensaje || 'No se pudo guardar.');
+        }
+      }).fail(function () {
+        alert('Error de conexion. Revisa la senal.');
+      });
+    });
+  });
+</script>
+{% endblock %}

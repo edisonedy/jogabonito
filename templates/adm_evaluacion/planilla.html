@@ -1,4 +1,5 @@
 {% extends "base_nueva.html" %}
+{% load l10n %}
 
 {% block pagetitle %}{{ evaluacion.titulo }} | {{ academia.nombre }}{% endblock %}
 
@@ -7,7 +8,13 @@
     <div>
       <h5 class="mb-0">{{ evaluacion.titulo }}</h5>
       <div class="small text-muted">
-        {{ evaluacion.categoria.nombre }} &middot; {{ evaluacion.fecha|date:"l d/m/Y" }}
+        {{ evaluacion.texto_a_quien }} &middot; {{ evaluacion.texto_fechas }}
+        {% if evaluacion.es_individual %}
+          <span class="badge text-bg-info">prueba individual</span>
+        {% endif %}
+        {% if evaluacion.dura_varios_dias %}
+          <span class="badge text-bg-info">se toma en varios dias</span>
+        {% endif %}
       </div>
     </div>
 
@@ -43,6 +50,17 @@
       El grupo {{ evaluacion.categoria.nombre }} no tiene jugadores activos.
     </div>
   {% else %}
+    <div class="d-flex flex-wrap gap-2 my-3 align-items-center">
+      <div class="buscador-lista ms-auto">
+        <i class="bi bi-search"></i>
+        <input type="search" id="buscarEnPlanilla" class="form-control form-control-sm"
+               placeholder="Buscar jugador en la planilla" autocomplete="off">
+        <button type="button" class="btn btn-sm btn-outline-secondary d-none" id="verTodosPlanilla">
+          Ver todos
+        </button>
+      </div>
+    </div>
+    <div class="small text-muted mb-2 d-none" id="avisoPlanilla"></div>
     <div class="planilla" id="planilla" data-evaluacion="{{ evaluacion.id }}"
          data-cerrada="{% if evaluacion.cerrada %}1{% else %}0{% endif %}">
       {% for fila in filas %}
@@ -56,14 +74,32 @@
             <div class="min-w-0">
               <div class="fw-semibold text-truncate">{{ fila.jugador.nombre_completo }}</div>
               <div class="small text-muted">
-                {{ fila.jugador.edad }} anios
+                {% if fila.jugador.apodo %}"{{ fila.jugador.apodo }}" &middot; {% endif %}
+                {{ fila.jugador.edad }} anios &middot; {{ fila.jugador.division_texto }}
                 {% if fila.jugador.posicion %} &middot; {{ fila.jugador.posicion.nombre }}{% endif %}
+                {% if fila.jugador.tiene_cuidados %}
+                  <span class="badge text-bg-warning" title="{{ fila.jugador.cuidados }}">
+                    <i class="bi bi-heart-pulse"></i> cuidado
+                  </span>
+                {% endif %}
               </div>
             </div>
-            <a href="/sistema/adm_evaluacion?action=progreso&amp;id={{ fila.jugador.id }}"
-               class="btn btn-sm btn-soft ms-auto" title="Ver progreso">
-              <i class="bi bi-graph-up-arrow"></i>
-            </a>
+            <span class="ms-auto d-flex align-items-center gap-2">
+              {% if not evaluacion.cerrada %}
+                <label class="fecha-jugador" title="El dia en que ESTE jugador dio la prueba">
+                  <span>dio la prueba el</span>
+                  <input type="date" class="form-control form-control-sm dia-jugador"
+                         data-jugador="{{ fila.jugador.id }}"
+                         value="{{ fila.dia|date:'Y-m-d' }}"
+                         min="{{ evaluacion.fecha|date:'Y-m-d' }}"
+                         max="{{ evaluacion.ultimo_dia|date:'Y-m-d' }}">
+                </label>
+              {% endif %}
+              <a href="/sistema/adm_evaluacion?action=progreso&amp;id={{ fila.jugador.id }}"
+                 class="btn btn-sm btn-soft" title="Ver progreso">
+                <i class="bi bi-graph-up-arrow"></i>
+              </a>
+            </span>
           </header>
 
           <div class="planilla-campos">
@@ -78,7 +114,7 @@
                          class="form-control form-control-sm celda-valor"
                          data-jugador="{{ fila.jugador.id }}"
                          data-indicador="{{ celda.indicador.id }}"
-                         value="{{ celda.valor }}"
+                         value="{{ celda.valor|unlocalize }}"
                          {% if evaluacion.cerrada %}disabled{% endif %}>
                   {% if celda.indicador.sufijo %}
                     <span class="planilla-unidad">{{ celda.indicador.sufijo }}</span>
@@ -87,6 +123,9 @@
                     {% if celda.mejoro is True %}<i class="bi bi-arrow-up-circle-fill text-success"></i>
                     {% elif celda.mejoro is False %}<i class="bi bi-arrow-down-circle-fill text-danger"></i>{% endif %}
                   </span>
+                </span>
+                <span class="planilla-dia">
+                  {% if celda.dia %}{{ celda.dia|date:"d/m/Y" }}{% endif %}
                 </span>
               </label>
             {% endfor %}
@@ -100,6 +139,46 @@
 {% block heading %}
 <script>
   $(function () {
+    // Buscador: con 40 jugadores bajar a mano hasta el que falta es lento.
+    var campoBuscar = $('#buscarEnPlanilla');
+    var botonVerTodos = $('#verTodosPlanilla');
+    var aviso = $('#avisoPlanilla');
+
+    function filtrarPlanilla() {
+      var buscado = (campoBuscar.val() || '').trim().toLowerCase();
+      var visibles = 0;
+      var total = 0;
+
+      $('.planilla-jugador').each(function () {
+        var tarjeta = $(this);
+        var nombre = (tarjeta.find('.fw-semibold').text() || '').toLowerCase();
+        var apodo = (tarjeta.find('.small').text() || '').toLowerCase();
+        total += 1;
+
+        if (!buscado || nombre.indexOf(buscado) >= 0 || apodo.indexOf(buscado) >= 0) {
+          tarjeta.removeClass('d-none');
+          visibles += 1;
+        } else {
+          tarjeta.addClass('d-none');
+        }
+      });
+
+      if (buscado) {
+        botonVerTodos.removeClass('d-none');
+        aviso.removeClass('d-none').text('Mostrando ' + visibles + ' de ' + total + ' jugadores.');
+      } else {
+        botonVerTodos.addClass('d-none');
+        aviso.addClass('d-none');
+      }
+    }
+
+    campoBuscar.on('input', filtrarPlanilla);
+    botonVerTodos.on('click', function () {
+      campoBuscar.val('');
+      filtrarPlanilla();
+      campoBuscar.focus();
+    });
+
     var planilla = document.getElementById('planilla');
     var csrftoken = $('meta[name="csrf-token"]').attr('content');
     var evaluacionId = {{ evaluacion.id }};
@@ -110,6 +189,13 @@
       } else {
         alert(data.mensaje || 'No se pudo guardar');
       }
+    }
+
+    // Cada jugador puede haber dado la prueba otro dia: ese es el que se
+    // guarda con sus marcas.
+    function diaDe(jugador) {
+      var campo = $('.dia-jugador[data-jugador="' + jugador + '"]');
+      return campo.length ? (campo.val() || '') : '';
     }
 
     if (planilla) {
@@ -128,6 +214,7 @@
             jugador: campo.data('jugador'),
             indicador: campo.data('indicador'),
             valor: campo.val(),
+            fecha: diaDe(campo.data('jugador')),
             csrfmiddlewaretoken: csrftoken
           },
           dataType: 'json'
@@ -147,6 +234,9 @@
             if (typeof data.avance !== 'undefined') {
               $('#avanceTexto').text(data.avance);
             }
+
+            var dia = campo.closest('.planilla-campo').find('.planilla-dia');
+            dia.text(data.borrado ? '' : (data.dia || ''));
           } else {
             avisar(data);
           }

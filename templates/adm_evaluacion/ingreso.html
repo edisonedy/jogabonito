@@ -1,0 +1,50 @@
+{% extends "form_modal.html" %}
+{% block form_action %}/sistema/adm_evaluacion{% endblock %}
+
+{% block formextra %}
+  <input type="hidden" name="action" value="ingreso">
+  <input type="hidden" name="jugador" value="{{ jugador.id }}">
+
+  <div class="alert alert-light border py-2 small">
+    <b>{{ jugador.nombre_completo }}</b> &middot; {{ jugador.categoria.nombre }}
+    &middot; {{ jugador.edad }} anios
+    <hr class="my-2">
+    Se le toma la prueba <b>solo a el</b>, el dia que venga: no tiene que
+    esperar a la jornada del grupo. Con esto llego a la academia, y es contra
+    esto que se compara todo lo que venga despues.
+    <br><br>
+    Se abren los <b>{{ cuantos }}</b> indicadores activos; anotas los que le
+    tomes y dejas vacios los que no.
+    {% if tipo %}
+      <br><span class="text-muted">Queda marcada como <b>{{ tipo.nombre }}</b>.</span>
+    {% else %}
+      <br><span class="text-danger">
+        Ningun tipo de evaluacion esta marcado como inicial. Marca uno en
+        "Que medimos" para que esta prueba sea la linea base.
+      </span>
+    {% endif %}
+  </div>
+
+  {% if ya_tiene %}
+    <div class="alert alert-warning py-2 small">
+      <i class="bi bi-exclamation-triangle me-1"></i>
+      {{ jugador.como_le_dicen }} ya tiene marcas anteriores. Si tomas otra
+      prueba de ingreso, la base pasa a ser la mas vieja de las dos.
+    </div>
+  {% endif %}
+{% endblock %}
+
+{% block form_fields %}
+  <div class="horus-field">
+    <label class="horus-label" for="id_fecha">
+      Dia en que se le tomo <span class="text-danger ms-1">*</span>
+    </label>
+    <div class="horus-control">
+      <input type="date" name="fecha" id="id_fecha" class="form-control form-control-sm"
+             value="{{ hoy|date:'Y-m-d' }}" max="{{ hoy|date:'Y-m-d' }}">
+      <div class="horus-help">Casi siempre es hoy, pero puede ser el dia que vino.</div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block save_label %}Crear y anotar{% endblock %}

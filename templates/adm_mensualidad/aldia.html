@@ -1,0 +1,66 @@
+{% extends "form_modal.html" %}
+{% block form_action %}/sistema/adm_mensualidad{% endblock %}
+
+{% block formextra %}
+  <input type="hidden" name="action" value="aldia">
+
+  <div class="alert alert-light border py-2 small">
+    <b>El mes de cada jugador se abre solo.</b>
+    Cuando se termina su periodo, el sistema le arranca el siguiente al dia
+    siguiente, contando desde el dia en que ingreso. No importa si pago o no:
+    si sigue viniendo, se le sigue cobrando.
+    <br><br>
+    Deja de abrirse en dos casos: si el jugador ya no esta activo, o si en su
+    ficha le apagas <b>"cobrarle cada mes"</b>.
+    <br><br>
+    Esto corre cada vez que entras a Mensualidades. El boton de abajo es por si
+    quieres revisarlo ahora mismo.
+  </div>
+
+  {% if proximos %}
+    <div class="tabla-scroll" style="max-height:320px; overflow-y:auto">
+      <table class="tabla-joga">
+        <thead>
+          <tr><th>Jugador</th><th>Grupo</th><th>Su proximo mes</th></tr>
+        </thead>
+        <tbody>
+          {% for fila in proximos %}
+            <tr>
+              <td data-label="Jugador">{{ fila.jugador.nombre_completo }}</td>
+              <td data-label="Grupo">{{ fila.jugador.categoria.nombre }}</td>
+              <td data-label="Proximo">
+                {{ fila.inicio|date:"d/m/Y" }} al {{ fila.fin|date:"d/m/Y" }}
+                {% if fila.ya_toca %}
+                  <span class="badge text-bg-warning">se abre ahora</span>
+                {% else %}
+                  <small class="text-muted d-block">en {{ fila.faltan }} dia{{ fila.faltan|pluralize }}</small>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="alert alert-warning py-2 small mb-0">
+      No hay jugadores con el cobro prendido.
+    </div>
+  {% endif %}
+
+  {% if pausados %}
+    <div class="alert alert-secondary py-2 small mt-3 mb-0">
+      <b>Con el cobro pausado ({{ pausados|length }}):</b>
+      {% for j in pausados %}{{ j.nombre_completo }}{% if not forloop.last %}, {% endif %}{% endfor %}.
+      <br>A ellos no se les abre ningun mes nuevo hasta que lo vuelvas a prender.
+    </div>
+  {% endif %}
+  <p class="small text-muted mt-3 mb-0">
+    Caso raro: si necesitas generarle el mes de golpe a un grupo entero,
+    <a href="#" data-modal-url="/sistema/adm_mensualidad?action=generar&amp;mes={{ mes }}&amp;anio={{ anio }}">
+      hazlo desde aqui</a>.
+  </p>
+{% endblock %}
+
+{% block form_fields %}{% endblock %}
+
+{% block save_label %}Revisar ahora{% endblock %}

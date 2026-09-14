@@ -141,6 +141,8 @@ ACADEMIA_DESCRIPCION = env(
     'Formamos futbolistas dentro y fuera de la cancha. Trabajamos la tecnica, la tactica '
     'y sobre todo el gusto por jugar bien: el joga bonito.'
 )
+# Anios de trayectoria (solo el numero, sin fechas). Vacio = no se muestra.
+ACADEMIA_ANIOS = env('ACADEMIA_ANIOS', '2')
 
 # Responsable de la academia (seccion "Quien dirige" de la pagina publica).
 ACADEMIA_DIRECTOR = env('ACADEMIA_DIRECTOR', 'Kevin Supe')
@@ -160,6 +162,15 @@ ACADEMIA_MAPA_LINK = env('ACADEMIA_MAPA_LINK', 'https://maps.app.goo.gl/7WQef3g5
 
 # Tope de solicitudes que acepta la landing desde una misma IP por hora.
 SOLICITUDES_MAXIMAS_POR_HORA = int(env('SOLICITUDES_MAXIMAS_POR_HORA', '5'))
+
+# --- Quien desarrolla el sistema (credito en la landing y en el sistema) ---
+# Si DESARROLLADOR_NOMBRE queda vacio, el credito no se dibuja en ningun lado.
+DESARROLLADOR_NOMBRE = env('DESARROLLADOR_NOMBRE', 'HORUS')
+DESARROLLADOR_LEMA = env('DESARROLLADOR_LEMA', 'Soluciones Tecnologicas')
+DESARROLLADOR_URL = env('DESARROLLADOR_URL', '')
+DESARROLLADOR_WHATSAPP = env('DESARROLLADOR_WHATSAPP', '0999955936')
+DESARROLLADOR_EMAIL = env('DESARROLLADOR_EMAIL', 'edisonmoyolema@hotmail.com')
+DESARROLLADOR_COLOR = env('DESARROLLADOR_COLOR', '#009FE3')
 
 # --- Grupos del sistema --------------------------------------------------
 GRUPO_ADMINISTRADOR = 'ADMINISTRADOR'

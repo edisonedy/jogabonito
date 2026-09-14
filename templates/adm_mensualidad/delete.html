@@ -1,0 +1,6 @@
+{% extends "delete_modal.html" %}
+{% block formaction %}/sistema/adm_mensualidad{% endblock %}
+{% block formactionvalue %}delete{% endblock %}
+{% block formobjectid %}{{ mensualidad.id }}{% endblock %}
+{% block formobjectrepr %}la mensualidad de <b>{{ mensualidad.jugador.nombre_completo }}</b>
+  ({{ mensualidad.periodo }}){% endblock %}

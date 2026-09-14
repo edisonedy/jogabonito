@@ -12,14 +12,14 @@ from django.shortcuts import render
 
 from jogabonito.commonviews import adduserdata
 from jogabonito.decorators import URL_LOGIN, last_access, secure_module, solo_administrador
-from jogabonito.forms import IndicadorForm, PosicionForm
+from jogabonito.forms import IndicadorForm, PosicionForm, TipoEvaluacionForm
 from jogabonito.funciones import bad_json, ok_json, paginar, url_back
-from jogabonito.models import AREAS_INDICADOR, Indicador, Posicion
+from jogabonito.models import AREAS_INDICADOR, Indicador, Posicion, TipoEvaluacion
 
 MODULO = 'adm_indicador'
 
 
-def _primer_error(form):
+def primer_error(form):
     return next(iter(form.errors.values()))[0]
 
 
@@ -42,7 +42,7 @@ def view(request):
                     indicador = Indicador.objects.get(pk=int(request.POST['id']))
                 form = IndicadorForm(request.POST, instance=indicador)
                 if not form.is_valid():
-                    return bad_json(mensaje=_primer_error(form))
+                    return bad_json(mensaje=primer_error(form))
                 indicador = form.save(commit=False)
                 indicador.save(request)
                 return ok_json({'mensaje': 'Indicador guardado.'})
@@ -80,7 +80,7 @@ def view(request):
                     posicion = Posicion.objects.get(pk=int(request.POST['id']))
                 form = PosicionForm(request.POST, instance=posicion)
                 if not form.is_valid():
-                    return bad_json(mensaje=_primer_error(form))
+                    return bad_json(mensaje=primer_error(form))
                 posicion = form.save(commit=False)
                 posicion.save(request)
                 return ok_json({'mensaje': 'Posicion guardada.'})
@@ -100,6 +100,44 @@ def view(request):
                 posicion.delete()
                 return ok_json({'mensaje': 'Posicion eliminada.'})
             except Posicion.DoesNotExist:
+                return bad_json(error=3)
+            except (KeyError, TypeError, ValueError):
+                return bad_json(error=6)
+            except Exception as ex:
+                transaction.set_rollback(True)
+                return bad_json(error=9, ex=ex)
+
+        if action in ('addtipo', 'edittipo'):
+            try:
+                tipo = None
+                if action == 'edittipo':
+                    tipo = TipoEvaluacion.objects.get(pk=int(request.POST['id']))
+                form = TipoEvaluacionForm(request.POST, instance=tipo)
+                if not form.is_valid():
+                    return bad_json(mensaje=primer_error(form))
+                tipo = form.save(commit=False)
+                tipo.save(request)
+                # Solo un tipo puede ser la prueba inicial.
+                if tipo.es_inicial:
+                    TipoEvaluacion.objects.exclude(pk=tipo.pk).update(es_inicial=False)
+                return ok_json({'mensaje': 'Tipo de evaluacion guardado.'})
+            except TipoEvaluacion.DoesNotExist:
+                return bad_json(error=3)
+            except (KeyError, TypeError, ValueError):
+                return bad_json(error=6)
+            except Exception as ex:
+                transaction.set_rollback(True)
+                return bad_json(error=1, ex=ex)
+
+        if action == 'deltipo':
+            try:
+                tipo = TipoEvaluacion.objects.get(pk=int(request.POST['id']))
+                if tipo.evaluaciones.exists():
+                    return bad_json(mensaje='No se puede eliminar: hay evaluaciones de ese tipo. '
+                                            'Desactivalo para dejar de usarlo.')
+                tipo.delete()
+                return ok_json({'mensaje': 'Tipo de evaluacion eliminado.'})
+            except TipoEvaluacion.DoesNotExist:
                 return bad_json(error=3)
             except (KeyError, TypeError, ValueError):
                 return bad_json(error=6)
@@ -149,6 +187,24 @@ def view(request):
         data['form'] = PosicionForm(instance=posicion)
         return render(request, 'adm_indicador/editposicion.html', data)
 
+    if action == 'addtipo':
+        data['title'] = 'Nuevo tipo de evaluacion'
+        data['form'] = TipoEvaluacionForm()
+        return render(request, 'adm_indicador/addtipo.html', data)
+
+    if action in ('edittipo', 'deltipo'):
+        try:
+            tipo = TipoEvaluacion.objects.get(pk=int(request.GET['id']))
+        except (TipoEvaluacion.DoesNotExist, KeyError, ValueError):
+            return url_back(request)
+        data['tipo'] = tipo
+        if action == 'deltipo':
+            data['title'] = 'Eliminar tipo de evaluacion'
+            return render(request, 'adm_indicador/deltipo.html', data)
+        data['title'] = 'Editar tipo de evaluacion'
+        data['form'] = TipoEvaluacionForm(instance=tipo)
+        return render(request, 'adm_indicador/edittipo.html', data)
+
     data['title'] = 'Que medimos'
     buscar = (request.GET.get('s') or '').strip()
     indicadores = Indicador.objects.all()
@@ -167,5 +223,6 @@ def view(request):
     data['areas'] = AREAS_INDICADOR
     data['total_activos'] = Indicador.objects.filter(activo=True).count()
     data['posiciones'] = Posicion.objects.all()
+    data['tipos'] = TipoEvaluacion.objects.all()
     data['indicadores'] = paginar(request, indicadores, data, MODULO, por_pagina=30)
     return render(request, 'adm_indicador/view.html', data)

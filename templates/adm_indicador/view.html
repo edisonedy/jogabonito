@@ -10,6 +10,11 @@
       </button>
     </li>
     <li class="nav-item">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabTipos" type="button">
+        <i class="fa-solid fa-clipboard-list me-1"></i> Tipos de evaluacion
+      </button>
+    </li>
+    <li class="nav-item">
       <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabPosiciones" type="button">
         <i class="fa-solid fa-location-dot me-1"></i> Posiciones
       </button>
@@ -107,6 +112,64 @@
       </div>
 
       {% include "paginador.html" %}
+    </div>
+
+    <!-- ---------------------- TIPOS DE EVALUACION -------------------- -->
+    <div class="tab-pane fade" id="tabTipos">
+      <div class="alert alert-light border py-2 small">
+        <i class="bi bi-info-circle me-1"></i>
+        Define que clases de prueba existen. La marcada como <b>inicial</b> es la
+        linea base del jugador: con que llego a la academia.
+      </div>
+
+      <div class="modulo-toolbar">
+        <span class="modulo-chip"><i class="fa-solid fa-clipboard-list"></i> {{ tipos.count }} tipos</span>
+        <a href="#" data-modal-url="/sistema/adm_indicador?action=addtipo"
+           class="btn btn-joga btn-sm btn-touch ms-auto">
+          <i class="fa-solid fa-plus me-1"></i> Nuevo tipo
+        </a>
+      </div>
+
+      <div class="tabla-scroll">
+        <table class="tabla-joga">
+          <thead>
+            <tr><th>Tipo</th><th>Para que sirve</th><th>Pruebas</th><th>Estado</th><th class="text-end">Acciones</th></tr>
+          </thead>
+          <tbody>
+            {% for t in tipos %}
+              <tr>
+                <td data-label="Tipo">
+                  <span class="badge text-bg-{{ t.color }}">{{ t.nombre }}</span>
+                  {% if t.es_inicial %}
+                    <span class="badge text-bg-dark"><i class="bi bi-flag-fill"></i> Linea base</span>
+                  {% endif %}
+                </td>
+                <td data-label="Para que sirve">{{ t.descripcion|default:"-" }}</td>
+                <td data-label="Pruebas">{{ t.evaluaciones.count }}</td>
+                <td data-label="Estado">
+                  {% if t.activo %}
+                    <span class="badge text-bg-success">Activo</span>
+                  {% else %}
+                    <span class="badge text-bg-secondary">Inactivo</span>
+                  {% endif %}
+                </td>
+                <td class="text-end celda-acciones" data-label="Acciones">
+                  <div class="btn-group btn-group-sm">
+                    <a class="btn btn-outline-primary" href="#"
+                       data-modal-url="/sistema/adm_indicador?action=edittipo&amp;id={{ t.id }}" title="Editar">
+                      <i class="bi bi-pencil"></i></a>
+                    <a class="btn btn-outline-danger" href="#"
+                       data-modal-url="/sistema/adm_indicador?action=deltipo&amp;id={{ t.id }}" title="Eliminar">
+                      <i class="bi bi-trash"></i></a>
+                  </div>
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="5" class="text-center text-muted py-4">No hay tipos registrados.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <!-- -------------------------- POSICIONES ------------------------- -->

@@ -1,0 +1,21 @@
+{% extends "form_modal.html" %}
+{% block form_action %}/sistema/adm_evaluacion{% endblock %}
+{% block formextra %}
+  <input type="hidden" name="action" value="{% if control %}editcontrol{% else %}control{% endif %}">
+  <input type="hidden" name="jugador" value="{{ jugador.id }}">
+  {% if control %}<input type="hidden" name="id" value="{{ control.id }}">{% endif %}
+
+  <div class="alert alert-light border py-2 small">
+    <b>{{ jugador.nombre_completo }}</b> &middot; {{ jugador.edad }} anios
+    {% if jugador.ultimo_control %}
+      <br>Ultimo control: {{ jugador.ultimo_control.fecha|date:"d/m/Y" }} &middot;
+      {{ jugador.ultimo_control.texto_peso }} &middot; {{ jugador.ultimo_control.texto_estatura }}
+    {% endif %}
+    <hr class="my-2">
+    El peso y la estatura van aparte de las pruebas a proposito: no son una
+    marca que se mejora, es un ninio creciendo. No entran al radar ni se
+    comparan con el resto del grupo.
+    <br>Puedes poner solo uno de los dos.
+  </div>
+{% endblock %}
+{% block save_label %}Guardar control{% endblock %}

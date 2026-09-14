@@ -1,0 +1,5 @@
+Deja aqui las fotos de los entrenamientos (jpg, png o webp) y aparecen solas
+en la seccion "Asi entrenamos" de la pagina publica. Se muestran las 8 primeras
+en orden alfabetico, asi que puedes nombrarlas 01-equipo.jpg, 02-cancha.jpg, etc.
+
+Si la carpeta queda vacia (solo con este archivo), la seccion no se dibuja.

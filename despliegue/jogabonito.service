@@ -1,0 +1,29 @@
+[Unit]
+Description=Joga Bonito (Django + Gunicorn)
+After=network.target postgresql.service
+
+[Service]
+Type=notify
+User=jogabonito
+Group=jogabonito
+WorkingDirectory=/opt/jogabonito
+Environment="PYTHONUNBUFFERED=1"
+ExecStart=/opt/jogabonito/.venv/bin/gunicorn \
+    --workers 3 \
+    --bind unix:/run/jogabonito/gunicorn.sock \
+    --access-logfile /var/log/jogabonito/acceso.log \
+    --error-logfile /var/log/jogabonito/error.log \
+    jogabonito.wsgi:application
+ExecReload=/bin/kill -s HUP $MAINPID
+RuntimeDirectory=jogabonito
+LogsDirectory=jogabonito
+Restart=on-failure
+RestartSec=5
+
+# Seguridad basica: el servicio no necesita mas que su carpeta.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

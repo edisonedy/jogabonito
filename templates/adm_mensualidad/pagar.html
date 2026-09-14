@@ -1,0 +1,33 @@
+{% extends "form_modal.html" %}
+{% block form_action %}/sistema/adm_mensualidad{% endblock %}
+{% block formextra %}
+  <input type="hidden" name="action" value="pagar">
+  <input type="hidden" name="id" value="{{ mensualidad.id }}">
+
+  <div class="alert alert-light border py-2 small">
+    <b>Esta pantalla es para corregir el mes.</b> Para cobrar sin cambiar nada,
+    usa el boton verde de cobrar en la lista.
+    <hr class="my-2">
+    <b>{{ mensualidad.jugador.nombre_completo }}</b><br>
+    {{ mensualidad.periodo }} &middot; {{ mensualidad.jugador.categoria.nombre }}<br>
+    Cubre {{ mensualidad.texto_periodo }} ({{ mensualidad.dias_del_periodo }} dias)<br>
+    Vence el {{ mensualidad.fecha_vencimiento|date:"d/m/Y" }}
+    {% if mensualidad.esta_atrasada %}
+      <span class="badge text-bg-danger">
+        {{ mensualidad.dias_de_atraso }} dia{{ mensualidad.dias_de_atraso|pluralize }} de atraso
+      </span>
+    {% endif %}
+    <hr class="my-2">
+    Mes completo: <b>$ {{ mensualidad.valor_completo }}</b>
+    &middot; a pagar hoy: <b>$ {{ mensualidad.valor }}</b><br>
+    <span class="text-muted">{{ mensualidad.jugador.explicacion_precio }}</span>
+    <hr class="my-2">
+    Si el representante aviso que el nino no viene parte del periodo, pon
+    cuantos dias y el sistema cobra solo los dias que si entrena.
+    Aqui cada dia vale <b>$ {{ mensualidad.valor_por_dia }}</b>.
+    <hr class="my-2">
+    Si las fechas quedaron mal (entro despues, se le corrio el cobro), cambialas
+    abajo: el valor por dia se recalcula con el periodo nuevo.
+  </div>
+{% endblock %}
+{% block save_label %}Guardar cambios{% endblock %}

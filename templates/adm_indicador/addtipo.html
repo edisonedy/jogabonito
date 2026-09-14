@@ -1,0 +1,11 @@
+{% extends "form_modal.html" %}
+{% block form_action %}/sistema/adm_indicador{% endblock %}
+{% block formextra %}
+  <input type="hidden" name="action" value="addtipo">
+  <div class="alert alert-light border py-2 small">
+    Marca <b>"Es la prueba inicial"</b> en el tipo que uses cuando el jugador recien
+    llega: ese es su punto de partida y con el se compara todo lo que venga despues.
+    Solo un tipo puede ser el inicial.
+  </div>
+{% endblock %}
+{% block save_label %}Guardar tipo{% endblock %}

@@ -6,6 +6,7 @@
   <title>{{ academia.nombre }} | Escuela de futbol en {{ academia.direccion }}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="{{ academia.descripcion|truncatechars:160 }}">
+  <meta name="theme-color" content="#0f8a3d">
 
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="{{ academia.nombre }}">
@@ -13,10 +14,14 @@
   <meta property="og:description" content="{{ academia.descripcion|truncatechars:160 }}">
   {% if academia.logo %}<meta property="og:image" content="{% static academia.logo %}">{% endif %}
 
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Kaushan+Script&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <link href="{% static 'css/landing.css' %}?v=1" rel="stylesheet">
+  <link href="{% static 'css/landing.css' %}?v=6" rel="stylesheet">
 </head>
 <body>
 
@@ -24,11 +29,11 @@
   <div class="container">
     <a class="navbar-brand d-flex align-items-center gap-2" href="#inicio">
       {% if academia.logo %}
-        <img src="{% static academia.logo %}" alt="{{ academia.nombre }}" height="42">
+        <img src="{% static academia.logo %}" alt="{{ academia.nombre }}" height="46">
       {% else %}
-        <span class="lp-ball"><i class="fa-solid fa-futbol"></i></span>
+        <span class="lp-emblema-nav">{% include "landing/emblema.html" %}</span>
       {% endif %}
-      <span class="lp-brand-name">JOGA BONITO</span>
+      <span class="lp-brand-name">JOGA <em>Bonito</em></span>
     </a>
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menuLanding"
@@ -40,10 +45,10 @@
       <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-1">
         <li class="nav-item"><a class="nav-link" href="#fortalezas">Por que nosotros</a></li>
         <li class="nav-item"><a class="nav-link" href="#horarios">Horarios</a></li>
-        <li class="nav-item"><a class="nav-link" href="#director">Quien dirige</a></li>
+        <li class="nav-item"><a class="nav-link" href="#equipo">Cuerpo tecnico</a></li>
         <li class="nav-item"><a class="nav-link" href="#contacto">Contacto</a></li>
         <li class="nav-item ms-lg-2">
-          <a class="btn btn-amarillo btn-sm px-3" href="#inscripcion">Quiero inscribirme</a>
+          <a class="btn btn-oro btn-sm px-3" href="#inscripcion">Quiero inscribirme</a>
         </li>
       </ul>
     </div>
@@ -55,12 +60,20 @@
   <div class="container">
     <div class="row align-items-center g-5">
       <div class="col-lg-7">
-        <span class="lp-kicker"><i class="bi bi-geo-alt-fill"></i> {{ academia.direccion }}</span>
-        <h1 class="lp-title">Aprende a jugar<br><span>bonito</span></h1>
+        <div class="d-flex flex-wrap gap-2">
+          <span class="lp-kicker"><i class="bi bi-geo-alt-fill"></i> {{ academia.direccion }}</span>
+          {% if academia.anios %}
+            <span class="lp-kicker lp-kicker-oro">
+              <i class="bi bi-stars"></i> {{ academia.anios }} anios formando deportistas
+            </span>
+          {% endif %}
+        </div>
+
+        <h1 class="lp-title">Aprende a jugar<span class="lp-script">Bonito</span></h1>
         <p class="lp-lead">{{ academia.descripcion }}</p>
 
         <div class="d-flex flex-wrap gap-2 mt-4">
-          <a href="#inscripcion" class="btn btn-amarillo btn-lg">
+          <a href="#inscripcion" class="btn btn-oro btn-lg">
             <i class="fa-solid fa-user-plus me-2"></i>Quiero inscribirme
           </a>
           {% if academia.whatsapp_link %}
@@ -85,18 +98,23 @@
       </div>
 
       <div class="col-lg-5 text-center">
-        <div class="lp-hero-badge">
+        <div class="lp-escudo-hero">
           {% if academia.logo %}
             <img src="{% static academia.logo %}" alt="{{ academia.nombre }}" class="img-fluid">
           {% else %}
-            <span class="lp-ball lp-ball-xl"><i class="fa-solid fa-futbol"></i></span>
-            <div class="lp-hero-badge-txt">
-              <span>ACADEMIA</span>
-              <strong>JOGA BONITO</strong>
-            </div>
+            {% include "landing/emblema.html" %}
           {% endif %}
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Franja de valores, igual que en su arte oficial -->
+  <div class="lp-valores">
+    <div class="container">
+      {% for v in valores %}
+        <span class="lp-valor"><i class="{{ v.icono }}"></i> {{ v.texto }}</span>
+      {% endfor %}
     </div>
   </div>
 </header>
@@ -161,23 +179,28 @@
   </div>
 </section>
 
-<!-- ========================== DIRECTOR ========================== -->
-<section class="lp-section" id="director">
+<!-- ======================== CUERPO TECNICO ======================= -->
+<section class="lp-section" id="equipo">
   <div class="container">
-    <div class="row align-items-center g-5">
-      <div class="col-lg-5 text-center">
-        <div class="lp-director-foto">
-          {% if academia.director_foto %}
-            <img src="{{ academia.director_foto }}" alt="{{ academia.director }}" class="img-fluid">
-          {% else %}
-            <i class="fa-solid fa-user-tie"></i>
-          {% endif %}
-        </div>
+    <div class="lp-section-head">
+      <span class="lp-eyebrow">Cuerpo tecnico</span>
+      <h2>Mas que entrenadores, <em class="lp-em">forman campeones</em></h2>
+      <p>Lideran, forman e inspiran. Detras de cada grupo hay un profe que conoce a sus jugadores
+         por el nombre y sabe en que tiene que mejorar cada uno.</p>
+    </div>
+
+    <article class="lp-director">
+      <div class="lp-director-foto">
+        {% if academia.director_foto %}
+          <img src="{{ academia.director_foto }}" alt="{{ academia.director }}">
+        {% else %}
+          <i class="fa-solid fa-user-tie"></i>
+        {% endif %}
       </div>
 
-      <div class="col-lg-7">
-        <span class="lp-eyebrow">Quien dirige la academia</span>
-        <h2 class="lp-director-nombre">{{ academia.director }}</h2>
+      <div class="lp-director-texto">
+        <span class="lp-etiqueta-profe">Director</span>
+        <h3 class="lp-director-nombre">{{ academia.director }}</h3>
         <p class="lp-director-cargo">{{ academia.director_cargo }}</p>
 
         <ul class="lp-credenciales">
@@ -186,29 +209,80 @@
           {% endfor %}
         </ul>
 
-        {% if academia.director_bio %}
-          <p class="lp-director-bio">{{ academia.director_bio|linebreaksbr }}</p>
-        {% else %}
-          <p class="lp-director-bio">
+        <p class="lp-director-bio">
+          {% if academia.director_bio %}
+            {{ academia.director_bio|linebreaksbr }}
+          {% else %}
             {{ academia.director }} esta a cargo de la Academia Formativa Joga Bonito y del trabajo
             diario en la cancha: arma los grupos, dirige los entrenamientos y conversa con los
             representantes sobre el avance de cada jugador.
-          </p>
-        {% endif %}
-
-        <div class="d-flex flex-wrap gap-2 mt-3">
-          {% if academia.whatsapp_link %}
-            <a href="https://wa.me/{{ academia.whatsapp_link }}" target="_blank" rel="noopener"
-               class="btn btn-verde">
-              <i class="fa-brands fa-whatsapp me-2"></i>Hablar con la academia
-            </a>
           {% endif %}
-          <a href="#inscripcion" class="btn btn-outline-dark">Ver como inscribirme</a>
-        </div>
+        </p>
+
+        {% if academia.whatsapp_link %}
+          <a href="https://wa.me/{{ academia.whatsapp_link }}" target="_blank" rel="noopener"
+             class="btn btn-verde">
+            <i class="fa-brands fa-whatsapp me-2"></i>Hablar con la academia
+          </a>
+        {% endif %}
       </div>
+    </article>
+
+    <h3 class="lp-subtitulo-profes">Los profes de cada grupo</h3>
+
+    <div class="lp-profes">
+      {% for e in entrenadores %}
+        <article class="lp-profe">
+          <div class="lp-profe-foto">
+            {% if e.fotografia %}
+              <img src="{{ e.fotografia.url }}" alt="{{ e.nombre_completo }}">
+            {% else %}
+              <i class="fa-solid fa-user"></i>
+            {% endif %}
+          </div>
+          <div class="min-w-0">
+            <span class="lp-etiqueta-profe">Profesor</span>
+            <h4>{{ e.nombre_completo|title }}</h4>
+            <p>
+              {% with cantidad=e.categorias_activas.count %}
+                {% if cantidad %}
+                  {{ cantidad }} grupo{{ cantidad|pluralize }} a cargo
+                {% else %}
+                  Parte del cuerpo tecnico
+                {% endif %}
+              {% endwith %}
+            </p>
+          </div>
+        </article>
+      {% empty %}
+        <div class="lp-profe lp-profe-vacio">
+          <div class="lp-profe-foto"><i class="fa-solid fa-user-plus"></i></div>
+          <div>
+            <h4>Cuerpo tecnico en formacion</h4>
+            <p>Escribenos y te contamos quien dirige cada grupo.</p>
+          </div>
+        </div>
+      {% endfor %}
     </div>
   </div>
 </section>
+
+<!-- =========================== GALERIA =========================== -->
+{% if academia.galeria %}
+  <section class="lp-section lp-section-alt" id="galeria">
+    <div class="container">
+      <div class="lp-section-head">
+        <span class="lp-eyebrow">La academia por dentro</span>
+        <h2>Asi entrenamos</h2>
+      </div>
+      <div class="lp-galeria">
+        {% for foto in academia.galeria %}
+          <figure><img src="{% static foto %}" alt="Entrenamiento en {{ academia.nombre }}" loading="lazy"></figure>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+{% endif %}
 
 <!-- ========================= INSCRIPCION ======================== -->
 <section class="lp-section lp-section-verde" id="inscripcion">
@@ -230,7 +304,7 @@
 
         {% if academia.whatsapp_link %}
           <a href="https://wa.me/{{ academia.whatsapp_link }}" target="_blank" rel="noopener"
-             class="btn btn-amarillo mt-2">
+             class="btn btn-oro mt-2">
             <i class="fa-brands fa-whatsapp me-2"></i>Prefiero WhatsApp
           </a>
         {% endif %}
@@ -394,15 +468,35 @@
   <div class="container d-flex flex-wrap justify-content-between align-items-center gap-3">
     <div class="d-flex align-items-center gap-2">
       {% if academia.logo %}
-        <img src="{% static academia.logo %}" alt="" height="34">
+        <img src="{% static academia.logo %}" alt="" height="42">
       {% else %}
-        <span class="lp-ball lp-ball-sm"><i class="fa-solid fa-futbol"></i></span>
+        <span class="lp-emblema-pie">{% include "landing/emblema.html" %}</span>
       {% endif %}
       <div>
         <div class="fw-bold">{{ academia.nombre }}</div>
         <div class="small opacity-75">{{ academia.lema }}</div>
       </div>
     </div>
+
+    {% if desarrollador.nombre %}
+      <a class="lp-horus"
+         {% if desarrollador.url %}href="{{ desarrollador.url }}" target="_blank" rel="noopener"
+         {% elif desarrollador.whatsapp_link %}href="https://wa.me/{{ desarrollador.whatsapp_link }}" target="_blank" rel="noopener"
+         {% else %}href="#"{% endif %}
+         title="Sistema desarrollado por {{ desarrollador.nombre }}">
+        {% if desarrollador.logo %}
+          <img src="{% static desarrollador.logo %}" alt="{{ desarrollador.nombre }}" height="34">
+        {% else %}
+          <span class="lp-horus-marca">&#9670;</span>
+        {% endif %}
+        <span class="lp-horus-txt">
+          <small>Sistema desarrollado por</small>
+          <b>{{ desarrollador.nombre }}</b>
+          {% if desarrollador.lema %}<em>{{ desarrollador.lema }}</em>{% endif %}
+        </span>
+      </a>
+    {% endif %}
+
     <div class="small opacity-75">
       &copy; {% now "Y" %} {{ academia.nombre }} &middot;
       <a href="/sistema/">Ingreso al sistema</a>

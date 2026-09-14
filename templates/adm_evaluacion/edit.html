@@ -1,5 +1,6 @@
 {% extends "form_modal.html" %}
 {% block form_action %}/sistema/adm_evaluacion{% endblock %}
+
 {% block formextra %}
   <input type="hidden" name="action" value="edit">
   <input type="hidden" name="id" value="{{ evaluacion.id }}">
@@ -8,4 +9,13 @@
     guardados pero dejan de aparecer en la planilla.
   </div>
 {% endblock %}
+
+{% block form_fields %}
+  {% include "adm_evaluacion/campos.html" %}
+{% endblock %}
+
 {% block save_label %}Guardar cambios{% endblock %}
+
+{% block extra_js %}
+  {% include "adm_evaluacion/selectorjs.html" %}
+{% endblock %}

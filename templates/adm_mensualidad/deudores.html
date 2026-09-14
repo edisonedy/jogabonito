@@ -1,0 +1,88 @@
+{% extends "base_nueva.html" %}
+
+{% block pagetitle %}Quien debe | {{ academia.nombre }}{% endblock %}
+
+{% block canvas %}
+  <div class="modulo-toolbar">
+    <div>
+      <h5 class="mb-0">Quien debe</h5>
+      <div class="small text-muted">
+        Ordenado por los que llevan mas dias de atraso. La deuda no se borra al
+        abrirse el mes siguiente: se va sumando.
+      </div>
+    </div>
+    <a href="/sistema/adm_mensualidad" class="btn btn-sm btn-outline-secondary btn-touch ms-auto">
+      <i class="bi bi-arrow-left me-1"></i> Volver
+    </a>
+  </div>
+
+  <div class="tabla-scroll">
+    <table class="tabla-joga">
+      <thead>
+        <tr>
+          <th>Jugador</th>
+          <th>Grupo</th>
+          <th>Meses que debe</th>
+          <th>Total</th>
+          <th>Atraso</th>
+          <th class="text-end">Contacto</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for d in deudores %}
+          <tr>
+            <td data-label="Jugador">
+              <a class="fw-semibold" href="/sistema/adm_jugador?action=view&amp;id={{ d.jugador.id }}">
+                {{ d.jugador.nombre_completo }}
+              </a>
+              <div class="small text-muted">
+                {% for m in d.detalle %}
+                  <span class="badge text-bg-{{ m.color }}">{{ m.nombre_mes|title }} {{ m.anio }}</span>
+                {% endfor %}
+              </div>
+            </td>
+            <td data-label="Grupo">{{ d.jugador.categoria.nombre }}</td>
+            <td data-label="Meses que debe">
+              <b>{{ d.meses }}</b>
+              {% if d.jugador.debe_desde %}
+                <div class="small text-muted">desde el {{ d.jugador.debe_desde|date:"d/m/Y" }}</div>
+              {% endif %}
+            </td>
+            <td data-label="Total"><b class="text-danger">$ {{ d.total }}</b></td>
+            <td data-label="Atraso">
+              {% if d.dias %}
+                <span class="badge text-bg-danger">{{ d.dias }} dia{{ d.dias|pluralize }}</span>
+              {% else %}
+                <span class="badge text-bg-warning">Aun no vence</span>
+              {% endif %}
+            </td>
+            <td class="text-end celda-acciones" data-label="Contacto">
+              {% if d.jugador.representante %}
+                <a class="btn btn-sm btn-outline-success"
+                   href="https://wa.me/{{ d.jugador.representante.numero_whatsapp }}"
+                   target="_blank" rel="noopener"
+                   title="Escribir a {{ d.jugador.representante.nombre_completo }}">
+                  <i class="fa-brands fa-whatsapp"></i> Representante
+                </a>
+              {% elif d.jugador.telefono %}
+                <a class="btn btn-sm btn-outline-success" target="_blank" rel="noopener"
+                   href="https://wa.me/{{ d.jugador.numero_whatsapp }}">
+                  <i class="bi bi-telephone"></i> {{ d.jugador.telefono }}
+                </a>
+              {% else %}
+                <span class="small text-muted">Sin contacto</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="6" class="text-center text-muted py-4">
+              <i class="bi bi-check2-circle text-success me-1"></i>
+              Nadie debe nada. Todos al dia.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

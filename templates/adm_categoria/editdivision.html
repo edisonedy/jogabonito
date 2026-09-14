@@ -1,0 +1,12 @@
+{% extends "form_modal.html" %}
+{% block form_action %}/sistema/adm_categoria{% endblock %}
+{% block formextra %}
+  <input type="hidden" name="action" value="editdivision">
+  <input type="hidden" name="id" value="{{ division.id }}">
+  <div class="alert alert-light border py-2 small">
+    Hoy caen aqui los de {{ division.rango_texto }}. Si cambias el rango, los
+    jugadores se reacomodan solos: la division sale de la edad, no se asigna
+    a mano.
+  </div>
+{% endblock %}
+{% block save_label %}Guardar division{% endblock %}

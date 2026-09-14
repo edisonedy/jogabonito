@@ -10,9 +10,12 @@ from datetime import date, timedelta
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
+from decimal import Decimal
+
 from jogabonito.models import (
     ASISTENCIA_ATRASO, ASISTENCIA_FALTA, ASISTENCIA_JUSTIFICADO, ASISTENCIA_PRESENTE,
-    Asistencia, Categoria, Entrenador, Jugador, Representante,
+    AREAS_INDICADOR, MEDIDA_ESCALA, MEDIDA_TIEMPO, Asistencia, Categoria, Entrenador, Evaluacion,
+    Indicador, Jugador, Medicion, Posicion, Representante, TipoEvaluacion,
 )
 
 MARCA = '[DEMO]'
@@ -51,7 +54,7 @@ class Command(BaseCommand):
     @transaction.atomic
     def handle(self, *args, **opciones):
         if opciones['borrar']:
-            return self._borrar()
+            return self.borrar_datos()
 
         categorias = list(Categoria.objects.filter(activo=True).order_by('hora_inicio'))
         if not categorias:
@@ -79,6 +82,14 @@ class Command(BaseCommand):
             )
             representantes.append(representante)
 
+        # Los grupos demo quedan tambien separados por edad.
+        for indice, categoria in enumerate(categorias):
+            if categoria.edad_minima is None and categoria.edad_maxima is None:
+                categoria.edad_minima = 6 + indice * 4
+                categoria.edad_maxima = 9 + indice * 4
+                categoria.save()
+
+        posiciones = list(Posicion.objects.filter(activo=True).order_by('orden'))
         jugadores = []
         for indice, (nombres, apellidos, anio) in enumerate(JUGADORES):
             jugador, _ = Jugador.objects.get_or_create(
@@ -88,6 +99,9 @@ class Command(BaseCommand):
                     'categoria': categorias[indice % len(categorias)],
                     'representante': representantes[indice % len(representantes)],
                     'fecha_ingreso': date.today() - timedelta(days=60),
+                    'posicion': posiciones[indice % len(posiciones)] if posiciones else None,
+                    'pie_habil': (indice % 3) + 1,
+                    'dorsal': 5 + indice,
                     'observacion': MARCA,
                 }
             )
@@ -107,18 +121,62 @@ class Command(BaseCommand):
                 )
                 creadas += 1 if creada else 0
 
+        # --- pruebas semanales con su progreso ---------------------------
+        # Un indicador de cada area, para que la tela de arania salga completa.
+        indicadores = []
+        for area, _etiqueta in AREAS_INDICADOR:
+            indicador = Indicador.objects.filter(activo=True, area=area).order_by('orden').first()
+            if indicador:
+                indicadores.append(indicador)
+        mediciones = 0
+        if indicadores:
+            for categoria in categorias:
+                del_grupo = [j for j in jugadores if j.categoria_id == categoria.id]
+                if not del_grupo:
+                    continue
+                inicial = TipoEvaluacion.objects.filter(es_inicial=True).first()
+                seguimiento = TipoEvaluacion.objects.filter(
+                    activo=True, es_inicial=False).order_by('orden').first()
+
+                for semana in range(3):
+                    fecha = date.today() - timedelta(days=21 - semana * 7)
+                    evaluacion, _ = Evaluacion.objects.get_or_create(
+                        categoria=categoria, fecha=fecha,
+                        titulo='%s Prueba semanal %s' % (MARCA, semana + 1),
+                        defaults={'tipo': inicial if semana == 0 else seguimiento}
+                    )
+                    evaluacion.indicadores.set(indicadores)
+                    for jugador in del_grupo:
+                        for indicador in indicadores:
+                            if indicador.tipo_medida == MEDIDA_ESCALA:
+                                valor = Decimal(str(min(10, 5 + semana + sorteo.randint(0, 2))))
+                            elif indicador.tipo_medida == MEDIDA_TIEMPO:
+                                valor = Decimal(str(round(5.6 - semana * 0.15 + sorteo.uniform(-0.2, 0.2), 2)))
+                            else:
+                                valor = Decimal(str(10 + semana * 4 + sorteo.randint(0, 6)))
+                            Medicion.objects.update_or_create(
+                                evaluacion=evaluacion, jugador=jugador, indicador=indicador,
+                                defaults={'valor': valor}
+                            )
+                            mediciones += 1
+
         self.stdout.write('  entrenadores: %s' % len(entrenadores))
         self.stdout.write('  jugadores: %s' % len(jugadores))
         self.stdout.write('  asistencias creadas: %s' % creadas)
+        self.stdout.write('  mediciones creadas: %s' % mediciones)
         self.stdout.write(self.style.SUCCESS('Datos de ejemplo listos.'))
 
-    def _borrar(self):
+    def borrar_datos(self):
         nombres_jugadores = [(n, a) for n, a, _ in JUGADORES]
         jugadores = Jugador.objects.none()
         for nombres, apellidos in nombres_jugadores:
             jugadores = jugadores | Jugador.objects.filter(nombres=nombres, apellidos=apellidos)
 
         Asistencia.objects.filter(jugador__in=jugadores).delete()
+        Medicion.objects.filter(jugador__in=jugadores).delete()
+        for evaluacion in Evaluacion.objects.filter(titulo__startswith=MARCA):
+            evaluacion.indicadores.clear()
+            evaluacion.delete()
         borrados = jugadores.count()
         jugadores.delete()
 

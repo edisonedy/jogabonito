@@ -77,8 +77,10 @@ class AdministradorTest(BaseSeguridad):
     def test_crea_un_jugador(self):
         respuesta = self.client.post('/sistema/adm_jugador', {
             'action': 'add',
-            'nombres': 'carlos',
-            'apellidos': 'jimenez',
+            'nombre1': 'carlos',
+            'nombre2': 'andres',
+            'apellido1': 'jimenez',
+            'apellido2': 'vaca',
             'cedula': '',
             'fecha_nacimiento': '2014-02-10',
             'fecha_ingreso': '2026-01-15',
@@ -86,7 +88,10 @@ class AdministradorTest(BaseSeguridad):
             'estado': 1,
         })
         self.assertEqual(json.loads(respuesta.content)['result'], 'ok')
-        self.assertTrue(Jugador.objects.filter(apellidos='JIMENEZ').exists())
+        creado = Jugador.objects.get(apellido1='JIMENEZ')
+        self.assertEqual(creado.nombres, 'CARLOS ANDRES')
+        self.assertEqual(creado.apellidos, 'JIMENEZ VACA')
+        self.assertEqual(creado.nombre_completo(), 'JIMENEZ VACA CARLOS ANDRES')
 
     def test_no_elimina_una_categoria_con_jugadores(self):
         respuesta = self.client.post('/sistema/adm_categoria', {
@@ -108,32 +113,50 @@ class EntrenadorTest(BaseSeguridad):
     def setUp(self):
         self.client.force_login(self.usuario_entrenador)
 
-    def test_solo_ve_asistencia_y_jugadores(self):
+    def test_solo_ve_los_modulos_de_su_rol(self):
+        from jogabonito.management.commands.cargar_base import MODULOS_ENTRENADOR
         respuesta = self.client.get('/sistema/')
         urls = sorted(m.url for m in respuesta.context['mismodulos'])
-        self.assertEqual(urls, ['adm_asistencia', 'adm_jugador'])
+        self.assertEqual(urls, sorted(MODULOS_ENTRENADOR))
 
     def test_no_entra_a_los_modulos_del_administrador(self):
-        for url in ('/sistema/adm_categoria', '/sistema/adm_entrenador', '/sistema/adm_representante'):
+        for url in ('/sistema/adm_categoria', '/sistema/adm_entrenador', '/sistema/adm_representante',
+                    '/sistema/adm_solicitud', '/sistema/adm_indicador'):
             respuesta = self.client.get(url)
             self.assertEqual(respuesta.status_code, 302, url)
             self.assertEqual(respuesta['Location'], '/sistema/', url)
 
-    def test_el_listado_solo_trae_a_sus_jugadores(self):
+    def test_no_entra_al_modulo_de_jugadores(self):
+        """Su trabajo es tomar lista y medir; las fichas son del administrador."""
         respuesta = self.client.get('/sistema/adm_jugador')
-        self.assertEqual(respuesta.status_code, 200)
-        ids = [j.id for j in respuesta.context['jugadores']]
-        self.assertIn(self.mi_jugador.id, ids)
-        self.assertNotIn(self.jugador_ajeno.id, ids)
+        self.assertEqual(respuesta.status_code, 302)
+        self.assertEqual(respuesta['Location'], '/sistema/')
 
-    def test_no_abre_la_ficha_de_un_jugador_de_otra_categoria(self):
-        """IDOR: aunque mande el id a mano, no debe recibir la ficha."""
-        respuesta = self.client.get('/sistema/adm_jugador?action=view&id=%s' % self.jugador_ajeno.id)
+    def test_no_entra_a_la_plata_ni_a_los_turnos(self):
+        for url in ('/sistema/adm_mensualidad', '/sistema/adm_turno', '/sistema/dashboard'):
+            respuesta = self.client.get(url)
+            self.assertEqual(respuesta.status_code, 302, url)
+
+    def test_sigue_viendo_solo_a_sus_jugadores(self):
+        """El alcance por categoria no cambia: se revisa donde el si entra."""
+        respuesta = self.client.get('/sistema/adm_asistencia?categoria=%s' % self.mi_categoria.id)
+        self.assertEqual(respuesta.status_code, 200)
+
+        nombres = [f['jugador'].nombre_completo() for f in respuesta.context['filas']]
+        self.assertIn('VERA PEDRO', nombres)
+        self.assertNotIn('RUIZ SOFIA', nombres)
+
+    def test_no_abre_el_progreso_de_un_jugador_de_otra_categoria(self):
+        """IDOR: aunque mande el id a mano, no debe recibir sus datos."""
+        respuesta = self.client.get(
+            '/sistema/adm_evaluacion?action=progreso&id=%s' % self.jugador_ajeno.id)
+        # url_back devuelve la misma ruta, sin datos del jugador ajeno.
         self.assertNotContains(respuesta, 'RUIZ SOFIA')
         self.assertIsNone(respuesta.context)
 
-    def test_si_abre_la_ficha_de_su_jugador(self):
-        respuesta = self.client.get('/sistema/adm_jugador?action=view&id=%s' % self.mi_jugador.id)
+    def test_si_abre_el_progreso_de_su_jugador(self):
+        respuesta = self.client.get(
+            '/sistema/adm_evaluacion?action=progreso&id=%s' % self.mi_jugador.id)
         self.assertEqual(respuesta.status_code, 200)
         self.assertContains(respuesta, 'VERA PEDRO')
 
@@ -143,13 +166,31 @@ class EntrenadorTest(BaseSeguridad):
             'fecha_nacimiento': '2014-01-01', 'fecha_ingreso': '2026-01-01',
             'categoria': self.mi_categoria.id, 'estado': 1,
         })
-        self.assertEqual(json.loads(respuesta.content)['result'], 'bad')
+        self.assertEqual(respuesta.status_code, 302)
         self.assertFalse(Jugador.objects.filter(apellidos='INTRUSO').exists())
 
     def test_no_puede_eliminar_a_un_jugador(self):
-        respuesta = self.client.post('/sistema/adm_jugador', {'action': 'delete', 'id': self.mi_jugador.id})
-        self.assertEqual(json.loads(respuesta.content)['result'], 'bad')
+        respuesta = self.client.post('/sistema/adm_jugador',
+                                     {'action': 'delete', 'id': self.mi_jugador.id})
+        self.assertEqual(respuesta.status_code, 302)
         self.assertTrue(Jugador.objects.filter(pk=self.mi_jugador.pk).exists())
+
+    def test_si_puede_anotar_y_medir_a_los_suyos(self):
+        """Las notas y las medidas viven en evaluaciones, que si tiene."""
+        respuesta = self.client.post('/sistema/adm_evaluacion', {
+            'action': 'nota', 'jugador': self.mi_jugador.id,
+            'fecha': date.today().strftime('%Y-%m-%d'), 'tipo': 1,
+            'texto': 'lo vi bien parado en la cancha',
+        })
+        self.assertEqual(json.loads(respuesta.content)['result'], 'ok')
+
+    def test_pero_no_a_los_de_otro_grupo(self):
+        respuesta = self.client.post('/sistema/adm_evaluacion', {
+            'action': 'nota', 'jugador': self.jugador_ajeno.id,
+            'fecha': date.today().strftime('%Y-%m-%d'), 'tipo': 1,
+            'texto': 'no deberia poder anotarle',
+        })
+        self.assertEqual(json.loads(respuesta.content)['result'], 'bad')
 
 
 class PerfilInactivoTest(BaseSeguridad):

@@ -44,7 +44,7 @@ def puede_entrar(usuario, url_modulo):
     return modulos_del_usuario(usuario).filter(url=url_modulo).exists()
 
 
-def _rechazar(request):
+def rechazar_acceso(request):
     """AJAX recibe JSON; una navegacion normal vuelve al panel."""
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
         return bad_json(error=4)
@@ -57,7 +57,7 @@ def secure_module(f):
         if not request.user.is_authenticated:
             return HttpResponseRedirect(URL_LOGIN)
         if not puede_entrar(request.user, path_modulo(request)):
-            return _rechazar(request)
+            return rechazar_acceso(request)
         return f(request, *args, **kwargs)
 
     return nueva
@@ -72,7 +72,7 @@ def solo_administrador(f):
             return HttpResponseRedirect(URL_LOGIN)
         perfil = getattr(request.user, 'perfil', None)
         if not (request.user.is_superuser or (perfil and perfil.es_administrador())):
-            return _rechazar(request)
+            return rechazar_acceso(request)
         return f(request, *args, **kwargs)
 
     return nueva

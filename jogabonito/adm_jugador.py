@@ -7,20 +7,22 @@ nunca se confia en el id que llega del navegador).
 """
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Count, Q, Sum
 from django.shortcuts import render
 
 from jogabonito.acceso import categorias_permitidas, jugadores_permitidos
 from jogabonito.commonviews import adduserdata, perfil_de
 from jogabonito.decorators import URL_LOGIN, last_access, secure_module
-from jogabonito.forms import JugadorForm
+from jogabonito.forms import JugadorForm, RepresentanteDelJugadorForm
 from jogabonito.funciones import bad_json, generar_nombre, ok_json, paginar, url_back
-from jogabonito.models import ESTADOS_JUGADOR, JUGADOR_ACTIVO, Jugador
+from jogabonito.models import (
+    ESTADOS_JUGADOR, JUGADOR_ACTIVO, MENSUALIDAD_PENDIENTE, Division, Jugador, Representante,
+)
 
 MODULO = 'adm_jugador'
 
 
-def _primer_error(form):
+def primer_error(form):
     return next(iter(form.errors.values()))[0]
 
 
@@ -35,17 +37,22 @@ def view(request):
         return bad_json(error=4) if request.method == 'POST' else url_back(request)
 
     if request.method == 'POST':
-        # Todas las escrituras son exclusivas del administrador.
+        action = request.POST.get('action')
+
+        # Las notas las escribe quien esta en la cancha, asi que el entrenador
+        # tambien puede (solo sobre los jugadores de sus grupos, como siempre).
+        # Todo lo demas sigue siendo del administrador.
+        # Todas las escrituras de este modulo son del administrador. Lo que
+        # el entrenador anota de sus jugadores (notas y medidas) vive en
+        # adm_evaluacion, que es el modulo que el si tiene.
         if not perfil.es_administrador():
             return bad_json(error=4)
-
-        action = request.POST.get('action')
 
         if action == 'add':
             try:
                 form = JugadorForm(request.POST, request.FILES)
                 if not form.is_valid():
-                    return bad_json(mensaje=_primer_error(form))
+                    return bad_json(mensaje=primer_error(form))
                 jugador = form.save(commit=False)
                 if jugador.fotografia:
                     jugador.fotografia.name = generar_nombre('jugador_', jugador.fotografia.name)
@@ -60,7 +67,7 @@ def view(request):
                 jugador = Jugador.objects.get(pk=int(request.POST['id']))
                 form = JugadorForm(request.POST, request.FILES, instance=jugador)
                 if not form.is_valid():
-                    return bad_json(mensaje=_primer_error(form))
+                    return bad_json(mensaje=primer_error(form))
                 jugador = form.save(commit=False)
                 if 'fotografia' in request.FILES:
                     jugador.fotografia.name = generar_nombre('jugador_', jugador.fotografia.name)
@@ -82,6 +89,25 @@ def view(request):
             except Exception as ex:
                 transaction.set_rollback(True)
                 return bad_json(error=9, ex=ex)
+
+        if action == 'representante':
+            try:
+                jugador = Jugador.objects.get(pk=int(request.POST['id']))
+                form = RepresentanteDelJugadorForm(request.POST)
+                if not form.is_valid():
+                    return bad_json(mensaje=primer_error(form))
+
+                representante = form.asignar(jugador, request)
+                if representante is None:
+                    return ok_json({'mensaje': 'El jugador quedo sin representante.'})
+                return ok_json({'mensaje': 'Representante asignado: %s.' % representante.nombre_completo()})
+            except Jugador.DoesNotExist:
+                return bad_json(error=3)
+            except (KeyError, TypeError, ValueError):
+                return bad_json(error=6)
+            except Exception as ex:
+                transaction.set_rollback(True)
+                return bad_json(error=1, ex=ex)
 
         if action == 'estado':
             try:
@@ -109,7 +135,7 @@ def view(request):
     solo_lectura = not perfil.es_administrador()
     data['solo_lectura'] = solo_lectura
 
-    if action in ('add', 'edit', 'delete') and solo_lectura:
+    if action in ('add', 'edit', 'delete', 'representante') and solo_lectura:
         return url_back(request)
 
     if action == 'add':
@@ -136,6 +162,18 @@ def view(request):
         data['jugador'] = jugador
         return render(request, 'adm_jugador/delete.html', data)
 
+    if action == 'representante':
+        if solo_lectura:
+            return url_back(request)
+        try:
+            jugador = permitidos.get(pk=int(request.GET['id']))
+        except (Jugador.DoesNotExist, KeyError, ValueError):
+            return url_back(request)
+        data['title'] = 'Representante de %s' % jugador.nombre_completo()
+        data['jugador'] = jugador
+        data['form'] = RepresentanteDelJugadorForm(jugador=jugador)
+        return render(request, 'adm_jugador/representante.html', data)
+
     if action == 'view':
         try:
             jugador = permitidos.get(pk=int(request.GET['id']))
@@ -146,6 +184,17 @@ def view(request):
         data['entrenadores'] = jugador.entrenadores()
         data['resumen'] = jugador.resumen_asistencia()
         data['asistencias'] = jugador.ultimas_asistencias(10)
+        data['mensualidades'] = jugador.mensualidades.all().order_by('-anio', '-mes')[:12]
+        data['proximo_cobro'] = jugador.proximo_periodo()
+        data['controles'] = list(jugador.controles_fisicos())[::-1][:6]
+        data['ultimo_control'] = jugador.ultimo_control()
+        data['crecimiento'] = jugador.crecimiento()
+        data['notas'] = jugador.notas.select_related('entrenador')[:8]
+        data['total_notas'] = jugador.notas.count()
+        data['meses_que_debe'] = jugador.meses_que_debe()
+        data['total_que_debe'] = jugador.total_que_debe()
+        data['dias_de_atraso'] = jugador.dias_de_atraso()
+        data['posicion_sugerida'] = jugador.posicion_sugerida()
         return render(request, 'adm_jugador/ficha.html', data)
 
     data['title'] = 'Jugadores'
@@ -174,9 +223,37 @@ def view(request):
         except (TypeError, ValueError):
             pass
 
+    division_id = request.GET.get('division')
+    if division_id:
+        try:
+            division = Division.objects.get(pk=int(division_id))
+            desde, hasta = division.rango_de_nacimiento()
+            jugadores = jugadores.filter(fecha_nacimiento__gte=desde, fecha_nacimiento__lte=hasta)
+            data['division_id'] = division.id
+        except (Division.DoesNotExist, TypeError, ValueError):
+            pass
+
+    # Cuanto debe cada uno, para verlo sin entrar a la ficha.
+    pendientes = Q(mensualidades__estado=MENSUALIDAD_PENDIENTE)
+    jugadores = jugadores.annotate(
+        meses_pendientes=Count('mensualidades', filter=pendientes),
+        deuda=Sum('mensualidades__valor', filter=pendientes),
+    ).order_by('apellidos', 'nombres')
+
+    cuenta = request.GET.get('cuenta')
+    if cuenta == 'debe':
+        jugadores = jugadores.filter(meses_pendientes__gt=0)
+        data['cuenta_id'] = 'debe'
+    elif cuenta == 'aldia':
+        jugadores = jugadores.filter(meses_pendientes=0)
+        data['cuenta_id'] = 'aldia'
+
     data['search'] = buscar
     data['categorias'] = categorias_permitidas(perfil).filter(activo=True).order_by('hora_inicio')
     data['estados'] = ESTADOS_JUGADOR
+    data['divisiones'] = Division.objects.filter(activo=True)
     data['total_jugadores'] = permitidos.filter(estado=JUGADOR_ACTIVO).count()
+    data['cuantos_deben'] = permitidos.filter(
+        estado=JUGADOR_ACTIVO, mensualidades__estado=MENSUALIDAD_PENDIENTE).distinct().count()
     data['jugadores'] = paginar(request, jugadores, data, MODULO)
     return render(request, 'adm_jugador/view.html', data)

@@ -1,0 +1,29 @@
+{% extends "form_modal.html" %}
+{% block form_action %}/sistema/adm_mensualidad{% endblock %}
+
+{% block formextra %}
+  <input type="hidden" name="action" value="cobrar">
+  <input type="hidden" name="id" value="{{ mensualidad.id }}">
+
+  <div class="cobro-monto">
+    <span>A cobrar</span>
+    <b>$ {{ mensualidad.valor }}</b>
+    <small>
+      {{ mensualidad.jugador.nombre_completo }} &middot; {{ mensualidad.periodo }}
+      ({{ mensualidad.texto_periodo }})
+    </small>
+    {% if mensualidad.esta_atrasada %}
+      <span class="badge text-bg-danger">
+        {{ mensualidad.dias_de_atraso }} dia{{ mensualidad.dias_de_atraso|pluralize }} de atraso
+      </span>
+    {% endif %}
+  </div>
+
+  {% if mensualidad.tiene_ajuste %}
+    <div class="alert alert-light border py-2 small">
+      {{ mensualidad.texto_ajuste }} &middot; el mes completo es $ {{ mensualidad.valor_completo }}.
+    </div>
+  {% endif %}
+{% endblock %}
+
+{% block save_label %}Cobrado{% endblock %}

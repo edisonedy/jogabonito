@@ -1,0 +1,19 @@
+{% comment %}
+Escudo de respaldo: se dibuja solo cuando todavia no esta el logo real en
+static/images/logo.png. Usa los colores del escudo: azul marino, dorado y verde.
+{% endcomment %}
+<svg class="lp-emblema" viewBox="0 0 120 140" role="img" aria-label="{{ academia.nombre }}"
+     xmlns="http://www.w3.org/2000/svg">
+  <path d="M60 4 112 20v58c0 30-24 48-52 58C32 126 8 108 8 78V20z"
+        fill="#2b2a6e" stroke="#ffd200" stroke-width="5" stroke-linejoin="round"/>
+  <circle cx="60" cy="42" r="19" fill="#ffffff" stroke="#2b2a6e" stroke-width="2"/>
+  <path d="M60 30l8 6-3 10h-10l-3-10z" fill="#2b2a6e"/>
+  <path d="M60 23v7M49 36l-6-3M71 36l6-3M54 46l-4 8M66 46l4 8"
+        stroke="#2b2a6e" stroke-width="2.2" stroke-linecap="round"/>
+  <text x="60" y="76" text-anchor="middle" fill="#ffffff"
+        font-size="9" letter-spacing="2.6" font-weight="700">ACADEMIA</text>
+  <text x="60" y="100" text-anchor="middle" fill="#ffd200"
+        font-size="25" font-weight="900" letter-spacing="1">JOGA</text>
+  <text x="60" y="119" text-anchor="middle" fill="#25c05a"
+        font-size="17" font-style="italic" font-weight="700" font-family="Georgia, serif">Bonito</text>
+</svg>

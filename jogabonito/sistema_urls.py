@@ -6,9 +6,12 @@ import jogabonito.adm_entrenador
 import jogabonito.adm_evaluacion
 import jogabonito.adm_indicador
 import jogabonito.adm_jugador
+import jogabonito.adm_mensualidad
 import jogabonito.adm_representante
 import jogabonito.adm_solicitud
+import jogabonito.adm_turno
 import jogabonito.commonviews
+import jogabonito.dashboard
 
 urlpatterns = [
     path('', jogabonito.commonviews.panel, name='panel'),
@@ -25,4 +28,7 @@ urlpatterns = [
     path('adm_solicitud', jogabonito.adm_solicitud.view, name='adm_solicitud'),
     path('adm_evaluacion', jogabonito.adm_evaluacion.view, name='adm_evaluacion'),
     path('adm_indicador', jogabonito.adm_indicador.view, name='adm_indicador'),
+    path('dashboard', jogabonito.dashboard.view, name='dashboard'),
+    path('adm_mensualidad', jogabonito.adm_mensualidad.view, name='adm_mensualidad'),
+    path('adm_turno', jogabonito.adm_turno.view, name='adm_turno'),
 ]

@@ -1,0 +1,26 @@
+{% comment %}
+  Los campos de la evaluacion: todo el formulario normal, menos los
+  indicadores, que se pintan con el selector agrupado de al lado.
+{% endcomment %}
+
+{% for field in form %}
+  {% if field.name != 'indicadores' %}
+    <div class="horus-field" id="fieldset_{{ field.name }}">
+      <label class="horus-label" for="{{ field.id_for_label }}">
+        {{ field.label }}
+        {% if field.field.required %}<span class="text-danger ms-1">*</span>{% endif %}
+      </label>
+      <div class="horus-control">
+        {{ field }}
+        {% if field.help_text %}
+          <div class="horus-help">{{ field.help_text }}</div>
+        {% endif %}
+        {% if field.errors %}
+          <div class="invalid-feedback d-block">{{ field.errors|striptags }}</div>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+{% endfor %}
+
+{% include "adm_evaluacion/selector.html" %}

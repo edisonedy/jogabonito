@@ -1,0 +1,5 @@
+{% extends "delete_modal.html" %}
+{% block formaction %}/sistema/adm_indicador{% endblock %}
+{% block formactionvalue %}deltipo{% endblock %}
+{% block formobjectid %}{{ tipo.id }}{% endblock %}
+{% block formobjectrepr %}el tipo <b>{{ tipo.nombre }}</b>{% endblock %}

@@ -187,3 +187,47 @@ class ModuloSolicitudesTest(BaseLanding):
                                      {'action': 'delete', 'id': self.solicitud.id})
         self.assertEqual(json.loads(respuesta.content)['result'], 'ok')
         self.assertEqual(SolicitudInscripcion.objects.count(), 0)
+
+
+class CreditoDesarrolladorTest(BaseLanding):
+    def test_la_landing_muestra_quien_desarrolla_el_sistema(self):
+        respuesta = self.client.get('/')
+        self.assertContains(respuesta, 'Sistema desarrollado por')
+        self.assertContains(respuesta, 'HORUS')
+
+    def test_el_login_tambien_lo_muestra(self):
+        respuesta = self.client.get('/sistema/login/')
+        self.assertContains(respuesta, 'HORUS')
+
+    def test_el_sistema_lo_muestra_en_el_sidebar(self):
+        self.client.force_login(self.admin)
+        respuesta = self.client.get('/sistema/')
+        self.assertContains(respuesta, 'Desarrollado por')
+        self.assertContains(respuesta, 'HORUS')
+
+    @override_settings(DESARROLLADOR_NOMBRE='')
+    def test_sin_nombre_el_credito_desaparece(self):
+        respuesta = self.client.get('/')
+        self.assertNotContains(respuesta, 'Sistema desarrollado por')
+
+
+class IdentidadVisualTest(BaseLanding):
+    def test_muestra_los_cuatro_valores_de_la_academia(self):
+        respuesta = self.client.get('/')
+        for valor in ('Disciplina', 'Respeto', 'Trabajo en equipo', 'Pasion'):
+            self.assertContains(respuesta, valor)
+
+    def test_muestra_el_cuerpo_tecnico_activo(self):
+        respuesta = self.client.get('/')
+        self.assertContains(respuesta, 'Mora Luis')
+        self.assertEqual(respuesta.context['total_entrenadores'], 1)
+
+    def test_no_publica_el_telefono_de_los_entrenadores(self):
+        """El cuerpo tecnico sale con nombre y foto, nada mas."""
+        respuesta = self.client.get('/')
+        self.assertNotContains(respuesta, '0999999999')
+
+    def test_no_habla_de_aniversario(self):
+        """El usuario pidio no publicar aniversario: no sabemos la fecha."""
+        respuesta = self.client.get('/')
+        self.assertNotContains(respuesta, 'niversario')

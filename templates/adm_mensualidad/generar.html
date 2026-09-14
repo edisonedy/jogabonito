@@ -1,0 +1,54 @@
+{% extends "form_modal.html" %}
+{% block form_action %}/sistema/adm_mensualidad{% endblock %}
+
+{% block formextra %}
+  <input type="hidden" name="action" value="generar">
+  <div class="alert alert-light border py-2 small">
+    Crea de golpe la mensualidad de cada jugador <b>activo</b> con el precio que
+    tiene hoy (ya con su descuento). A quien ya la tenga, no se le toca, y a
+    quien todavia no habia ingresado, no se le cobra.
+    <br>Cada uno vence el dia del mes en que ingreso a la academia.
+    <br>Si solo es un jugador, mejor usa el boton <b>Agregar a uno</b>: ahi
+    puedes poner las fechas que quieras.
+  </div>
+  {% if resumen.generadas %}
+    <div class="alert alert-warning py-2 small">
+      Ese mes ya tiene {{ resumen.generadas }} de {{ activos }} mensualidades generadas.
+    </div>
+  {% endif %}
+{% endblock %}
+
+{% block form_fields %}
+  <div class="horus-field">
+    <label class="horus-label" for="id_mes">Mes</label>
+    <div class="horus-control">
+      <select name="mes" id="id_mes" class="form-select form-select-sm">
+        {% for valor, etiqueta in meses %}
+          <option value="{{ valor }}" {% if mes == valor %}selected{% endif %}>{{ etiqueta|title }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+
+  <div class="horus-field">
+    <label class="horus-label" for="id_anio">Anio</label>
+    <div class="horus-control">
+      <input type="number" name="anio" id="id_anio" value="{{ anio }}" min="2000" max="2100"
+             class="form-control form-control-sm">
+    </div>
+  </div>
+
+  <div class="horus-field">
+    <label class="horus-label" for="id_categoria">Grupo</label>
+    <div class="horus-control">
+      <select name="categoria" id="id_categoria" class="form-select form-select-sm">
+        <option value="">Todos los grupos</option>
+        {% for c in categorias %}
+          <option value="{{ c.id }}">{{ c.nombre }} ($ {{ c.valor_mensual }})</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+{% endblock %}
+
+{% block save_label %}Generar mensualidades{% endblock %}

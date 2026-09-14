@@ -1,5 +1,6 @@
 {% extends "form_modal.html" %}
 {% block form_action %}/sistema/adm_evaluacion{% endblock %}
+
 {% block formextra %}
   <input type="hidden" name="action" value="add">
   {% if sin_indicadores %}
@@ -9,7 +10,17 @@
   {% endif %}
   <div class="alert alert-light border py-2 small">
     Elige la fecha, el grupo y marca <b>que se va a medir</b> ese dia.
-    Despues se abre la planilla para anotar los valores de cada jugador.
+    <br>Si la prueba se toma en varios dias, pon el <b>hasta</b>: al que falto se
+    le mide despues y queda con su propia fecha.
   </div>
 {% endblock %}
+
+{% block form_fields %}
+  {% include "adm_evaluacion/campos.html" %}
+{% endblock %}
+
 {% block save_label %}Crear y abrir planilla{% endblock %}
+
+{% block extra_js %}
+  {% include "adm_evaluacion/selectorjs.html" %}
+{% endblock %}

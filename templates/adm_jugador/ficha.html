@@ -3,108 +3,499 @@
 {% block pagetitle %}{{ jugador.nombre_completo }} | {{ academia.nombre }}{% endblock %}
 
 {% block canvas %}
-  <div class="row g-4">
-    <div class="col-12 col-md-4 text-center">
-      {% if jugador.fotografia %}
-        <img src="{{ jugador.fotografia.url }}" class="avatar-jugador-lg" alt="{{ jugador.nombre_completo }}">
-      {% else %}
-        <span class="avatar-jugador-lg avatar-vacio"><i class="fa-solid fa-futbol fa-2x"></i></span>
-      {% endif %}
-      <h5 class="mt-3 mb-1">{{ jugador.nombre_completo }}</h5>
-      <div class="small text-muted">{{ jugador.categoria.nombre }} &middot; {{ jugador.get_estado_display }}</div>
+  <!-- ------------------------- cabecera ------------------------- -->
+  <header class="ficha-cabecera">
+    {% if jugador.fotografia %}
+      <img src="{{ jugador.fotografia.url }}" class="ficha-foto" alt="{{ jugador.nombre_completo }}">
+    {% else %}
+      <span class="ficha-foto ficha-foto-vacia"><i class="fa-solid fa-futbol"></i></span>
+    {% endif %}
 
-      {% if not solo_lectura %}
-        <a href="#" data-modal-url="/sistema/adm_jugador?action=edit&amp;id={{ jugador.id }}"
-           class="btn btn-joga btn-sm btn-touch mt-3">
-          <i class="bi bi-pencil me-1"></i> Editar ficha
-        </a>
+    <div class="ficha-identidad">
+      <h4>{{ jugador.nombre_completo }}</h4>
+      {% if jugador.apodo %}
+        <div class="ficha-apodo">le dicen <b>{{ jugador.apodo }}</b></div>
       {% endif %}
+      <div class="ficha-chips">
+        <span class="chip chip-grupo">{{ jugador.categoria.nombre }}</span>
+        <span class="chip">{{ jugador.edad }} anios</span>
+        <span class="chip">{{ jugador.division_texto }}</span>
+        {% if jugador.posicion %}<span class="chip">{{ jugador.posicion.nombre }}</span>{% endif %}
+        {% if jugador.pie_habil %}
+          <span class="chip"><i class="fa-solid fa-shoe-prints"></i> pie {{ jugador.get_pie_habil_display|lower }}</span>
+        {% endif %}
+        {% if jugador.dorsal %}<span class="chip">#{{ jugador.dorsal }}</span>{% endif %}
+        {% if jugador.estado == 1 %}
+          <span class="chip chip-ok">Activo</span>
+        {% elif jugador.estado == 2 %}
+          <span class="chip chip-alerta">Inactivo</span>
+        {% else %}
+          <span class="chip chip-gris">Retirado</span>
+        {% endif %}
+        {% if meses_que_debe %}
+          <span class="chip chip-deuda">
+            <i class="bi bi-exclamation-circle"></i>
+            debe {{ meses_que_debe }} mes{{ meses_que_debe|pluralize:"es" }}
+          </span>
+        {% else %}
+          <span class="chip chip-ok"><i class="bi bi-check2"></i> al dia</span>
+        {% endif %}
+      </div>
     </div>
 
-    <div class="col-12 col-md-8">
-      <h6>Datos personales</h6>
-      <div class="ficha-dato"><span>Cedula</span><span>{{ jugador.cedula|default:"-" }}</span></div>
-      <div class="ficha-dato"><span>Fecha de nacimiento</span><span>{{ jugador.fecha_nacimiento|date:"d/m/Y" }} ({{ jugador.edad }} anios)</span></div>
-      <div class="ficha-dato"><span>Telefono</span><span>{{ jugador.telefono|default:"-" }}</span></div>
-      <div class="ficha-dato"><span>Direccion</span><span>{{ jugador.direccion|default:"-" }}</span></div>
-      <div class="ficha-dato"><span>Fecha de ingreso</span><span>{{ jugador.fecha_ingreso|date:"d/m/Y" }}</span></div>
-
-      <h6 class="mt-4">Academia</h6>
-      <div class="ficha-dato"><span>Categoria</span><span>{{ jugador.categoria.nombre }} ({{ jugador.categoria.horario_texto }})</span></div>
-      <div class="ficha-dato"><span>Dias</span><span>{{ jugador.categoria.dias_texto }}</span></div>
-      <div class="ficha-dato">
-        <span>Entrenador(es)</span>
-        <span>
-          {% for e in entrenadores %}{{ e.nombre_completo }}{% if not forloop.last %}, {% endif %}{% empty %}Sin entrenador{% endfor %}
-        </span>
-      </div>
-      <div class="ficha-dato"><span>Mensualidad</span><span>$ {{ jugador.valor_mensual_vigente }}</span></div>
-
-      <h6 class="mt-4">Representante</h6>
-      {% if jugador.representante %}
-        <div class="ficha-dato"><span>Nombre</span><span>{{ jugador.representante.nombre_completo }}</span></div>
-        <div class="ficha-dato"><span>Parentesco</span><span>{{ jugador.representante.get_parentesco_display }}</span></div>
-        <div class="ficha-dato"><span>Telefono</span><span>{{ jugador.representante.telefono }}</span></div>
-        <div class="ficha-dato">
-          <span>WhatsApp</span>
-          <span>
-            <a href="https://wa.me/{{ jugador.representante.numero_whatsapp }}" target="_blank" rel="noopener">
-              <i class="fa-brands fa-whatsapp text-success"></i> {{ jugador.representante.numero_whatsapp }}
-            </a>
-          </span>
-        </div>
-      {% else %}
-        <div class="text-muted small">Sin representante registrado.</div>
-      {% endif %}
-
-      {% if jugador.observacion %}
-        <h6 class="mt-4">Observacion</h6>
-        <p class="small">{{ jugador.observacion|linebreaksbr }}</p>
-      {% endif %}
-
-      <h6 class="mt-4 d-flex align-items-center gap-2">
-        Asistencia
-        <a href="/sistema/adm_asistencia?action=historial&amp;id={{ jugador.id }}"
-           class="btn btn-sm btn-outline-secondary ms-auto">
-          <i class="bi bi-clock-history me-1"></i> Ver historial
+    <div class="ficha-acciones">
+      <a href="/sistema/adm_evaluacion?action=progreso&amp;id={{ jugador.id }}" class="btn btn-joga btn-sm btn-touch">
+        <i class="bi bi-graph-up-arrow me-1"></i> Progreso
+      </a>
+      <a href="/sistema/adm_asistencia?action=historial&amp;id={{ jugador.id }}"
+         class="btn btn-outline-secondary btn-sm btn-touch">
+        <i class="bi bi-clock-history me-1"></i> Asistencia
+      </a>
+      {% if jugador.whatsapp_de_contacto %}
+        <a href="https://wa.me/{{ jugador.whatsapp_de_contacto }}" target="_blank" rel="noopener"
+           class="btn btn-outline-success btn-sm btn-touch"
+           title="Escribir por WhatsApp">
+          <i class="fa-brands fa-whatsapp me-1"></i> WhatsApp
         </a>
-      </h6>
-
-      <div class="resumen-asistencia mb-3">
-        <span class="res-item res-total"><b>{{ resumen.porcentaje }}%</b> de asistencia</span>
-        <span class="res-item text-bg-success"><b>{{ resumen.presentes }}</b> presentes</span>
-        <span class="res-item text-bg-danger"><b>{{ resumen.faltas }}</b> faltas</span>
-        <span class="res-item text-bg-warning"><b>{{ resumen.atrasos }}</b> atrasos</span>
-        <span class="res-item text-bg-info"><b>{{ resumen.justificados }}</b> justificados</span>
-      </div>
-
-      {% if asistencias %}
-        <div class="tabla-scroll">
-          <table class="tabla-joga">
-            <thead><tr><th>Fecha</th><th>Estado</th><th>Observacion</th></tr></thead>
-            <tbody>
-              {% for a in asistencias %}
-                <tr>
-                  <td data-label="Fecha">{{ a.fecha|date:"d/m/Y" }}</td>
-                  <td data-label="Estado"><span class="badge text-bg-{{ a.color }}">{{ a.get_estado_display }}</span></td>
-                  <td data-label="Observacion">{{ a.observacion|default:"-" }}</td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      {% else %}
-        <div class="text-muted small">Todavia no tiene asistencias registradas.</div>
       {% endif %}
-
-      <div class="alert alert-light border mt-4 small mb-0">
-        <i class="bi bi-info-circle me-1"></i>
-        Las mensualidades y las observaciones del entrenador se activan en las siguientes fases.
-      </div>
-
-      <a href="/sistema/adm_jugador" class="btn btn-sm btn-outline-secondary btn-touch mt-3">
+      {% if not solo_lectura %}
+        <a href="#" data-modal-url="/sistema/adm_jugador?action=edit&amp;id={{ jugador.id }}"
+           class="btn btn-outline-primary btn-sm btn-touch">
+          <i class="bi bi-pencil me-1"></i> Editar
+        </a>
+      {% endif %}
+      <a href="/sistema/adm_jugador" class="btn btn-outline-secondary btn-sm btn-touch">
         <i class="bi bi-arrow-left me-1"></i> Volver
       </a>
+    </div>
+  </header>
+
+  <!-- ------------------------ cifras rapidas ------------------------ -->
+  <div class="tablero-cifras mb-3">
+    <article class="cifra">
+      <span class="cifra-icono bg-joga"><i class="fa-solid fa-clipboard-check"></i></span>
+      <div><b>{{ resumen.porcentaje }}%</b><span>de asistencia</span></div>
+    </article>
+    <article class="cifra">
+      <span class="cifra-icono bg-azul"><i class="fa-solid fa-money-bill-wave"></i></span>
+      <div><b>$ {{ jugador.valor_mensual_vigente }}</b><span>paga al mes</span></div>
+    </article>
+    {% if meses_que_debe %}
+      <article class="cifra">
+        <span class="cifra-icono bg-rojo"><i class="fa-solid fa-triangle-exclamation"></i></span>
+        <div>
+          <b>$ {{ total_que_debe }}</b>
+          <span>debe ({{ meses_que_debe }} mes{{ meses_que_debe|pluralize:"es" }})</span>
+        </div>
+      </article>
+    {% endif %}
+    {% if posicion_sugerida %}
+      <article class="cifra">
+        <span class="cifra-icono bg-oro"><i class="fa-solid fa-bullseye"></i></span>
+        <div>
+          <b>{{ posicion_sugerida.puntaje }}</b>
+          <span>afinidad con {{ posicion_sugerida.posicion.nombre|title }}</span>
+        </div>
+      </article>
+    {% endif %}
+  </div>
+
+  {% if jugador.tiene_cuidados %}
+    <div class="alert alert-warning d-flex align-items-start gap-2 mt-3">
+      <i class="bi bi-heart-pulse-fill fs-5"></i>
+      <div>
+        <b>Hay que cuidarle:</b> {{ jugador.cuidados|linebreaksbr }}
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="row g-3">
+    <!-- ----------------------- datos personales ---------------------- -->
+    <div class="col-12 col-lg-4 columna-bloques">
+      <section class="bloque bloque-crece">
+        <h6><i class="bi bi-person-vcard me-1"></i> Datos personales</h6>
+        <div class="ficha-dato"><span>Cedula</span><span>{{ jugador.cedula|default:"-" }}</span></div>
+        <div class="ficha-dato">
+          <span>Nacimiento</span><span>{{ jugador.fecha_nacimiento|date:"d/m/Y" }}</span>
+        </div>
+        <div class="ficha-dato">
+          <span>Telefono</span>
+          <span>
+            {% if jugador.telefono %}
+              <a href="https://wa.me/{{ jugador.numero_whatsapp }}" target="_blank" rel="noopener">
+                <i class="fa-brands fa-whatsapp text-success"></i> {{ jugador.telefono }}
+              </a>
+            {% else %}-{% endif %}
+          </span>
+        </div>
+        <div class="ficha-dato"><span>Direccion</span><span>{{ jugador.direccion|default:"-" }}</span></div>
+        <div class="ficha-dato">
+          <span>Ingreso</span>
+          <span>
+            {{ jugador.fecha_ingreso|date:"d/m/Y" }}
+            <small class="text-muted d-block">se le cobra el {{ jugador.dia_de_cobro }} de cada mes</small>
+          </span>
+        </div>
+        <div class="ficha-dato">
+          <span>Pierna habil</span><span>{{ jugador.get_pie_habil_display|default:"-" }}</span>
+        </div>
+
+        {% if jugador.observacion %}
+          <h6 class="mt-3"><i class="bi bi-chat-left-text me-1"></i> Observacion</h6>
+          <p class="small mb-0">{{ jugador.observacion|linebreaksbr }}</p>
+        {% endif %}
+      </section>
+    </div>
+
+    <!-- ------------------ representante y grupo ---------------------- -->
+    <div class="col-12 col-lg-4 columna-bloques">
+      <section class="bloque bloque-crece">
+        <h6>
+          <i class="bi bi-people me-1"></i> Representante
+          {% if not solo_lectura %}
+            <a href="#" class="btn btn-sm btn-outline-secondary ms-auto"
+               data-modal-url="/sistema/adm_jugador?action=representante&amp;id={{ jugador.id }}"
+               title="{% if jugador.representante %}Cambiar{% else %}Asignar o crear{% endif %} representante">
+              <i class="bi bi-{% if jugador.representante %}arrow-repeat{% else %}plus-lg{% endif %}"></i>
+            </a>
+          {% endif %}
+        </h6>
+
+        {% if jugador.representante %}
+          <div class="ficha-dato">
+            <span>Nombre</span>
+            <span>
+              <a href="/sistema/adm_representante?action=view&amp;id={{ jugador.representante.id }}">
+                {{ jugador.representante.nombre_completo }}
+              </a>
+            </span>
+          </div>
+          <div class="ficha-dato">
+            <span>Parentesco</span><span>{{ jugador.representante.get_parentesco_display }}</span>
+          </div>
+          <div class="ficha-dato">
+            <span>Telefono</span>
+            <span>
+              <a href="https://wa.me/{{ jugador.representante.numero_whatsapp }}"
+                 target="_blank" rel="noopener">
+                <i class="fa-brands fa-whatsapp text-success"></i>
+                {{ jugador.representante.telefono }}
+              </a>
+            </span>
+          </div>
+
+          <a class="btn btn-sm btn-outline-success w-100 mt-2" target="_blank" rel="noopener"
+             href="https://wa.me/{{ jugador.representante.numero_whatsapp }}">
+            <i class="fa-brands fa-whatsapp me-1"></i> Escribir por WhatsApp
+          </a>
+        {% else %}
+          <p class="small text-muted">
+            Todavia no tiene representante.
+            {% if not solo_lectura %}Con el boton de arriba le asignas uno o creas uno nuevo.{% endif %}
+          </p>
+        {% endif %}
+
+        <h6 class="mt-3"><i class="bi bi-layers me-1"></i> Grupo</h6>
+        <div class="ficha-dato"><span>Horario</span><span>{{ jugador.categoria.horario_texto }}</span></div>
+        <div class="ficha-dato"><span>Dias</span><span>{{ jugador.categoria.dias_texto }}</span></div>
+        <div class="ficha-dato">
+          <span>Entrenador</span>
+          <span>
+            {% for e in entrenadores %}{{ e.nombre_completo }}{% if not forloop.last %}, {% endif %}
+            {% empty %}Sin entrenador{% endfor %}
+          </span>
+        </div>
+      </section>
+    </div>
+
+    <!-- --------------------------- cuentas --------------------------- -->
+    <div class="col-12 col-lg-4 columna-bloques">
+      <section class="bloque bloque-crece {% if meses_que_debe %}bloque-dinero{% endif %}">
+        <h6>
+          <i class="bi bi-cash-coin me-1"></i> Cuentas
+          {% if not solo_lectura %}
+            <span class="ms-auto d-flex gap-1">
+              <a href="#" class="btn btn-sm btn-joga"
+                 data-modal-url="/sistema/adm_mensualidad?action=siguiente&amp;id={{ jugador.id }}"
+                 title="Abrir el siguiente mes"><i class="bi bi-arrow-right-circle"></i> Siguiente mes</a>
+              <a href="#" class="btn btn-sm btn-outline-success"
+                 data-modal-url="/sistema/adm_mensualidad?action=add&amp;jugador={{ jugador.id }}"
+                 title="Cobrarle un mes con otras fechas o valor"><i class="bi bi-plus-lg"></i></a>
+              <a href="#" class="btn btn-sm btn-outline-secondary"
+                 data-modal-url="/sistema/adm_mensualidad?action=precio&amp;id={{ jugador.id }}"
+                 title="Precio y descuento"><i class="bi bi-tag"></i></a>
+            </span>
+          {% endif %}
+        </h6>
+
+        <div class="ficha-dato">
+          <span>Paga al mes</span>
+          <span>
+            $ {{ jugador.valor_mensual_vigente }}
+            <small class="text-muted d-block">{{ jugador.explicacion_precio }}</small>
+            {% if proximo_cobro %}
+              <small class="text-muted d-block">
+                asi se le cobrara el mes que arranca el {{ proximo_cobro.0|date:"d/m/Y" }};
+                los meses ya generados no cambian
+              </small>
+            {% endif %}
+          </span>
+        </div>
+
+        <div class="ficha-dato">
+          <span>Cobro mensual</span>
+          <span>
+            {% if jugador.cobro_activo %}
+              <span class="badge text-bg-success">Activo</span>
+              {% if proximo_cobro %}
+                <small class="text-muted d-block">
+                  su proximo mes: {{ proximo_cobro.0|date:"d/m/Y" }} al {{ proximo_cobro.1|date:"d/m/Y" }}
+                </small>
+              {% endif %}
+            {% else %}
+              <span class="badge text-bg-secondary">Pausado</span>
+              <small class="text-muted d-block">no se le abren meses nuevos</small>
+            {% endif %}
+          </span>
+        </div>
+
+        <div class="ficha-dato">
+          <span>Estado de cuenta</span>
+          <span>{{ jugador.estado_de_cuenta }}</span>
+        </div>
+
+        {% if meses_que_debe %}
+          <div class="ficha-dato">
+            <span>Debe</span>
+            <span>
+              <b class="text-danger">$ {{ total_que_debe }}</b>
+              <small class="text-muted d-block">
+                {{ meses_que_debe }} mes{{ meses_que_debe|pluralize:"es" }}
+                {% if dias_de_atraso %}&middot; {{ dias_de_atraso }} dia{{ dias_de_atraso|pluralize }} de atraso{% endif %}
+              </small>
+            </span>
+          </div>
+        {% endif %}
+
+        {% if mensualidades %}
+          <div class="lista-meses">
+            {% for m in mensualidades|slice:":6" %}
+              <a class="mes-item" href="#"
+                 data-modal-url="/sistema/adm_mensualidad?action={% if m.esta_pagada %}pagar{% else %}cobrar{% endif %}&amp;id={{ m.id }}">
+                <span>
+                  {{ m.periodo }}
+                  {% if m.periodo_inicio %}
+                    <small class="text-muted d-block">
+                      {{ m.periodo_inicio|date:"d/m" }} al {{ m.periodo_fin|date:"d/m" }}
+                    </small>
+                  {% endif %}
+                  {% if m.tiene_ajuste %}
+                    <small class="text-muted d-block">{{ m.texto_ajuste }}</small>
+                  {% endif %}
+                </span>
+                <span class="text-end">
+                  $ {{ m.valor }}
+                  <span class="badge text-bg-{{ m.color }}">{{ m.estado_visible }}</span>
+                </span>
+              </a>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="small text-muted mb-0">
+            Todavia no tiene mensualidades.
+            {% if not solo_lectura %}
+              <a href="#" data-modal-url="/sistema/adm_mensualidad?action=add&amp;jugador={{ jugador.id }}">
+                Cobrarle un mes
+              </a>.
+            {% endif %}
+          </p>
+        {% endif %}
+      </section>
+    </div>
+
+    <!-- ------------------- asistencia y rendimiento ------------------- -->
+    <div class="col-12 col-lg-6 columna-bloques">
+      <section class="bloque bloque-crece">
+        <h6><i class="bi bi-calendar-check me-1"></i> Ultimas asistencias</h6>
+
+        <div class="resumen-asistencia mb-2">
+          <span class="res-item res-total"><b>{{ resumen.porcentaje }}%</b> asistencia</span>
+          <span class="res-item text-bg-success"><b>{{ resumen.presentes }}</b> presentes</span>
+          <span class="res-item text-bg-danger"><b>{{ resumen.faltas }}</b> faltas</span>
+          <span class="res-item text-bg-warning"><b>{{ resumen.atrasos }}</b> atrasos</span>
+        </div>
+
+        {% for a in asistencias|slice:":6" %}
+          <div class="ficha-dato">
+            <span>
+              {{ a.fecha|date:"d/m/Y" }}
+              {% if a.observacion %}
+                <small class="text-muted d-block">{{ a.observacion|truncatechars:40 }}</small>
+              {% endif %}
+            </span>
+            <span><span class="badge text-bg-{{ a.color }}">{{ a.get_estado_display }}</span></span>
+          </div>
+        {% empty %}
+          <p class="small text-muted mb-0">Todavia no tiene asistencias registradas.</p>
+        {% endfor %}
+      </section>
+    </div>
+
+    <div class="col-12 col-lg-6 columna-bloques">
+      <section class="bloque bloque-crece">
+        <h6>
+          <i class="bi bi-bullseye me-1"></i> Como viene rindiendo
+          <span class="ms-auto d-flex gap-1">
+            {% if not solo_lectura %}
+              <a href="#" class="btn btn-sm btn-joga"
+                 data-modal-url="/sistema/adm_evaluacion?action=ingreso&amp;jugador={{ jugador.id }}"
+                 title="Tomarle la prueba de ingreso, solo a el">
+                <i class="bi bi-flag me-1"></i> Prueba de ingreso
+              </a>
+            {% endif %}
+            <a href="/sistema/adm_evaluacion?action=progreso&amp;id={{ jugador.id }}"
+               class="btn btn-sm btn-outline-secondary">Ver todo</a>
+          </span>
+        </h6>
+
+        {% if posicion_sugerida %}
+          <div class="ficha-dato">
+            <span>Puesto que mejor le queda</span>
+            <span>
+              {{ posicion_sugerida.posicion.nombre|title }}
+              <small class="text-muted d-block">
+                afinidad {{ posicion_sugerida.puntaje }}/100
+                {% if posicion_sugerida.es_la_que_le_gusta %}&middot; y es la que le gusta{% endif %}
+              </small>
+            </span>
+          </div>
+          {% if jugador.posicion and not posicion_sugerida.es_la_que_le_gusta %}
+            <div class="ficha-dato">
+              <span>La que le gusta</span><span>{{ jugador.posicion.nombre|title }}</span>
+            </div>
+          {% endif %}
+          <p class="small text-muted mt-2 mb-0">
+            La sugerencia sale de lo que se le ha medido. Todos deben jugar de todo:
+            esto es solo para saber donde rinde hoy.
+          </p>
+        {% else %}
+          <p class="small text-muted mb-0">
+            Todavia no se le ha tomado ninguna prueba.
+            {% if not solo_lectura %}
+              Empieza por su <b>prueba de ingreso</b>: se le toma solo a el, el
+              dia que venga, y queda como su punto de partida.
+            {% endif %}
+          </p>
+        {% endif %}
+      </section>
+    </div>
+
+    <!-- --------------------- peso y estatura ----------------------- -->
+    <div class="col-12 col-lg-6 columna-bloques">
+      <section class="bloque bloque-crece">
+        <h6>
+          <i class="bi bi-rulers me-1"></i> Peso y estatura
+          <a href="#" class="btn btn-sm btn-joga ms-auto"
+             data-modal-url="/sistema/adm_evaluacion?action=control&amp;jugador={{ jugador.id }}">
+            <i class="bi bi-plus-lg me-1"></i> Tomar medidas
+          </a>
+        </h6>
+
+        {% if ultimo_control %}
+          <div class="resumen-asistencia mb-2">
+            <span class="res-item res-total"><b>{{ ultimo_control.texto_peso }}</b> peso</span>
+            <span class="res-item res-total"><b>{{ ultimo_control.texto_estatura }}</b> estatura</span>
+            {% if ultimo_control.imc %}
+              <span class="res-item res-pendientes"><b>{{ ultimo_control.imc }}</b> IMC</span>
+            {% endif %}
+          </div>
+
+          {% if crecimiento %}
+            <p class="small text-muted">
+              En {{ crecimiento.dias }} dia{{ crecimiento.dias|pluralize }}
+              {% if crecimiento.estatura %}crecio {{ crecimiento.estatura }} cm{% endif %}
+              {% if crecimiento.estatura and crecimiento.peso %} y {% endif %}
+              {% if crecimiento.peso %}cambio {{ crecimiento.peso }} kg{% endif %}.
+            </p>
+          {% endif %}
+
+          <div class="lista-meses">
+            {% for c in controles %}
+              <div class="mes-item">
+                <span>
+                  {{ c.fecha|date:"d/m/Y" }}
+                  {% if c.observacion %}
+                    <small class="text-muted d-block">{{ c.observacion }}</small>
+                  {% endif %}
+                </span>
+                <span class="text-end">
+                  {{ c.texto_peso }} &middot; {{ c.texto_estatura }}
+                  <span class="d-block">
+                    <a href="#" class="small"
+                       data-modal-url="/sistema/adm_evaluacion?action=editcontrol&amp;jugador={{ jugador.id }}&amp;id={{ c.id }}">
+                      editar</a>
+                    &middot;
+                    <a href="#" class="small text-danger"
+                       data-modal-url="/sistema/adm_evaluacion?action=borrarcontrol&amp;id={{ c.id }}">
+                      borrar</a>
+                  </span>
+                </span>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="small text-muted mb-0">
+            Todavia no se le ha tomado el peso ni la estatura. Esto va aparte de
+            las pruebas: no es una marca que se mejora, es el chico creciendo.
+          </p>
+        {% endif %}
+      </section>
+    </div>
+
+    <!-- ---------------------- notas del profe ---------------------- -->
+    <div class="col-12">
+      <section class="bloque">
+        <h6>
+          <i class="bi bi-journal-text me-1"></i> Notas del profe
+          {% if total_notas %}<span class="chip chip-gris ms-2">{{ total_notas }}</span>{% endif %}
+          <a href="#" class="btn btn-sm btn-joga ms-auto"
+             data-modal-url="/sistema/adm_evaluacion?action=nota&amp;jugador={{ jugador.id }}">
+            <i class="bi bi-plus-lg me-1"></i> Escribir una nota
+          </a>
+        </h6>
+
+        {% if notas %}
+          <div class="lista-notas">
+            {% for n in notas %}
+              <article class="nota nota-{{ n.color }}">
+                <div class="nota-cabecera">
+                  <span class="badge text-bg-{{ n.color }}">
+                    <i class="bi {{ n.icono }}"></i> {{ n.get_tipo_display }}
+                  </span>
+                  <span class="small text-muted">
+                    {{ n.fecha|date:"d/m/Y" }} &middot; {{ n.firma }}
+                  </span>
+                  <a href="#" class="btn btn-sm btn-outline-danger ms-auto"
+                     data-modal-url="/sistema/adm_evaluacion?action=borrarnota&amp;id={{ n.id }}"
+                     title="Eliminar"><i class="bi bi-trash"></i></a>
+                </div>
+                <p class="nota-texto">{{ n.texto }}</p>
+              </article>
+            {% endfor %}
+          </div>
+          {% if total_notas > 8 %}
+            <p class="small text-muted mt-2 mb-0">
+              Se muestran las 8 mas recientes de {{ total_notas }}.
+            </p>
+          {% endif %}
+        {% else %}
+          <p class="small text-muted mb-0">
+            Todavia no hay notas de {{ jugador.como_le_dicen }}. Aqui se anota como va,
+            que hay que trabajarle o si le paso algo; queda con la fecha y el nombre
+            de quien la escribio.
+          </p>
+        {% endif %}
+      </section>
     </div>
   </div>
 {% endblock %}

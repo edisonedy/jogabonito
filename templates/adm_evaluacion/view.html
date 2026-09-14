@@ -11,7 +11,18 @@
       {% endfor %}
     </select>
 
-    <a href="#" data-modal-url="/sistema/adm_evaluacion?action=add" class="btn btn-joga btn-sm btn-touch ms-auto">
+    <select name="tipo" class="form-select form-select-sm" style="max-width:210px" onchange="this.form.submit()">
+      <option value="">Todos los tipos</option>
+      {% for t in tipos %}
+        <option value="{{ t.id }}" {% if tipo_id == t.id %}selected{% endif %}>{{ t.nombre }}</option>
+      {% endfor %}
+    </select>
+
+    <a href="/sistema/adm_evaluacion?action=bajando" class="btn btn-outline-warning btn-sm btn-touch ms-auto">
+      <i class="bi bi-graph-down-arrow me-1"></i> Quien viene bajando
+    </a>
+
+    <a href="#" data-modal-url="/sistema/adm_evaluacion?action=add" class="btn btn-joga btn-sm btn-touch">
       <i class="fa-solid fa-plus me-1"></i> Nueva evaluacion
     </a>
   </form>
@@ -36,8 +47,24 @@
               <a class="fw-semibold" href="/sistema/adm_evaluacion?action=planilla&amp;id={{ e.id }}">{{ e.titulo }}</a>
               {% if e.observacion %}<div class="small text-muted">{{ e.observacion|truncatechars:60 }}</div>{% endif %}
             </td>
-            <td data-label="Grupo">{{ e.categoria.nombre }}</td>
-            <td data-label="Fecha">{{ e.fecha|date:"d/m/Y" }}</td>
+            <td data-label="Grupo">
+              {{ e.categoria.nombre }}
+              {% if e.es_individual %}
+                <div class="small">
+                  <span class="badge text-bg-info">individual</span>
+                  {{ e.jugador.nombre_completo }}
+                </div>
+              {% endif %}
+              {% if e.tipo %}
+                <div><span class="badge text-bg-{{ e.tipo.color }}">{{ e.tipo.nombre }}</span></div>
+              {% endif %}
+            </td>
+            <td data-label="Fecha">
+              {{ e.fecha|date:"d/m/Y" }}
+              {% if e.dura_varios_dias %}
+                <div class="small text-muted">hasta el {{ e.ultimo_dia|date:"d/m/Y" }}</div>
+              {% endif %}
+            </td>
             <td data-label="Que se midio">
               {% for i in e.indicadores_ordenados|slice:":3" %}
                 <span class="badge text-bg-{{ i.color_area }}">{{ i.nombre|truncatechars:22 }}</span>

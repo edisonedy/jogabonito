@@ -1,0 +1,12 @@
+{% extends "form_modal.html" %}
+{% block form_action %}/sistema/adm_categoria{% endblock %}
+{% block formextra %}
+  <input type="hidden" name="action" value="adddivision">
+  <div class="alert alert-light border py-2 small">
+    La division es la categoria por <b>edad</b>, aparte del horario. Un jugador
+    cae solo en la que le corresponde segun los anios que tiene, sin importar si
+    entrena en la manana, tarde o noche.
+    <br>Los rangos no se pueden cruzar: cada edad pertenece a una sola division.
+  </div>
+{% endblock %}
+{% block save_label %}Guardar division{% endblock %}

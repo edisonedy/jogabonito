@@ -1,0 +1,385 @@
+{% extends "base_nueva.html" %}
+
+{% block pagetitle %}Tablero | {{ academia.nombre }}{% endblock %}
+
+{% block canvas %}
+  <div class="modulo-toolbar">
+    <div>
+      <h5 class="mb-0">Hola, {{ perfil.nombre_completo }}</h5>
+      <div class="small text-muted">{{ hoy|date:"l d \d\e F \d\e Y" }}</div>
+    </div>
+    <a href="/sistema/adm_asistencia" class="btn btn-joga btn-sm btn-touch ms-auto">
+      <i class="fa-solid fa-clipboard-check me-1"></i> Tomar asistencia
+    </a>
+  </div>
+
+  <!-- ---------------------- numeros grandes ---------------------- -->
+  <div class="tablero-cifras">
+    <article class="cifra">
+      <span class="cifra-icono bg-joga"><i class="fa-solid fa-user-group"></i></span>
+      <div>
+        <b>{{ total_jugadores }}</b>
+        <span>jugadores activos</span>
+      </div>
+    </article>
+
+    <article class="cifra">
+      <span class="cifra-icono bg-azul"><i class="fa-solid fa-layer-group"></i></span>
+      <div>
+        <b>{{ total_categorias }}</b>
+        <span>grupos</span>
+      </div>
+    </article>
+
+    <article class="cifra">
+      <span class="cifra-icono bg-oro"><i class="fa-solid fa-clipboard-check"></i></span>
+      <div>
+        <b>{{ asistencia.marcados }}<small>/{{ asistencia.esperados }}</small></b>
+        <span>asistencia de hoy</span>
+      </div>
+    </article>
+
+    {% if es_administrador %}
+      <article class="cifra">
+        <span class="cifra-icono bg-verde-oscuro"><i class="fa-solid fa-sack-dollar"></i></span>
+        <div>
+          <b>$ {{ dinero.cobrado }}</b>
+          <span>cobrado este mes</span>
+        </div>
+      </article>
+
+      <article class="cifra">
+        <span class="cifra-icono bg-rojo"><i class="fa-solid fa-hand-holding-dollar"></i></span>
+        <div>
+          <b>$ {{ deuda.total }}</b>
+          <span>deuda total &middot; {{ deuda.cuantos }} jugador{{ deuda.cuantos|pluralize:"es" }}</span>
+        </div>
+      </article>
+
+      <article class="cifra">
+        <span class="cifra-icono bg-oro"><i class="fa-solid fa-envelope-open-text"></i></span>
+        <div>
+          <b>{{ solicitudes_nuevas }}</b>
+          <span>solicitudes nuevas</span>
+        </div>
+      </article>
+    {% endif %}
+  </div>
+
+  <div class="row g-3 mt-1">
+    <!-- ------------------------ asistencia hoy ------------------------ -->
+    <div class="col-12 col-lg-6 columna-bloques">
+      <section class="bloque bloque-crece">
+        <h6><i class="bi bi-calendar-check me-1"></i> Hoy en la cancha</h6>
+
+        {% if asistencia.grupos_hoy %}
+          <div class="resumen-asistencia mb-2">
+            <span class="res-item text-bg-success"><b>{{ asistencia.presentes }}</b> presentes</span>
+            <span class="res-item text-bg-danger"><b>{{ asistencia.faltas }}</b> faltas</span>
+            <span class="res-item text-bg-warning"><b>{{ asistencia.atrasos }}</b> atrasos</span>
+            <span class="res-item text-bg-info"><b>{{ asistencia.justificados }}</b> justificados</span>
+            <span class="res-item res-pendientes"><b>{{ asistencia.pendientes }}</b> sin marcar</span>
+          </div>
+
+          <div class="ficha-dato">
+            <span>Grupos que entrenan hoy</span>
+            <span>
+              {% for c in asistencia.grupos_hoy %}
+                <a href="/sistema/adm_asistencia?categoria={{ c.id }}">{{ c.nombre }}</a>{% if not forloop.last %}, {% endif %}
+              {% endfor %}
+            </span>
+          </div>
+          {% if asistencia.marcados %}
+            <div class="ficha-dato"><span>Asistencia del dia</span><span>{{ asistencia.porcentaje }}%</span></div>
+          {% endif %}
+        {% else %}
+          <p class="small text-muted mb-0">
+            Hoy no entrena ningun grupo segun los dias configurados.
+            Igual puedes registrar asistencia si hubo clase.
+          </p>
+        {% endif %}
+      </section>
+    </div>
+
+    <!-- ----------------------- a quien mirar ------------------------- -->
+    <div class="col-12 col-lg-6 columna-bloques">
+      <section class="bloque bloque-alerta bloque-crece">
+        <h6>
+          <i class="bi bi-exclamation-triangle me-1"></i>
+          A quien hay que llamar
+          <small class="text-muted">asistencia bajo {{ asistencia_baja }}% en {{ dias_ventana }} dias</small>
+        </h6>
+
+        {% for fila in en_alerta %}
+          <div class="ficha-dato">
+            <span>
+              <a href="/sistema/adm_jugador?action=view&amp;id={{ fila.jugador.id }}">{{ fila.jugador.nombre_completo }}</a>
+              <small class="text-muted d-block">{{ fila.jugador.categoria.nombre }}</small>
+            </span>
+            <span>
+              <b class="text-danger">{{ fila.resumen.porcentaje }}%</b>
+              <small class="text-muted d-block">{{ fila.resumen.faltas }} falta{{ fila.resumen.faltas|pluralize }}</small>
+            </span>
+          </div>
+        {% empty %}
+          <p class="small text-muted mb-0">
+            <i class="bi bi-check2-circle text-success me-1"></i>
+            Nadie por debajo del {{ asistencia_baja }}%. Buen momento.
+          </p>
+        {% endfor %}
+      </section>
+    </div>
+
+    {% if es_administrador %}
+      <!-- ------------------------- quien debe -------------------------- -->
+      <div class="col-12 col-lg-6 columna-bloques">
+        <section class="bloque bloque-dinero bloque-crece">
+          <h6>
+            <i class="bi bi-cash-coin me-1"></i> Quien debe mas
+            <a href="/sistema/adm_mensualidad?action=deudores" class="btn btn-sm btn-outline-secondary ms-auto">
+              Ver todos
+            </a>
+          </h6>
+
+          <div class="resumen-asistencia mb-2">
+            <span class="res-item res-total"><b>$ {{ deuda.total }}</b> deuda total</span>
+            <span class="res-item text-bg-danger"><b>$ {{ deuda.vencido }}</b> ya vencido</span>
+            <span class="res-item text-bg-warning"><b>$ {{ deuda.por_vencer }}</b> por vencer</span>
+            <span class="res-item text-bg-success"><b>$ {{ dinero.cobrado }}</b> cobrado este mes</span>
+          </div>
+
+          {% for d in deuda.top %}
+            <div class="ficha-dato">
+              <span>
+                <a href="/sistema/adm_jugador?action=view&amp;id={{ d.jugador.id }}">{{ d.jugador.nombre_completo }}</a>
+                <small class="text-muted d-block">
+                  {{ d.meses }} mes{{ d.meses|pluralize:"es" }}
+                  {% if d.dias %}
+                    &middot; {{ d.dias }} dia{{ d.dias|pluralize }} de atraso
+                  {% else %}
+                    &middot; todavia no le vence
+                  {% endif %}
+                </small>
+              </span>
+              <span>
+                <b class="text-danger">$ {{ d.total }}</b>
+                {% if d.jugador.representante %}
+                  <a class="small d-block" target="_blank" rel="noopener"
+                     href="https://wa.me/{{ d.jugador.representante.numero_whatsapp }}">
+                    <i class="fa-brands fa-whatsapp text-success"></i> avisar
+                  </a>
+                {% endif %}
+              </span>
+            </div>
+          {% empty %}
+            <p class="small text-muted mb-0">
+              <i class="bi bi-check2-circle text-success me-1"></i> Nadie debe nada. Todos al dia.
+            </p>
+          {% endfor %}
+        </section>
+      </div>
+    {% endif %}
+
+    <!-- -------------------------- grupos ----------------------------- -->
+    <div class="col-12 col-lg-7 columna-bloques">
+      <section class="bloque bloque-crece">
+        <h6><i class="bi bi-layers me-1"></i> Como va cada grupo</h6>
+        <div class="tabla-scroll">
+          <table class="tabla-joga">
+            <thead>
+              <tr><th>Grupo</th><th>Edades</th><th>Jugadores</th><th>Asistencia</th><th></th></tr>
+            </thead>
+            <tbody>
+              {% for g in grupos %}
+                <tr>
+                  <td data-label="Grupo">
+                    <div class="fw-semibold">{{ g.categoria.nombre }}</div>
+                    <div class="small text-muted">{{ g.categoria.horario_texto }}</div>
+                  </td>
+                  <td data-label="Edades">
+                    {{ g.categoria.rango_edad_texto }}
+                    {% if g.fuera_de_rango %}
+                      <span class="badge text-bg-warning" title="Jugadores fuera del rango de edad">
+                        {{ g.fuera_de_rango }} fuera
+                      </span>
+                    {% endif %}
+                  </td>
+                  <td data-label="Jugadores">{{ g.jugadores }}</td>
+                  <td data-label="Asistencia">
+                    {% if g.asistencia is not None %}
+                      <div class="barra-avance"><span style="width: {{ g.asistencia }}%"></span></div>
+                      <div class="small text-muted">{{ g.asistencia }}%</div>
+                    {% else %}
+                      <span class="small text-muted">Sin registros</span>
+                    {% endif %}
+                  </td>
+                  <td class="text-end celda-acciones" data-label="">
+                    {% if g.entreno_hoy %}
+                      <a class="btn btn-sm btn-joga" href="/sistema/adm_asistencia?categoria={{ g.categoria.id }}">
+                        Hoy entrena
+                      </a>
+                    {% else %}
+                      <a class="btn btn-sm btn-outline-secondary" href="/sistema/adm_asistencia?categoria={{ g.categoria.id }}">
+                        Abrir
+                      </a>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="5" class="text-center text-muted py-3">No tienes grupos asignados.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- ---------------------- quien dirige hoy ------------------------ -->
+    <div class="col-12 col-lg-6 columna-bloques">
+      <section class="bloque bloque-crece">
+        <h6>
+          <i class="bi bi-person-badge me-1"></i> Quien dirige hoy
+          <a href="/sistema/adm_turno" class="btn btn-sm btn-outline-secondary ms-auto">
+            Cambiar encargados
+          </a>
+        </h6>
+
+        {% if mis_grupos %}
+          <div class="alert alert-success py-2 small">
+            <i class="bi bi-megaphone me-1"></i>
+            <b>Estas a cargo de:</b>
+            {% for c in mis_grupos %}{{ c.nombre }}{% if not forloop.last %}, {% endif %}{% endfor %}
+          </div>
+        {% endif %}
+
+        {% for clase in clases_hoy %}
+          <div class="ficha-dato">
+            <span>
+              {{ clase.categoria.nombre }}
+              <small class="text-muted d-block">{{ clase.categoria.horario_texto }}</small>
+            </span>
+            <span>
+              {% if clase.encargado %}
+                {{ clase.encargado.nombre_completo }}
+              {% else %}
+                <span class="badge text-bg-warning">sin encargado</span>
+              {% endif %}
+            </span>
+          </div>
+        {% empty %}
+          <p class="small text-muted mb-0">Hoy no entrena ningun grupo.</p>
+        {% endfor %}
+      </section>
+    </div>
+
+    <!-- --------------------- quien viene bajando ---------------------- -->
+    <div class="col-12 col-lg-6 columna-bloques">
+      <section class="bloque bloque-alerta bloque-crece">
+        <h6>
+          <i class="bi bi-graph-down-arrow me-1"></i> Quien viene bajando
+          <a href="/sistema/adm_evaluacion?action=bajando" class="btn btn-sm btn-outline-secondary ms-auto">
+            Ver todos
+          </a>
+        </h6>
+
+        {% for b in bajando %}
+          <div class="ficha-dato">
+            <span>
+              <a href="/sistema/adm_evaluacion?action=progreso&amp;id={{ b.jugador.id }}">
+                {{ b.jugador.nombre_completo }}
+              </a>
+              <small class="text-muted d-block">
+                {{ b.jugador.categoria.nombre }} &middot;
+                {% for baja in b.bajas|slice:":2" %}
+                  {{ baja.indicador.nombre|lower }} ({{ baja.desde }} &rarr; {{ baja.hasta }}){% if not forloop.last %}, {% endif %}
+                {% endfor %}
+              </small>
+            </span>
+            <span>
+              <span class="badge text-bg-warning">
+                {{ b.cuantos }} baj{{ b.cuantos|pluralize:"a,as" }}
+              </span>
+            </span>
+          </div>
+        {% empty %}
+          <p class="small text-muted mb-0">
+            <i class="bi bi-check2-circle text-success me-1"></i>
+            Nadie va para atras en su ultima prueba.
+          </p>
+        {% endfor %}
+
+        <p class="small text-muted mt-2 mb-0">
+          Compara la ultima medicion con la anterior. Bajar una vez es normal;
+          sirve para conversar con el chico antes de que se desanime.
+        </p>
+      </section>
+    </div>
+
+    <!-- --------------------- pruebas y cumpleanios -------------------- -->
+    <div class="col-12 col-lg-5 columna-bloques">
+      <section class="bloque">
+        <h6>
+          <i class="bi bi-clipboard-data me-1"></i> Ultimas pruebas
+          <a href="/sistema/adm_evaluacion" class="btn btn-sm btn-outline-secondary ms-auto">Ver todas</a>
+        </h6>
+
+        {% for e in evaluaciones %}
+          <div class="ficha-dato">
+            <span>
+              <a href="/sistema/adm_evaluacion?action=planilla&amp;id={{ e.id }}">{{ e.titulo }}</a>
+              <small class="text-muted d-block">
+                {{ e.categoria.nombre }}
+                {% if e.tipo %}&middot; <span class="badge text-bg-{{ e.tipo.color }}">{{ e.tipo.nombre }}</span>{% endif %}
+              </small>
+            </span>
+            <span>
+              {{ e.fecha|date:"d/m/Y" }}
+              <small class="text-muted d-block">{{ e.avance }}% completado</small>
+            </span>
+          </div>
+        {% empty %}
+          <p class="small text-muted mb-0">Todavia no hay pruebas registradas.</p>
+        {% endfor %}
+
+        {% if sin_evaluar %}
+          <div class="alert alert-warning py-2 small mt-2 mb-0">
+            <i class="bi bi-info-circle me-1"></i>
+            {{ sin_evaluar }} jugador{{ sin_evaluar|pluralize:"es" }} todavia sin ninguna medicion.
+          </div>
+        {% endif %}
+      </section>
+
+      <section class="bloque bloque-cumple">
+        <h6><i class="bi bi-balloon me-1"></i> Cumpleanios de la familia</h6>
+
+        {% for c in cumpleanios %}
+          <div class="ficha-dato {% if c.es_hoy %}cumple-hoy{% endif %}">
+            <span>
+              {% if c.es_hoy %}<i class="bi bi-gift-fill text-warning me-1"></i>{% endif %}
+              <a href="/sistema/adm_jugador?action=view&amp;id={{ c.jugador.id }}">{{ c.jugador.nombre_completo }}</a>
+              <small class="text-muted d-block">
+                {{ c.jugador.categoria.nombre }} &middot; cumple {{ c.cumple }}
+              </small>
+            </span>
+            <span>
+              {% if c.es_hoy %}
+                <b class="text-warning">Hoy!</b>
+              {% else %}
+                {{ c.fecha|date:"d/m" }}
+                <small class="text-muted d-block">en {{ c.faltan }} dia{{ c.faltan|pluralize }}</small>
+              {% endif %}
+              {% if c.jugador.representante %}
+                <a class="small d-block" target="_blank" rel="noopener"
+                   href="https://wa.me/{{ c.jugador.representante.numero_whatsapp }}?text={{ c.jugador.nombres|urlencode }}%2C%20feliz%20cumplea%C3%B1os%20de%20parte%20de%20toda%20la%20Academia%20Joga%20Bonito!">
+                  <i class="fa-brands fa-whatsapp text-success"></i> felicitar
+                </a>
+              {% endif %}
+            </span>
+          </div>
+        {% empty %}
+          <p class="small text-muted mb-0">Ninguno en los proximos 30 dias.</p>
+        {% endfor %}
+      </section>
+    </div>
+  </div>
+{% endblock %}

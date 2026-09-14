@@ -29,6 +29,16 @@
     {% endif %}
   </form>
 
+  {% if mis_clases %}
+    <div class="alert alert-success py-2 small">
+      <i class="bi bi-megaphone me-1"></i>
+      <b>Hoy te toca:</b>
+      {% for clase in mis_clases %}
+        {{ clase.categoria.nombre }} ({{ clase.categoria.horario_texto }}){% if not forloop.last %}, {% endif %}
+      {% endfor %}
+    </div>
+  {% endif %}
+
   {% if error %}
     <div class="alert alert-warning py-2 small">{{ error }}</div>
   {% endif %}
@@ -57,11 +67,21 @@
     </div>
 
     {% if filas %}
-      <div class="d-flex flex-wrap gap-2 my-3">
+      <div class="d-flex flex-wrap gap-2 my-3 align-items-center">
         <button type="button" class="btn btn-sm btn-outline-success btn-touch" id="btnTodosPresentes">
           <i class="bi bi-check2-all me-1"></i> Marcar presentes a los que faltan
         </button>
+
+        <div class="buscador-lista ms-auto">
+          <i class="bi bi-search"></i>
+          <input type="search" id="buscarJugador" class="form-control form-control-sm"
+                 placeholder="Buscar jugador en la lista" autocomplete="off">
+          <button type="button" class="btn btn-sm btn-outline-secondary d-none" id="verTodos">
+            Ver todos
+          </button>
+        </div>
       </div>
+      <div class="small text-muted mb-2 d-none" id="avisoFiltro"></div>
 
       <div class="lista-asistencia" id="listaAsistencia"
            data-categoria="{{ categoria.id }}" data-fecha="{{ fecha|date:'Y-m-d' }}">
@@ -76,16 +96,35 @@
               <div class="min-w-0">
                 <div class="fw-semibold text-truncate">{{ fila.jugador.nombre_completo }}</div>
                 <div class="small text-muted">
-                  {{ fila.jugador.edad }} anios
+                  {% if fila.jugador.apodo %}"{{ fila.jugador.apodo }}" &middot; {% endif %}
+                  {{ fila.jugador.edad }} anios &middot; {{ fila.jugador.division_texto }}
+                  {% if fila.jugador.tiene_cuidados %}
+                    <span class="badge text-bg-warning" title="{{ fila.jugador.cuidados }}">
+                      <i class="bi bi-heart-pulse"></i> cuidado
+                    </span>
+                  {% endif %}
                   {% if fila.asistencia.observacion %}
                     &middot; <i class="bi bi-chat-left-text"></i> {{ fila.asistencia.observacion|truncatechars:40 }}
                   {% endif %}
                 </div>
+                {% if fila.nota %}
+                  <div class="novedad-jugador text-{{ fila.nota.color }}" title="{{ fila.nota.texto }}">
+                    <i class="bi {{ fila.nota.icono }}"></i>
+                    {{ fila.nota.texto|truncatechars:60 }}
+                    <span class="text-muted">&middot; {{ fila.nota.fecha|date:"d/m" }}</span>
+                  </div>
+                {% endif %}
               </div>
-              <a href="#" class="btn btn-sm btn-soft ms-auto btn-detalle" title="Observacion"
-                 data-modal-url="/sistema/adm_asistencia?action=detalle&amp;categoria={{ categoria.id }}&amp;fecha={{ fecha|date:'Y-m-d' }}&amp;jugador={{ fila.jugador.id }}">
-                <i class="bi bi-chat-left-text"></i>
-              </a>
+              <span class="ms-auto d-flex gap-1">
+                <a href="#" class="btn btn-sm btn-soft btn-detalle" title="Observacion del dia"
+                   data-modal-url="/sistema/adm_asistencia?action=detalle&amp;categoria={{ categoria.id }}&amp;fecha={{ fecha|date:'Y-m-d' }}&amp;jugador={{ fila.jugador.id }}">
+                  <i class="bi bi-chat-left-text"></i>
+                </a>
+                <a href="#" class="btn btn-sm btn-soft" title="Anotar una novedad de hoy"
+                   data-modal-url="/sistema/adm_evaluacion?action=nota&amp;jugador={{ fila.jugador.id }}">
+                  <i class="bi bi-journal-plus"></i>
+                </a>
+              </span>
             </div>
 
             <div class="btn-group btn-group-asistencia" role="group">
@@ -173,6 +212,44 @@
       }).always(function () {
         grupoBotones.find('.btn-marcar').prop('disabled', false);
       });
+    });
+
+    // Filtro rapido de la lista: con 40 jugadores buscar a mano es lento.
+    var campoBuscar = $('#buscarJugador');
+    var botonVerTodos = $('#verTodos');
+    var aviso = $('#avisoFiltro');
+
+    function filtrarLista() {
+      var texto = (campoBuscar.val() || '').trim().toLowerCase();
+      var visibles = 0;
+      var total = 0;
+
+      $('.fila-asistencia').each(function () {
+        var fila = $(this);
+        var nombre = (fila.find('.fw-semibold').text() || '').toLowerCase();
+        total += 1;
+        if (!texto || nombre.indexOf(texto) >= 0) {
+          fila.removeClass('d-none');
+          visibles += 1;
+        } else {
+          fila.addClass('d-none');
+        }
+      });
+
+      if (texto) {
+        botonVerTodos.removeClass('d-none');
+        aviso.removeClass('d-none').text('Mostrando ' + visibles + ' de ' + total + ' jugadores.');
+      } else {
+        botonVerTodos.addClass('d-none');
+        aviso.addClass('d-none');
+      }
+    }
+
+    campoBuscar.on('input', filtrarLista);
+    botonVerTodos.on('click', function () {
+      campoBuscar.val('');
+      filtrarLista();
+      campoBuscar.focus();
     });
 
     $('#btnTodosPresentes').on('click', function () {

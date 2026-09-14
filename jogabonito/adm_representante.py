@@ -14,7 +14,7 @@ from jogabonito.models import Representante
 MODULO = 'adm_representante'
 
 
-def _primer_error(form):
+def primer_error(form):
     return next(iter(form.errors.values()))[0]
 
 
@@ -33,7 +33,7 @@ def view(request):
             try:
                 form = RepresentanteForm(request.POST)
                 if not form.is_valid():
-                    return bad_json(mensaje=_primer_error(form))
+                    return bad_json(mensaje=primer_error(form))
                 representante = form.save(commit=False)
                 representante.save(request)
                 return ok_json({'mensaje': 'Representante registrado.'})
@@ -46,7 +46,7 @@ def view(request):
                 representante = Representante.objects.get(pk=int(request.POST['id']))
                 form = RepresentanteForm(request.POST, instance=representante)
                 if not form.is_valid():
-                    return bad_json(mensaje=_primer_error(form))
+                    return bad_json(mensaje=primer_error(form))
                 representante = form.save(commit=False)
                 representante.save(request)
                 return ok_json({'mensaje': 'Representante actualizado.'})

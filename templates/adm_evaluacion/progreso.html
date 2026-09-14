@@ -29,7 +29,105 @@
         <i class="bi bi-arrow-left me-1"></i> Volver
       </a>
     </div>
+
   </div>
+  <form method="get" class="modulo-toolbar" id="filtroMediciones">
+    <input type="hidden" name="action" value="progreso">
+    <input type="hidden" name="id" value="{{ jugador.id }}">
+
+    <span class="small text-muted">Ver las mediciones</span>
+    <div class="input-group input-group-sm" style="max-width:190px">
+      <span class="input-group-text">desde</span>
+      <input type="date" class="form-control" name="desde" value="{{ desde|date:'Y-m-d' }}">
+    </div>
+    <div class="input-group input-group-sm" style="max-width:190px">
+      <span class="input-group-text">hasta</span>
+      <input type="date" class="form-control" name="hasta" value="{{ hasta|date:'Y-m-d' }}">
+    </div>
+    <button class="btn btn-sm btn-joga btn-touch" type="submit">
+      <i class="bi bi-funnel me-1"></i> Filtrar
+    </button>
+
+    {% if hay_filtro %}
+      <a href="/sistema/adm_evaluacion?action=progreso&amp;id={{ jugador.id }}"
+         class="btn btn-sm btn-outline-secondary btn-touch">Ver todas</a>
+    {% endif %}
+
+    <span class="modulo-chip ms-auto">
+      <i class="fa-solid fa-ruler"></i>
+      {{ total_mediciones }} medicion{{ total_mediciones|pluralize:"es" }} en total
+      {% if primera_medicion %}
+        &middot; desde {{ primera_medicion.dia|date:"d/m/Y" }}
+        hasta {{ ultima_medicion.dia|date:"d/m/Y" }}
+      {% endif %}
+    </span>
+  </form>
+
+  {% if desde_la_base %}
+    <section class="bloque mb-4">
+      <h6>
+        <i class="bi bi-flag me-1"></i> Como llego y como va
+        <span class="small text-muted ms-2">
+          desde su prueba inicial del {{ resumen_base.desde|date:"d/m/Y" }}
+        </span>
+      </h6>
+
+      <div class="resumen-asistencia mb-3">
+        <span class="res-item text-bg-success"><b>{{ resumen_base.mejoraron }}</b> mejoro</span>
+        <span class="res-item text-bg-danger"><b>{{ resumen_base.bajaron }}</b> bajo</span>
+        <span class="res-item res-pendientes"><b>{{ resumen_base.igual }}</b> igual</span>
+      </div>
+
+      <div class="tabla-scroll">
+        <table class="tabla-joga">
+          <thead>
+            <tr>
+              <th>Que se le midio</th>
+              <th>Con que llego</th>
+              <th>Como esta hoy</th>
+              <th>Cambio</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for fila in desde_la_base %}
+              <tr>
+                <td data-label="Que se le midio">
+                  <div class="fw-semibold">{{ fila.indicador.nombre }}</div>
+                  <span class="badge text-bg-{{ fila.indicador.color_area }}">
+                    {{ fila.indicador.get_area_display }}
+                  </span>
+                </td>
+                <td data-label="Con que llego">
+                  {{ fila.llego.texto }}
+                  <div class="small text-muted">{{ fila.llego.dia|date:"d/m/Y" }}</div>
+                </td>
+                <td data-label="Como esta hoy">
+                  <b>{{ fila.ahora.texto }}</b>
+                  <div class="small text-muted">{{ fila.ahora.dia|date:"d/m/Y" }}</div>
+                </td>
+                <td data-label="Cambio">
+                  {% if fila.mejoro is True %}
+                    <span class="badge text-bg-success"><i class="bi bi-arrow-up"></i> Mejoro</span>
+                  {% elif fila.mejoro is False %}
+                    <span class="badge text-bg-danger"><i class="bi bi-arrow-down"></i> Bajo</span>
+                  {% else %}
+                    <span class="badge text-bg-secondary">Igual</span>
+                  {% endif %}
+                  <div class="small text-muted">en {{ fila.dias }} dia{{ fila.dias|pluralize }}</div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <p class="small text-muted mt-2 mb-0">
+        La base es la prueba marcada como <b>inicial</b> en "Que medimos". Si no
+        hay ninguna, se toma la primera vez que se le midio cada cosa. Es lo que
+        se le muestra al representante: con que llego su hijo y como va hoy.
+      </p>
+    </section>
+  {% endif %}
 
   <div class="resumen-asistencia mb-4">
     <span class="res-item res-total"><b>{{ progreso|length }}</b> indicadores medidos</span>
@@ -37,6 +135,16 @@
     <span class="res-item text-bg-warning"><b>{{ a_mejorar|length }}</b> por mejorar</span>
     <span class="res-item res-pendientes"><b>{{ resumen_asistencia.porcentaje }}%</b> de asistencia</span>
   </div>
+
+  {% if hay_filtro and not progreso %}
+    <div class="alert alert-warning">
+      En ese rango de fechas no hay mediciones de {{ jugador.nombre_completo }}.
+      {% if total_mediciones %}
+        Tiene {{ total_mediciones }} en total,
+        <a href="/sistema/adm_evaluacion?action=progreso&amp;id={{ jugador.id }}">velas todas</a>.
+      {% endif %}
+    </div>
+  {% endif %}
 
   {% if not progreso %}
     <div class="alert alert-info mb-0">
@@ -46,8 +154,24 @@
   {% else %}
 
     <div class="row g-3 mb-4">
-      <div class="col-12 col-lg-6">
-        <div class="bloque-resumen bloque-fortalezas">
+      <div class="col-12 col-lg-5">
+        <div class="bloque-resumen h-100">
+          <h6><i class="bi bi-bullseye me-1"></i> Tela de arania</h6>
+          {% if radar.areas_medidas %}
+            {% include "adm_evaluacion/radar.html" %}
+          {% else %}
+            <p class="small text-muted mb-0">
+              Hace falta medir mas indicadores (y a mas companieros del grupo)
+              para poder dibujar el radar.
+            </p>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="col-12 col-lg-7">
+        <div class="row g-3">
+          <div class="col-12 col-md-6">
+        <div class="bloque-resumen bloque-fortalezas h-100">
           <h6><i class="bi bi-star-fill me-1"></i> Donde destaca en su grupo</h6>
           {% for f in fortalezas %}
             <div class="ficha-dato">
@@ -62,8 +186,9 @@
         </div>
       </div>
 
-      <div class="col-12 col-lg-6">
-        <div class="bloque-resumen bloque-mejorar">
+          </div>
+          <div class="col-12 col-md-6">
+        <div class="bloque-resumen bloque-mejorar h-100">
           <h6><i class="bi bi-arrow-up-right-circle-fill me-1"></i> Lo que hay que trabajar</h6>
           {% for m in a_mejorar %}
             <div class="ficha-dato">
@@ -74,8 +199,32 @@
             <p class="small text-muted mb-0">Nada por debajo del promedio del grupo.</p>
           {% endfor %}
         </div>
+          </div>
+        </div>
       </div>
     </div>
+
+    {% if afinidades %}
+      <h6 class="mb-2">
+        <i class="bi bi-diagram-3 me-1"></i> En que posicion rinde mejor
+        <small class="text-muted">segun lo que se le ha medido</small>
+      </h6>
+      <div class="afinidades mb-4">
+        {% for a in afinidades|slice:":5" %}
+          <div class="afinidad {% if forloop.first %}afinidad-top{% endif %}">
+            <div class="afinidad-nombre">
+              {{ a.posicion.nombre }}
+              {% if a.es_la_que_le_gusta %}
+                <span class="badge text-bg-warning"><i class="bi bi-heart-fill"></i> le gusta</span>
+              {% endif %}
+              <small class="text-muted d-block">{{ a.posicion.pesos_texto }}</small>
+            </div>
+            <div class="afinidad-barra"><span style="width: {{ a.puntaje }}%"></span></div>
+            <b>{{ a.puntaje }}</b>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
 
     <h6 class="mb-2">Evolucion indicador por indicador</h6>
     <div class="tabla-scroll">
@@ -103,14 +252,31 @@
               <td data-label="Area">
                 <span class="badge text-bg-{{ p.indicador.color_area }}">{{ p.indicador.get_area_display }}</span>
               </td>
-              <td data-label="Tomas">{{ p.tomas }}</td>
+              <td data-label="Tomas">
+                <details class="tomas-detalle">
+                  <summary>{{ p.tomas }}</summary>
+                  <ul class="lista-tomas">
+                    {% for m in p.historial %}
+                      <li>
+                        <span>{{ m.dia|date:"d/m/Y" }}</span>
+                        <b>{{ m.texto }}</b>
+                        <a class="small d-block"
+                           href="/sistema/adm_evaluacion?action=planilla&amp;id={{ m.evaluacion.id }}"
+                           title="Ver la planilla de ese dia">
+                          {{ m.evaluacion.titulo }}
+                        </a>
+                      </li>
+                    {% endfor %}
+                  </ul>
+                </details>
+              </td>
               <td data-label="Primera">
                 {{ p.primera.texto }}
-                <div class="small text-muted">{{ p.primera.evaluacion.fecha|date:"d/m/Y" }}</div>
+                <div class="small text-muted">{{ p.primera.dia|date:"d/m/Y" }}</div>
               </td>
               <td data-label="Ultima">
                 <b>{{ p.ultima.texto }}</b>
-                <div class="small text-muted">{{ p.ultima.evaluacion.fecha|date:"d/m/Y" }}</div>
+                <div class="small text-muted">{{ p.ultima.dia|date:"d/m/Y" }}</div>
               </td>
               <td data-label="Mejor marca">{{ p.mejor_texto }}</td>
               <td data-label="Evolucion">

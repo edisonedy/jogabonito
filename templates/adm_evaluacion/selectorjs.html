@@ -1,0 +1,66 @@
+{% comment %}
+  El comportamiento del selector de indicadores: buscar, marcar un area
+  completa y llevar la cuenta de cuantos van marcados.
+{% endcomment %}
+<script>
+(function () {
+  var caja = document.getElementById('selectorIndicadores');
+  if (!caja) { return; }
+
+  var buscar = document.getElementById('buscarIndicador');
+  var cuenta = document.getElementById('cuentaIndicadores');
+
+  function casillas() {
+    return Array.prototype.slice.call(caja.querySelectorAll('.casilla-indicador'));
+  }
+
+  function contar() {
+    var marcadas = casillas().filter(function (c) { return c.checked; }).length;
+    if (cuenta) { cuenta.textContent = marcadas; }
+  }
+
+  function filtrar() {
+    var texto = (buscar.value || '').trim().toLowerCase();
+
+    caja.querySelectorAll('.area-indicadores').forEach(function (area) {
+      var visibles = 0;
+
+      area.querySelectorAll('.opcion-indicador').forEach(function (opcion) {
+        var nombre = opcion.dataset.nombre || '';
+        var pasa = !texto || nombre.indexOf(texto) >= 0;
+        opcion.hidden = !pasa;
+        if (pasa) { visibles += 1; }
+      });
+
+      area.hidden = visibles === 0;
+      if (texto && visibles) { area.open = true; }
+    });
+  }
+
+  caja.addEventListener('change', function (e) {
+    if (e.target.classList.contains('casilla-indicador')) { contar(); }
+  });
+
+  caja.addEventListener('click', function (e) {
+    var marcarArea = e.target.closest('.marcar-area');
+    if (marcarArea) {
+      e.preventDefault();
+      var area = marcarArea.dataset.area;
+      var delArea = casillas().filter(function (c) { return c.dataset.area === area; });
+      var faltaAlguna = delArea.some(function (c) { return !c.checked; });
+      delArea.forEach(function (c) { c.checked = faltaAlguna; });
+      contar();
+      return;
+    }
+
+    if (e.target.id === 'limpiarIndicadores') {
+      e.preventDefault();
+      casillas().forEach(function (c) { c.checked = false; });
+      contar();
+    }
+  });
+
+  if (buscar) { buscar.addEventListener('input', filtrar); }
+  contar();
+})();
+</script>

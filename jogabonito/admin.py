@@ -2,8 +2,8 @@
 from django.contrib import admin
 
 from jogabonito.models import (
-    Asistencia, Categoria, Entrenador, GruposModulos, Jugador, Modulo, PerfilUsuario,
-    Representante, SolicitudInscripcion,
+    Asistencia, Categoria, Entrenador, Evaluacion, GruposModulos, Indicador, Jugador, Medicion,
+    Modulo, PerfilUsuario, Posicion, Representante, SolicitudInscripcion,
 )
 
 
@@ -69,3 +69,31 @@ class SolicitudInscripcionAdmin(admin.ModelAdmin):
     list_filter = ('estado', 'categoria')
     search_fields = ('nombre', 'telefono')
     readonly_fields = ('origen_ip',)
+
+
+@admin.register(Posicion)
+class PosicionAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'abreviatura', 'orden', 'activo')
+    list_filter = ('activo',)
+
+
+@admin.register(Indicador)
+class IndicadorAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'area', 'tipo_medida', 'unidad', 'mejor_es', 'activo')
+    list_filter = ('area', 'tipo_medida', 'activo')
+    search_fields = ('nombre',)
+
+
+@admin.register(Evaluacion)
+class EvaluacionAdmin(admin.ModelAdmin):
+    list_display = ('titulo', 'categoria', 'fecha', 'cerrada')
+    list_filter = ('categoria', 'cerrada')
+    filter_horizontal = ('indicadores',)
+    date_hierarchy = 'fecha'
+
+
+@admin.register(Medicion)
+class MedicionAdmin(admin.ModelAdmin):
+    list_display = ('jugador', 'indicador', 'valor', 'evaluacion')
+    list_filter = ('indicador', 'evaluacion')
+    search_fields = ('jugador__nombres', 'jugador__apellidos')

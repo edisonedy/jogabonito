@@ -1,0 +1,29 @@
+{% extends "form_modal.html" %}
+{% block form_action %}/sistema/adm_mensualidad{% endblock %}
+{% block formextra %}
+  <input type="hidden" name="action" value="precio">
+  <input type="hidden" name="id" value="{{ jugador.id }}">
+  <div class="alert alert-light border py-2 small">
+    <b>{{ jugador.nombre_completo }}</b> &middot; {{ jugador.categoria.nombre }}<br>
+    Su grupo cuesta <b>$ {{ jugador.categoria.valor_mensual }}</b> al mes.
+    Hoy este jugador paga <b>$ {{ jugador.valor_mensual_vigente }}</b>.
+    <hr class="my-2">
+    <b>Cobrarle cada mes</b> es el interruptor del cobro automatico: prendido,
+    cuando se termina su mes se le abre el siguiente solo. Apagado, deja de
+    generarse (lo que ya se le genero lo sigue debiendo).
+    {% if proximo %}
+      <br><span class="text-muted">
+        Su proximo mes seria del {{ proximo.0|date:"d/m/Y" }} al {{ proximo.1|date:"d/m/Y" }}.
+      </span>
+    {% endif %}
+    <hr class="my-2">
+    El <b>descuento</b> es el porcentaje que se le rebaja por beca, por tener un
+    hermano en la academia o por un convenio.
+    <br><span class="text-muted">
+      Afecta a las mensualidades que se generen despues, no a las ya creadas.
+      Si lo que quieres es no cobrarle unos dias sueltos, eso se hace al cobrar
+      el mes, con los dias que aviso que no viene.
+    </span>
+  </div>
+{% endblock %}
+{% block save_label %}Guardar{% endblock %}

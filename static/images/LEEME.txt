@@ -1,0 +1,5 @@
+logo.png   -> escudo de la Academia Joga Bonito (tambien sirve .jpg o .webp).
+              Si no esta, la pagina dibuja un escudo de respaldo con los
+              colores de la marca.
+horus.svg  -> logo de HORUS para el credito del desarrollador (o .png/.jpg).
+              Si no esta, se dibuja un rombo azul.

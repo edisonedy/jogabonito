@@ -138,7 +138,12 @@
     justify-content:space-between;
     gap:12px;
     padding:6px 12px;
+    /* En el celular una celda puede traer varias etiquetas: que bajen de
+       linea en vez de estirar la tarjeta a lo ancho. */
+    flex-wrap:wrap;
+    min-width:0;
   }
+  .tabla-joga tbody td > *{ min-width:0; }
   .tabla-joga tbody td::before{
     content:attr(data-label);
     font-size:12px;
@@ -339,3 +344,633 @@ input.check-group{
   .fila-asistencia .fila-jugador{ flex:1 1 auto; }
   .btn-group-asistencia{ width:auto; grid-template-columns:repeat(4, minmax(96px, 1fr)); }
 }
+
+/* =========================================================
+   Evaluaciones: planilla de captura y progreso
+   ========================================================= */
+.barra-avance{
+  height:8px;
+  border-radius:999px;
+  background:var(--accent-soft);
+  overflow:hidden;
+  min-width:90px;
+}
+.barra-avance span{
+  display:block;
+  height:100%;
+  border-radius:999px;
+  background:linear-gradient(90deg, var(--joga-verde-claro), var(--joga-verde));
+}
+
+.planilla{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+.planilla-jugador{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:12px 14px;
+  box-shadow:var(--shadow3);
+}
+.planilla-jugador header{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+  padding-bottom:10px;
+  border-bottom:1px dashed var(--line);
+  margin-bottom:10px;
+}
+.planilla-campos{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:10px;
+}
+.planilla-campo{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  margin:0;
+}
+.planilla-etiqueta{
+  font-size:12px;
+  font-weight:600;
+  color:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:.02em;
+}
+.planilla-input{
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.planilla-input input{
+  min-height:42px;
+  font-size:16px;   /* 16px evita que el telefono haga zoom al enfocar */
+  font-weight:600;
+  text-align:center;
+  max-width:120px;
+}
+.planilla-input input.guardado{
+  border-color:var(--joga-verde-claro);
+  box-shadow:0 0 0 .18rem rgba(18,160,76,.25);
+}
+.planilla-unidad{
+  font-size:12px;
+  font-weight:700;
+  color:var(--muted);
+  min-width:34px;
+}
+.planilla-flecha{ font-size:17px; }
+
+@media (min-width: 576px){
+  .planilla-campos{ grid-template-columns:repeat(2, 1fr); }
+}
+@media (min-width: 1200px){
+  .planilla-campos{ grid-template-columns:repeat(3, 1fr); }
+}
+
+.bloque-resumen{
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:16px 18px;
+  height:100%;
+  background:var(--card);
+}
+.bloque-resumen h6{ margin-bottom:10px; }
+.bloque-fortalezas{ border-left:4px solid #12a04c; }
+.bloque-mejorar{ border-left:4px solid #e39c00; }
+
+/* =========================================================
+   Credito del desarrollador (HORUS Soluciones Tecnologicas)
+   Azul de marca #009FE3 sobre #1E212D
+   ========================================================= */
+.horus-credito{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  padding:7px 10px;
+  border-radius:12px;
+  background:rgba(0,159,227,.10);
+  border:1px solid rgba(0,159,227,.35);
+  text-decoration:none;
+  color:var(--ink);
+  transition:background .18s ease, border-color .18s ease;
+}
+.horus-credito:hover{
+  background:rgba(0,159,227,.2);
+  border-color:#009fe3;
+  color:var(--ink);
+}
+.horus-credito .op-txt,
+.horus-credito > span:last-child{
+  display:flex;
+  flex-direction:column;
+  line-height:1.15;
+  min-width:0;
+}
+.horus-credito small{ font-size:9.5px; opacity:.75; letter-spacing:.03em; }
+.horus-credito b{
+  font-size:13px;
+  font-weight:900;
+  letter-spacing:.15em;
+  color:#009fe3;
+}
+.horus-marca{
+  width:26px;
+  height:26px;
+  border-radius:8px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  background:#009fe3;
+  color:#1e212d;
+  font-size:12px;
+  flex:0 0 auto;
+}
+.horus-credito-login{
+  display:inline-flex;
+  background:rgba(0,159,227,.08);
+  text-align:left;
+}
+/* Con el sidebar contraido solo queda el rombo azul. */
+.op-mini .horus-credito{ justify-content:center; }
+
+/* =========================================================
+   Tablero y tela de arania
+   ========================================================= */
+.tablero-cifras{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(190px, 1fr));
+  gap:12px;
+}
+.cifra{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:14px 16px;
+  box-shadow:var(--shadow3);
+}
+.cifra-icono{
+  width:46px;
+  height:46px;
+  border-radius:14px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  color:#fff;
+  font-size:19px;
+  flex:0 0 auto;
+}
+.cifra-icono.bg-joga{ background:linear-gradient(135deg,#17a44b,#0f8a3d); }
+.cifra-icono.bg-azul{ background:#2b2a6e; color:#ffd200; }
+.cifra-icono.bg-oro{ background:#ffd200; color:#2b2a6e; }
+.cifra-icono.bg-rojo{ background:#d9534f; }
+.cifra b{
+  display:block;
+  font-size:1.9rem;
+  line-height:1;
+  color:var(--ink);
+}
+.cifra b small{ font-size:1rem; color:var(--muted); font-weight:600; }
+.cifra span{ font-size:12.5px; color:var(--muted); }
+
+/* Ojo: nada de height:100% aqui. Cuando se apilan dos bloques en la misma
+   columna, cada uno tomaria el alto completo y se desbordarian sobre el pie. */
+.bloque{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:16px 18px;
+  box-shadow:var(--shadow3);
+}
+.columna-bloques{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+.columna-bloques .bloque-crece{ flex:1 1 auto; }
+.bloque h6{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  margin-bottom:12px;
+  font-weight:700;
+}
+.bloque h6 small{ font-weight:400; font-size:11.5px; margin-left:auto; }
+.bloque h6 .btn{ margin-left:auto; }
+.bloque-alerta{ border-left:4px solid #e39c00; }
+
+/* ---- tela de arania ---- */
+.radar-caja{ display:flex; flex-direction:column; align-items:center; gap:10px; }
+.radar{ width:100%; max-width:300px; height:auto; }
+.radar-anillo{ fill:none; stroke:var(--line); stroke-width:1; }
+.radar-anillo-borde{ stroke:var(--joga-verde-claro); stroke-width:1.5; }
+.radar-rayo{ stroke:var(--line); stroke-width:1; }
+.radar-area{
+  fill:rgba(18,160,76,.28);
+  stroke:#12a04c;
+  stroke-width:2.5;
+  stroke-linejoin:round;
+}
+.radar-etiqueta{
+  font-size:9.5px;
+  font-weight:700;
+  fill:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:.04em;
+}
+.radar-valor{ font-size:11px; font-weight:800; fill:var(--joga-verde); }
+.radar-promedio{
+  display:inline-flex;
+  align-items:baseline;
+  gap:5px;
+  background:linear-gradient(135deg, var(--joga-verde-claro), var(--joga-verde));
+  color:#fff;
+  padding:5px 14px;
+  border-radius:999px;
+}
+.radar-promedio b{ font-size:1.3rem; }
+.radar-promedio span{ font-size:11px; opacity:.85; }
+.radar-leyenda{ text-align:center; }
+
+.radar-punto{ fill:#12a04c; stroke:#fff; stroke-width:1.5; }
+.radar-valor-vacio{ fill:var(--muted); font-weight:600; font-size:8.5px; }
+
+/* El radar necesita aire: en pantalla grande ocupa media fila. */
+.radar{ max-width:340px; }
+.radar-etiqueta{ font-size:11px; }
+.radar-valor{ font-size:12.5px; }
+.radar-valor-vacio{ font-size:9.5px; }
+
+/* Afinidad por posicion */
+.afinidades{ display:flex; flex-direction:column; gap:8px; }
+.afinidad{
+  display:grid;
+  grid-template-columns:1fr 120px 44px;
+  align-items:center;
+  gap:12px;
+  padding:8px 12px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:var(--card);
+}
+.afinidad-top{ border-left:4px solid var(--joga-verde-claro); }
+.afinidad-nombre{ font-size:14px; font-weight:600; min-width:0; }
+.afinidad-barra{
+  height:8px;
+  border-radius:999px;
+  background:var(--accent-soft);
+  overflow:hidden;
+}
+.afinidad-barra span{
+  display:block;
+  height:100%;
+  border-radius:999px;
+  background:linear-gradient(90deg, var(--joga-verde-claro), var(--joga-verde));
+}
+.afinidad b{ text-align:right; font-size:15px; color:var(--joga-verde); }
+@media (max-width: 575.98px){
+  .afinidad{ grid-template-columns:1fr 60px; }
+  .afinidad-barra{ grid-column:1 / -1; }
+}
+
+.cifra-icono.bg-verde-oscuro{ background:#075a28; }
+.bloque-dinero{ border-left:4px solid #d9534f; }
+.bloque-cumple{ border-left:4px solid #ffd200; }
+.cumple-hoy{
+  background:rgba(255,210,0,.14);
+  border-radius:10px;
+  padding-left:8px;
+  padding-right:8px;
+}
+
+/* ---------------- Ficha del jugador ---------------- */
+.ficha-cabecera{
+  display:flex;
+  align-items:center;
+  gap:16px;
+  flex-wrap:wrap;
+  padding:16px 18px;
+  margin-bottom:14px;
+  border-radius:18px;
+  background:linear-gradient(135deg, var(--joga-verde-claro), var(--joga-verde));
+  color:#fff;
+  box-shadow:var(--shadow2);
+}
+.ficha-foto{
+  width:84px;
+  height:84px;
+  border-radius:50%;
+  object-fit:cover;
+  border:3px solid #ffd200;
+  flex:0 0 auto;
+}
+.ficha-foto-vacia{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(255,255,255,.16);
+  color:#ffd200;
+  font-size:32px;
+}
+.ficha-identidad{ min-width:0; flex:1 1 240px; }
+.ficha-identidad h4{ margin:0 0 8px; color:#fff; font-weight:800; }
+.ficha-chips{ display:flex; flex-wrap:wrap; gap:6px; }
+.chip{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  background:rgba(255,255,255,.18);
+  border:1px solid rgba(255,255,255,.28);
+  color:#fff;
+  font-size:12px;
+  font-weight:600;
+  padding:3px 10px;
+  border-radius:999px;
+}
+.chip-grupo{ background:#ffd200; color:#2b2a6e; border-color:#ffd200; }
+.chip-ok{ background:rgba(255,255,255,.9); color:#0f8a3d; border-color:transparent; }
+.chip-alerta{ background:#e39c00; border-color:transparent; }
+.chip-gris{ background:rgba(0,0,0,.25); border-color:transparent; }
+.chip-deuda{ background:#d9534f; border-color:transparent; }
+.ficha-acciones{ display:flex; flex-wrap:wrap; gap:8px; margin-left:auto; }
+
+.lista-meses{ display:flex; flex-direction:column; gap:4px; margin-top:6px; }
+.mes-item{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  padding:8px 10px;
+  border-radius:10px;
+  border:1px solid var(--line);
+  color:var(--ink);
+  text-decoration:none;
+  font-size:14px;
+}
+.mes-item:hover{ background:var(--accent-soft); color:var(--ink); }
+
+/* Buscador rapido dentro de una lista larga */
+.buscador-lista{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  position:relative;
+  flex:1 1 240px;
+  max-width:340px;
+}
+.buscador-lista i{
+  position:absolute;
+  left:11px;
+  color:var(--muted);
+  pointer-events:none;
+}
+.buscador-lista input{ padding-left:32px; min-height:40px; }
+
+@media (max-width: 767.98px){
+  .ficha-cabecera{ justify-content:center; text-align:center; }
+  .ficha-acciones{ margin-left:0; justify-content:center; width:100%; }
+  .ficha-chips{ justify-content:center; }
+}
+
+/* =========================================================
+   Panel lateral contraido: app_new.css no conoce los bloques
+   propios (menu de modulos, pie y credito), asi que se ajustan aqui.
+   ========================================================= */
+.app.op-mini .rail-nav{ gap:6px; }
+.app.op-mini .rail-link{
+  justify-content:center;
+  padding:11px 0;
+  border-radius:14px;
+}
+.app.op-mini .rail-link .op-txt{ display:none !important; }
+.app.op-mini .rail-link i{ width:auto; font-size:18px; }
+
+/* El copyright y la IP no caben en 84px: se ocultan contraido. */
+.app.op-mini .sidebar-bottom .small{ display:none !important; }
+
+.app.op-mini .horus-credito{
+  justify-content:center;
+  padding:8px 4px;
+  gap:0;
+}
+.app.op-mini .horus-credito .op-txt{ display:none !important; }
+.app.op-mini .horus-credito img{ height:22px; }
+
+/* ---- Todas las tomas de un indicador (pantalla de progreso) ---- */
+.tomas-detalle > summary{
+  cursor:pointer;
+  font-weight:700;
+  color:var(--joga-verde, #17a44b);
+  list-style:none;
+}
+.tomas-detalle > summary::marker{ content:''; }
+.tomas-detalle > summary::after{
+  content:'\F282';
+  font-family:'bootstrap-icons';
+  font-size:.8em;
+  margin-left:4px;
+}
+.tomas-detalle[open] > summary::after{ content:'\F286'; }
+.lista-tomas{
+  margin:8px 0 0;
+  padding:0;
+  list-style:none;
+  border-left:2px solid var(--linea, #e6e9ef);
+}
+.lista-tomas li{
+  padding:4px 0 4px 10px;
+  font-size:.85rem;
+  white-space:nowrap;
+}
+.lista-tomas li span{ color:#6c757d; margin-right:6px; }
+
+/* ---- Chip de "cuantos deben" en la lista de jugadores ---- */
+.modulo-chip.chip-deuda{
+  background:#fdecec;
+  border-color:#f5c2c7;
+  color:#b02a37;
+  text-decoration:none;
+}
+.modulo-chip.chip-deuda:hover{ background:#f8d7da; color:#842029; }
+
+/* ---- Apodo y notas del profe ---- */
+.ficha-apodo{
+  color:rgba(255,255,255,.9);
+  font-size:.9rem;
+  margin:-2px 0 6px;
+}
+.lista-notas{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));
+  gap:12px;
+}
+.nota{
+  background:#fff;
+  border:1px solid var(--linea, #e6e9ef);
+  border-left:4px solid var(--linea, #e6e9ef);
+  border-radius:12px;
+  padding:12px 14px;
+}
+.nota-success{ border-left-color:#198754; }
+.nota-warning{ border-left-color:#ffc107; }
+.nota-danger{ border-left-color:#dc3545; }
+.nota-secondary{ border-left-color:#6c757d; }
+.nota-cabecera{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-bottom:6px;
+}
+.nota-texto{
+  margin:0;
+  font-size:.92rem;
+  line-height:1.45;
+  white-space:pre-line;
+}
+
+/* ---- Selector de indicadores de la evaluacion ---- */
+.selector-indicadores{
+  border:1px solid var(--linea, #e6e9ef);
+  border-radius:12px;
+  padding:10px;
+  max-height:320px;
+  overflow-y:auto;
+  background:#fff;
+}
+.area-indicadores{
+  border-bottom:1px solid var(--linea, #e6e9ef);
+  padding:6px 0;
+}
+.area-indicadores:last-child{ border-bottom:0; }
+.area-indicadores > summary{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  cursor:pointer;
+  font-weight:700;
+  font-size:.9rem;
+  color:var(--joga-azul, #2b2a6e);
+  list-style:none;
+}
+.area-indicadores > summary::marker{ content:''; }
+.area-lista{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(220px, 1fr));
+  gap:4px 12px;
+  padding:8px 0 4px 6px;
+}
+.opcion-indicador{
+  display:flex;
+  align-items:flex-start;
+  gap:8px;
+  font-size:.88rem;
+  padding:3px 0;
+  cursor:pointer;
+}
+.opcion-indicador input{ margin-top:3px; }
+
+/* ---- Quien dirige cada grupo ---- */
+.dias-turno{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(190px, 1fr));
+  gap:8px;
+}
+.dia-turno{
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+  font-size:.85rem;
+}
+.dia-turno-nombre{
+  font-weight:700;
+  color:var(--joga-azul, #2b2a6e);
+  text-transform:uppercase;
+  font-size:11px;
+  letter-spacing:.06em;
+}
+.dia-semana{
+  border:1px solid var(--linea, #e6e9ef);
+  border-radius:12px;
+  padding:10px 14px;
+  margin-bottom:10px;
+}
+.dia-semana.dia-hoy{
+  border-color:var(--joga-verde, #17a44b);
+  background:#f2fbf5;
+}
+.dia-semana-titulo{
+  font-weight:800;
+  color:var(--joga-azul, #2b2a6e);
+  margin-bottom:6px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+/* ---- El dia en que cada jugador dio la prueba ---- */
+.fecha-jugador{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-size:11px;
+  color:#6c757d;
+  white-space:nowrap;
+}
+.fecha-jugador input{ width:150px; }
+.planilla-dia{
+  display:block;
+  font-size:10.5px;
+  color:#9aa1ab;
+  margin-top:2px;
+  min-height:13px;
+}
+
+/* ---- La ultima novedad del jugador en la lista de asistencia ---- */
+.novedad-jugador{
+  font-size:11.5px;
+  line-height:1.3;
+  margin-top:2px;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+}
+
+/* ---- Celular: el panel lateral no debe reservar columna ----
+   `.app.op-mini` deja una columna de 84px para el riel. En el telefono el
+   panel se abre flotando encima, asi que esa columna dejaba el contenido en
+   84px de ancho. Aqui se fuerza una sola columna. */
+@media (max-width: 992px){
+  .app,
+  .app.op-mini{ grid-template-columns:1fr; }
+}
+
+/* ---- El monto grande del cobro rapido ---- */
+.cobro-monto{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:2px;
+  background:#f2fbf5;
+  border:1px solid #bfe6cd;
+  border-radius:14px;
+  padding:14px;
+  margin-bottom:12px;
+  text-align:center;
+}
+.cobro-monto > span{ font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:#6c757d; }
+.cobro-monto > b{
+  font-family:'Anton', sans-serif;
+  font-size:2.4rem;
+  line-height:1.1;
+  color:var(--joga-verde, #17a44b);
+}
+.cobro-monto > small{ color:#6c757d; }

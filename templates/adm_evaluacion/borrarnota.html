@@ -1,0 +1,7 @@
+{% extends "delete_modal.html" %}
+{% block formaction %}/sistema/adm_evaluacion{% endblock %}
+{% block formactionvalue %}borrarnota{% endblock %}
+{% block formobjectid %}{{ nota.id }}{% endblock %}
+{% block formobjectrepr %}
+  la nota del {{ nota.fecha|date:"d/m/Y" }} sobre <b>{{ nota.jugador.nombre_completo }}</b>
+{% endblock %}

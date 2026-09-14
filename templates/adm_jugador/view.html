@@ -17,6 +17,15 @@
       {% endfor %}
     </select>
 
+    <select name="division" class="form-select form-select-sm" style="max-width:170px" onchange="this.form.submit()">
+      <option value="">Todas las edades</option>
+      {% for d in divisiones %}
+        <option value="{{ d.id }}" {% if division_id == d.id %}selected{% endif %}>
+          {{ d.nombre }} ({{ d.edad_minima }}-{{ d.edad_maxima }})
+        </option>
+      {% endfor %}
+    </select>
+
     <select name="estado" class="form-select form-select-sm" style="max-width:160px" onchange="this.form.submit()">
       <option value="">Todos los estados</option>
       {% for valor, etiqueta in estados %}
@@ -24,7 +33,21 @@
       {% endfor %}
     </select>
 
+    {% if not solo_lectura %}
+      <select name="cuenta" class="form-select form-select-sm" style="max-width:170px" onchange="this.form.submit()">
+        <option value="">Deban o no</option>
+        <option value="debe" {% if cuenta_id == 'debe' %}selected{% endif %}>Solo los que deben</option>
+        <option value="aldia" {% if cuenta_id == 'aldia' %}selected{% endif %}>Solo los que estan al dia</option>
+      </select>
+    {% endif %}
+
     <span class="modulo-chip"><i class="fa-solid fa-user-group"></i> {{ total_jugadores }} activos</span>
+
+    {% if not solo_lectura and cuantos_deben %}
+      <a href="?cuenta=debe" class="modulo-chip chip-deuda">
+        <i class="fa-solid fa-triangle-exclamation"></i> {{ cuantos_deben }} deben
+      </a>
+    {% endif %}
 
     {% if not solo_lectura %}
       <a href="#" data-modal-url="/sistema/adm_jugador?action=add" class="btn btn-joga btn-sm btn-touch ms-auto">
@@ -58,19 +81,55 @@
                 {% endif %}
                 <div>
                   <div class="fw-semibold">{{ j.nombre_completo }}</div>
-                  <div class="small text-muted">{{ j.cedula|default:"" }}</div>
+                  <div class="small text-muted">
+                    {% if j.apodo %}le dicen <b>{{ j.apodo }}</b>{% else %}{{ j.cedula|default:"" }}{% endif %}
+                  </div>
                 </div>
               </div>
             </td>
-            <td data-label="Edad">{{ j.edad }}</td>
+            <td data-label="Edad">
+              {{ j.edad }}
+              <div class="small"><span class="chip chip-gris">{{ j.division_texto }}</span></div>
+            </td>
             <td data-label="Categoria">{{ j.categoria.nombre }}</td>
             <td data-label="Representante">
               {% if j.representante %}
                 {{ j.representante.nombre_completo }}
-                <div class="small text-muted">{{ j.representante.numero_whatsapp }}</div>
+                {% if j.representante.numero_whatsapp %}
+                  <div class="small">
+                    <a href="https://wa.me/{{ j.representante.numero_whatsapp }}"
+                       target="_blank" rel="noopener">
+                      <i class="fa-brands fa-whatsapp text-success"></i>
+                      {{ j.representante.telefono }}
+                    </a>
+                  </div>
+                {% endif %}
+              {% elif j.telefono %}
+                <div class="small">
+                  <a href="https://wa.me/{{ j.numero_whatsapp }}" target="_blank" rel="noopener">
+                    <i class="fa-brands fa-whatsapp text-success"></i> {{ j.telefono }}
+                  </a>
+                </div>
+                <div class="small text-muted">sin representante</div>
               {% else %}-{% endif %}
             </td>
-            <td data-label="Mensualidad">$ {{ j.valor_mensual_vigente }}</td>
+            <td data-label="Mensualidad">
+              $ {{ j.valor_mensual_vigente }}
+              {% if not solo_lectura %}
+                {% if j.meses_pendientes %}
+                  <div class="small">
+                    <span class="badge text-bg-danger">
+                      debe $ {{ j.deuda }} &middot; {{ j.meses_pendientes }} mes{{ j.meses_pendientes|pluralize:"es" }}
+                    </span>
+                  </div>
+                {% elif j.estado == 1 %}
+                  <div class="small text-success">al dia</div>
+                {% endif %}
+                {% if not j.cobro_activo %}
+                  <div class="small text-muted"><i class="bi bi-pause-circle"></i> cobro pausado</div>
+                {% endif %}
+              {% endif %}
+            </td>
             <td data-label="Estado">
               {% if j.estado == 1 %}
                 <span class="badge text-bg-success">Activo</span>
@@ -86,9 +145,26 @@
                   <i class="bi bi-eye"></i>
                 </a>
                 {% if not solo_lectura %}
+                  <a class="btn btn-outline-success" href="#"
+                     data-modal-url="/sistema/adm_mensualidad?action=add&amp;jugador={{ j.id }}"
+                     title="Cobrarle un mes">
+                    <i class="bi bi-cash-coin"></i>
+                  </a>
                   <a class="btn btn-outline-primary" href="#" data-modal-url="/sistema/adm_jugador?action=edit&amp;id={{ j.id }}" title="Editar">
                     <i class="bi bi-pencil"></i>
                   </a>
+                  {% if j.estado == 1 %}
+                    <a class="btn btn-outline-warning js-estado" href="#"
+                       data-jugador="{{ j.id }}" data-estado="2"
+                       title="Desactivar (dejo de venir por ahora)">
+                      <i class="bi bi-pause-circle"></i>
+                    </a>
+                  {% else %}
+                    <a class="btn btn-outline-success js-estado" href="#"
+                       data-jugador="{{ j.id }}" data-estado="1" title="Volver a activar">
+                      <i class="bi bi-play-circle"></i>
+                    </a>
+                  {% endif %}
                   <a class="btn btn-outline-danger" href="#" data-modal-url="/sistema/adm_jugador?action=delete&amp;id={{ j.id }}" title="Eliminar">
                     <i class="bi bi-trash"></i>
                   </a>
@@ -104,4 +180,43 @@
   </div>
 
   {% include "paginador.html" %}
+{% endblock %}
+
+{% block heading %}
+<script>
+  $(function () {
+    // Activar / desactivar sin entrar a la ficha: pasa seguido cuando un
+    // ninio deja de venir un tiempo y despues vuelve.
+    $(document).on('click', '.js-estado', function (e) {
+      e.preventDefault();
+      var boton = $(this);
+      var activando = boton.data('estado') === 1;
+
+      if (!confirm(activando ? 'Volver a activar a este jugador?'
+                             : 'Desactivar a este jugador? Deja de contarse y no se le cobran meses nuevos.')) {
+        return;
+      }
+
+      $.ajax({
+        type: 'POST',
+        url: '/sistema/adm_jugador',
+        data: {
+          action: 'estado',
+          id: boton.data('jugador'),
+          estado: boton.data('estado'),
+          csrfmiddlewaretoken: $('meta[name="csrf-token"]').attr('content')
+        },
+        dataType: 'json'
+      }).done(function (data) {
+        if (data.result === 'ok') {
+          location.reload();
+        } else if (typeof NotificacionAlerta === 'function') {
+          NotificacionAlerta('warning', 'Advertencia', data.mensaje || 'No se pudo cambiar.');
+        }
+      }).fail(function () {
+        alert('Error de conexion.');
+      });
+    });
+  });
+</script>
 {% endblock %}

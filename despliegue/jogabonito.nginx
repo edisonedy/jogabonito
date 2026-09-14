@@ -1,0 +1,40 @@
+# Nginx delante de Gunicorn.
+#
+# 1. Cambia jogabonito.horus-tecnologia.com por tu dominio.
+# 2. Para el candado (https):  sudo certbot --nginx -d tu-dominio
+#    Certbot reescribe este archivo solo; no hay que tocar nada mas.
+
+upstream jogabonito {
+    server unix:/run/jogabonito/gunicorn.sock fail_timeout=0;
+}
+
+server {
+    listen 80;
+    server_name jogabonito.horus-tecnologia.com;
+
+    # Las fotos de los jugadores pesan; se suben pero con tope.
+    client_max_body_size 10M;
+
+    access_log /var/log/nginx/jogabonito-acceso.log;
+    error_log  /var/log/nginx/jogabonito-error.log;
+
+    location /static/ {
+        alias /opt/jogabonito/staticfiles/;
+        expires 30d;
+        add_header Cache-Control "public";
+    }
+
+    location /media/ {
+        alias /opt/jogabonito/media/;
+        expires 7d;
+    }
+
+    location / {
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_redirect off;
+        proxy_pass http://jogabonito;
+    }
+}

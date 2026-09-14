@@ -1,0 +1,202 @@
+{% extends "base_nueva.html" %}
+
+{% block pagetitle %}Mensualidades | {{ academia.nombre }}{% endblock %}
+
+{% block canvas %}
+  <form method="get" class="modulo-toolbar">
+    <select name="mes" class="form-select form-select-sm" style="max-width:150px" onchange="this.form.submit()">
+      {% for valor, etiqueta in meses %}
+        <option value="{{ valor }}" {% if mes == valor %}selected{% endif %}>{{ etiqueta|title }}</option>
+      {% endfor %}
+    </select>
+
+    <select name="anio" class="form-select form-select-sm" style="max-width:110px" onchange="this.form.submit()">
+      {% for a in anios %}
+        <option value="{{ a }}" {% if anio == a %}selected{% endif %}>{{ a }}</option>
+      {% endfor %}
+    </select>
+
+    <select name="categoria" class="form-select form-select-sm" style="max-width:180px" onchange="this.form.submit()">
+      <option value="">Todos los grupos</option>
+      {% for c in categorias %}
+        <option value="{{ c.id }}" {% if categoria_id == c.id %}selected{% endif %}>{{ c.nombre }}</option>
+      {% endfor %}
+    </select>
+
+    <select name="estado" class="form-select form-select-sm" style="max-width:160px" onchange="this.form.submit()">
+      <option value="">Todos</option>
+      <option value="atrasadas" {% if estado_id == 'atrasadas' %}selected{% endif %}>Solo atrasadas</option>
+      {% for valor, etiqueta in estados %}
+        <option value="{{ valor }}" {% if estado_id == valor %}selected{% endif %}>{{ etiqueta|title }}</option>
+      {% endfor %}
+    </select>
+
+    <div class="d-flex gap-2 ms-auto">
+      <a href="/sistema/adm_mensualidad?action=deudores" class="btn btn-sm btn-outline-danger btn-touch">
+        <i class="bi bi-exclamation-circle me-1"></i> Quien debe
+      </a>
+      <a href="#" data-modal-url="/sistema/adm_mensualidad?action=add&amp;mes={{ mes }}&amp;anio={{ anio }}"
+         class="btn btn-outline-success btn-sm btn-touch">
+        <i class="bi bi-person-plus me-1"></i> Agregar a uno
+      </a>
+      <a href="#" data-modal-url="/sistema/adm_mensualidad?action=aldia&amp;mes={{ mes }}&amp;anio={{ anio }}"
+         class="btn btn-joga btn-sm btn-touch">
+        <i class="fa-solid fa-rotate me-1"></i> Cobro automatico
+      </a>
+    </div>
+  </form>
+
+  {% if aviso_automatico %}
+    <div class="alert alert-success py-2 small d-flex align-items-center gap-2">
+      <i class="fa-solid fa-rotate"></i>
+      <span>{{ aviso_automatico }} Se abren solas al terminar el mes de cada jugador.</span>
+    </div>
+  {% endif %}
+
+  <p class="small text-muted mb-3">
+    <i class="bi bi-info-circle me-1"></i>
+    Cada mensualidad pertenece al mes en que <b>arranca</b> su periodo: si un
+    jugador entro un 23, su mes del 23/09 al 22/10 es la mensualidad de
+    <b>septiembre</b>, aunque se termine en octubre.
+  </p>
+
+  <div class="tablero-cifras mb-3">
+    <article class="cifra">
+      <span class="cifra-icono bg-joga"><i class="fa-solid fa-sack-dollar"></i></span>
+      <div><b>$ {{ resumen.cobrado }}</b><span>cobrado del mes</span></div>
+    </article>
+    <article class="cifra">
+      <span class="cifra-icono bg-oro"><i class="fa-solid fa-hourglass-half"></i></span>
+      <div><b>$ {{ resumen.por_cobrar }}</b><span>por cobrar</span></div>
+    </article>
+    <article class="cifra">
+      <span class="cifra-icono bg-azul"><i class="fa-solid fa-check"></i></span>
+      <div><b>{{ resumen.pagadas }}<small>/{{ resumen.generadas }}</small></b><span>pagadas</span></div>
+    </article>
+    <article class="cifra">
+      <span class="cifra-icono bg-rojo"><i class="fa-solid fa-triangle-exclamation"></i></span>
+      <div><b>{{ resumen.atrasadas }}</b><span>atrasadas</span></div>
+    </article>
+  </div>
+
+  <form method="get" class="modulo-toolbar">
+    <input type="hidden" name="mes" value="{{ mes }}">
+    <input type="hidden" name="anio" value="{{ anio }}">
+    <div class="buscador d-flex gap-2">
+      <input type="text" class="form-control form-control-sm" name="s" value="{{ search }}"
+             placeholder="Buscar jugador">
+      <button class="btn btn-sm btn-outline-secondary btn-touch" type="submit"><i class="bi bi-search"></i></button>
+    </div>
+  </form>
+
+  <div class="tabla-scroll">
+    <table class="tabla-joga">
+      <thead>
+        <tr>
+          <th>Jugador</th>
+          <th>Grupo</th>
+          <th>Valor</th>
+          <th>Periodo</th>
+          <th>Vence</th>
+          <th>Estado</th>
+          <th>Pago</th>
+          <th class="text-end">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in mensualidades %}
+          <tr>
+            <td data-label="Jugador">
+              <a class="fw-semibold" href="/sistema/adm_jugador?action=view&amp;id={{ m.jugador.id }}">
+                {{ m.jugador.nombre_completo }}
+              </a>
+              {% if m.descuento_aplicado %}
+                <div class="small text-muted">
+                  <i class="bi bi-tag"></i> con {{ m.descuento_aplicado|floatformat:"-2" }}% de descuento
+                  {% if m.jugador.motivo_descuento %}&middot; {{ m.jugador.motivo_descuento }}{% endif %}
+                </div>
+              {% elif m.jugador.descuento %}
+                <div class="small text-muted">
+                  <i class="bi bi-tag"></i> hoy tiene {{ m.jugador.descuento|floatformat:"-2" }}% de descuento
+                  (este mes se genero antes)
+                </div>
+              {% endif %}
+            </td>
+            <td data-label="Grupo">{{ m.jugador.categoria.nombre }}</td>
+            <td data-label="Valor">
+              <b>$ {{ m.valor }}</b>
+              {% if m.tiene_ajuste %}
+                <div class="small text-muted">de $ {{ m.valor_completo }} &middot; {{ m.dias_cobrados }} dias</div>
+              {% endif %}
+            </td>
+            <td data-label="Periodo">
+              {% if m.periodo_inicio %}
+                {{ m.periodo_inicio|date:"d/m" }} al {{ m.periodo_fin|date:"d/m/Y" }}
+                <div class="small text-muted">{{ m.dias_del_periodo }} dias</div>
+              {% else %}
+                {{ m.periodo }}
+              {% endif %}
+            </td>
+            <td data-label="Vence">
+              {{ m.fecha_vencimiento|date:"d/m/Y" }}
+              {% if m.esta_atrasada %}
+                <div class="small text-danger">
+                  {{ m.dias_de_atraso }} dia{{ m.dias_de_atraso|pluralize }} de atraso
+                </div>
+              {% endif %}
+            </td>
+            <td data-label="Estado">
+              <span class="badge text-bg-{{ m.color }}">{{ m.estado_visible }}</span>
+            </td>
+            <td data-label="Pago">
+              {% if m.esta_pagada %}
+                {{ m.fecha_pago|date:"d/m/Y" }}
+                <div class="small text-muted">{{ m.get_forma_pago_display|default:"" }}</div>
+              {% else %}-{% endif %}
+            </td>
+            <td class="text-end celda-acciones" data-label="Acciones">
+              <div class="btn-group btn-group-sm">
+                {% if not m.esta_pagada %}
+                  <a class="btn btn-joga" href="#"
+                     data-modal-url="/sistema/adm_mensualidad?action=cobrar&amp;id={{ m.id }}"
+                     title="Cobrar">
+                    <i class="bi bi-cash-coin"></i>
+                  </a>
+                {% endif %}
+                <a class="btn btn-outline-secondary" href="#"
+                   data-modal-url="/sistema/adm_mensualidad?action=pagar&amp;id={{ m.id }}"
+                   title="Editar el mes (fechas, valor, dias)">
+                  <i class="bi bi-pencil"></i>
+                </a>
+                <a class="btn btn-outline-secondary" href="#"
+                   data-modal-url="/sistema/adm_mensualidad?action=precio&amp;id={{ m.jugador.id }}"
+                   title="Precio y descuento">
+                  <i class="bi bi-tag"></i>
+                </a>
+                <a class="btn btn-outline-primary" href="#"
+                   data-modal-url="/sistema/adm_mensualidad?action=siguiente&amp;id={{ m.jugador.id }}"
+                   title="Abrir el siguiente mes de este jugador">
+                  <i class="bi bi-arrow-right-circle"></i>
+                </a>
+                <a class="btn btn-outline-danger" href="#"
+                   data-modal-url="/sistema/adm_mensualidad?action=delete&amp;id={{ m.id }}" title="Eliminar">
+                  <i class="bi bi-trash"></i>
+                </a>
+              </div>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="8" class="text-center text-muted py-4">
+              No hay mensualidades de ese mes.
+              Los meses se abren solos cuando a cada jugador le toca;
+              si necesitas uno ya, usa <b>Agregar a uno</b>.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% include "paginador.html" %}
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "form_modal.html" %}
+{% block form_action %}/sistema/adm_jugador{% endblock %}
+{% block formextra %}
+  <input type="hidden" name="action" value="representante">
+  <input type="hidden" name="id" value="{{ jugador.id }}">
+  <div class="alert alert-light border py-2 small">
+    <b>{{ jugador.nombre_completo }}</b><br>
+    Elige un representante que ya este registrado, o llena los datos de abajo
+    para crear uno nuevo y asignarselo de una vez.
+  </div>
+{% endblock %}
+{% block save_label %}Guardar representante{% endblock %}

@@ -1,0 +1,5 @@
+{% extends "delete_modal.html" %}
+{% block formaction %}/sistema/adm_categoria{% endblock %}
+{% block formactionvalue %}deldivision{% endblock %}
+{% block formobjectid %}{{ division.id }}{% endblock %}
+{% block formobjectrepr %}la division <b>{{ division.nombre }}</b> ({{ division.rango_texto }}){% endblock %}

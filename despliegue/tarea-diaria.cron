@@ -1,0 +1,6 @@
+# Abre solo las mensualidades que vencen, todos los dias a las 6 de la maniana.
+# Instalar con:  sudo crontab -u jogabonito despliegue/tarea-diaria.cron
+#
+# El modulo de mensualidades ya se pone al dia cuando alguien lo abre; esto es
+# por si nadie entra en varios dias.
+0 6 * * * /opt/jogabonito/.venv/bin/python /opt/jogabonito/manage.py poner_al_dia >> /var/log/jogabonito/cobros.log 2>&1

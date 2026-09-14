@@ -16,7 +16,7 @@ MODULO = 'adm_entrenador'
 URL_MODULO = '/sistema/%s' % MODULO
 
 
-def _primer_error(form):
+def primer_error(form):
     return next(iter(form.errors.values()))[0]
 
 
@@ -35,7 +35,7 @@ def view(request):
             try:
                 form = EntrenadorForm(request.POST, request.FILES)
                 if not form.is_valid():
-                    return bad_json(mensaje=_primer_error(form))
+                    return bad_json(mensaje=primer_error(form))
                 entrenador = form.save(commit=False)
                 if entrenador.fotografia:
                     entrenador.fotografia.name = generar_nombre('entrenador_', entrenador.fotografia.name)
@@ -50,7 +50,7 @@ def view(request):
                 entrenador = Entrenador.objects.get(pk=int(request.POST['id']))
                 form = EntrenadorForm(request.POST, request.FILES, instance=entrenador)
                 if not form.is_valid():
-                    return bad_json(mensaje=_primer_error(form))
+                    return bad_json(mensaje=primer_error(form))
                 entrenador = form.save(commit=False)
                 if 'fotografia' in request.FILES:
                     entrenador.fotografia.name = generar_nombre('entrenador_', entrenador.fotografia.name)
@@ -80,7 +80,7 @@ def view(request):
                 entrenador = Entrenador.objects.get(pk=int(request.POST['id']))
                 form = UsuarioEntrenadorForm(request.POST, entrenador=entrenador)
                 if not form.is_valid():
-                    return bad_json(mensaje=_primer_error(form))
+                    return bad_json(mensaje=primer_error(form))
 
                 username = form.cleaned_data['username']
                 clave = form.cleaned_data['password']

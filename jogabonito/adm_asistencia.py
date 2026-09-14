@@ -13,25 +13,28 @@ from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.shortcuts import render
 
-from jogabonito.acceso import categoria_permitida, categorias_permitidas, jugadores_activos_de, jugadores_permitidos
+from jogabonito.acceso import (
+    categoria_permitida, categorias_permitidas, jugadores_activos_de, jugadores_permitidos,
+)
+from jogabonito.adm_turno import grupos_de_hoy
 from jogabonito.commonviews import adduserdata, perfil_de
 from jogabonito.decorators import URL_LOGIN, last_access, secure_module
 from jogabonito.forms import AsistenciaDetalleForm
 from jogabonito.funciones import bad_json, convertir_fecha, ok_json, paginar, url_back
 from jogabonito.models import (
     ASISTENCIA_ATRASO, ASISTENCIA_BOTONES, ASISTENCIA_FALTA, ASISTENCIA_JUSTIFICADO,
-    ASISTENCIA_PRESENTE, ESTADOS_ASISTENCIA, Asistencia, Jugador,
+    ASISTENCIA_PRESENTE, ESTADOS_ASISTENCIA, Asistencia, Jugador, Nota,
 )
 
 MODULO = 'adm_asistencia'
 ESTADOS_VALIDOS = dict(ESTADOS_ASISTENCIA)
 
 
-def _primer_error(form):
+def primer_error(form):
     return next(iter(form.errors.values()))[0]
 
 
-def _fecha_pedida(valor):
+def fecha_pedida(valor):
     """Convierte la fecha recibida. Devuelve (fecha, error)."""
     if not valor:
         return date.today(), ''
@@ -43,7 +46,7 @@ def _fecha_pedida(valor):
     return fecha, ''
 
 
-def _resumen(categoria, fecha):
+def resumen_del_dia(categoria, fecha):
     """Conteo por estado de una categoria en una fecha."""
     conteo = {estado: 0 for estado, _ in ESTADOS_ASISTENCIA}
     registros = Asistencia.objects.filter(categoria=categoria, fecha=fecha)
@@ -83,7 +86,7 @@ def view(request):
                 if categoria is None:
                     return bad_json(error=4)
 
-                fecha, error = _fecha_pedida(request.POST.get('fecha'))
+                fecha, error = fecha_pedida(request.POST.get('fecha'))
                 if error:
                     return bad_json(mensaje=error)
 
@@ -107,7 +110,7 @@ def view(request):
                 return ok_json({
                     'jugador': jugador.id,
                     'estado': estado,
-                    'resumen': _resumen(categoria, fecha),
+                    'resumen': resumen_del_dia(categoria, fecha),
                 })
             except (KeyError, TypeError, ValueError):
                 return bad_json(error=6)
@@ -122,7 +125,7 @@ def view(request):
                 if categoria is None:
                     return bad_json(error=4)
 
-                fecha, error = _fecha_pedida(request.POST.get('fecha'))
+                fecha, error = fecha_pedida(request.POST.get('fecha'))
                 if error:
                     return bad_json(mensaje=error)
 
@@ -144,7 +147,7 @@ def view(request):
                 return ok_json({
                     'mensaje': 'Se marcaron %s jugadores.' % nuevos,
                     'recargar': True,
-                    'resumen': _resumen(categoria, fecha),
+                    'resumen': resumen_del_dia(categoria, fecha),
                 })
             except (TypeError, ValueError):
                 return bad_json(error=6)
@@ -159,7 +162,7 @@ def view(request):
                 if categoria is None:
                     return bad_json(error=4)
 
-                fecha, error = _fecha_pedida(request.POST.get('fecha'))
+                fecha, error = fecha_pedida(request.POST.get('fecha'))
                 if error:
                     return bad_json(mensaje=error)
 
@@ -172,7 +175,7 @@ def view(request):
                 ).first()
                 form = AsistenciaDetalleForm(request.POST, instance=asistencia)
                 if not form.is_valid():
-                    return bad_json(mensaje=_primer_error(form))
+                    return bad_json(mensaje=primer_error(form))
 
                 asistencia = form.save(commit=False)
                 asistencia.jugador = jugador
@@ -193,7 +196,7 @@ def view(request):
                 if categoria is None:
                     return bad_json(error=4)
 
-                fecha, error = _fecha_pedida(request.POST.get('fecha'))
+                fecha, error = fecha_pedida(request.POST.get('fecha'))
                 if error:
                     return bad_json(mensaje=error)
 
@@ -202,7 +205,7 @@ def view(request):
                 ).delete()
                 if not borrados:
                     return bad_json(error=3)
-                return ok_json({'resumen': _resumen(categoria, fecha)})
+                return ok_json({'resumen': resumen_del_dia(categoria, fecha)})
             except (KeyError, TypeError, ValueError):
                 return bad_json(error=6)
             except Exception as ex:
@@ -214,7 +217,7 @@ def view(request):
     # ----------------------------- GET --------------------------------
     adduserdata(request, data)
     action = request.GET.get('action')
-    categorias = categorias_permitidas(perfil).filter(activo=True).order_by('hora_inicio', 'nombre')
+    categorias = list(categorias_permitidas(perfil).filter(activo=True).order_by('hora_inicio', 'nombre'))
     data['categorias'] = categorias
     data['estados'] = ESTADOS_ASISTENCIA
     data['botones'] = ASISTENCIA_BOTONES
@@ -222,7 +225,7 @@ def view(request):
     # ---- modal de estado + observacion -------------------------------
     if action == 'detalle':
         categoria = categoria_permitida(perfil, request.GET.get('categoria'))
-        fecha, error = _fecha_pedida(request.GET.get('fecha'))
+        fecha, error = fecha_pedida(request.GET.get('fecha'))
         if categoria is None or error:
             return url_back(request)
         try:
@@ -256,7 +259,7 @@ def view(request):
 
     # ---- pantalla de marcado -----------------------------------------
     data['title'] = 'Asistencia'
-    fecha, error = _fecha_pedida(request.GET.get('fecha'))
+    fecha, error = fecha_pedida(request.GET.get('fecha'))
     if error:
         data['error'] = error
         fecha = date.today()
@@ -270,20 +273,50 @@ def view(request):
         categoria = categoria_permitida(perfil, request.GET.get('categoria'))
         if categoria is None:
             return url_back(request)
-    elif categorias.count() == 1:
-        categoria = categorias.first()
+    else:
+        # Sin elegir nada se abre el grupo mas probable: primero el que entrena
+        # ese dia, y entre esos el que tenga jugadores. El profe entra y ya
+        # tiene la lista lista para marcar, sin elegir nada.
+        def prioridad(grupo):
+            return (0 if grupo.entrena_hoy(fecha) else 1,
+                    0 if grupo.total_jugadores_activos() else 1,
+                    grupo.hora_inicio)
+
+        if categorias:
+            categoria = sorted(categorias, key=prioridad)[0]
 
     data['categoria'] = categoria
+
+    # Los grupos que entrenan hoy y estan a su cargo, para verlo donde trabaja.
+    yo = perfil.entrenador()
+    data['mis_clases'] = [
+        grupo for grupo in grupos_de_hoy(categorias, fecha)
+        if yo and grupo['encargado'] and grupo['encargado'].id == yo.id
+    ]
 
     if categoria is not None:
         marcas = {
             a.jugador_id: a for a in Asistencia.objects.filter(categoria=categoria, fecha=fecha)
         }
+
+        jugadores = list(jugadores_activos_de(categoria))
+
+        # La ultima novedad de cada uno: lo que el profe anoto la vez pasada.
+        # Asi, al tomar lista, ya sabe con que viene cada chico.
+        ultimas = {}
+        for nota in Nota.objects.filter(jugador__in=jugadores).select_related('entrenador'):
+            if nota.jugador_id not in ultimas:
+                ultimas[nota.jugador_id] = nota
+
         filas = []
-        for jugador in jugadores_activos_de(categoria):
-            filas.append({'jugador': jugador, 'asistencia': marcas.get(jugador.id)})
+        for jugador in jugadores:
+            filas.append({
+                'jugador': jugador,
+                'asistencia': marcas.get(jugador.id),
+                'nota': ultimas.get(jugador.id),
+            })
         data['filas'] = filas
-        data['resumen'] = _resumen(categoria, fecha)
+        data['resumen'] = resumen_del_dia(categoria, fecha)
         data['entrena_hoy'] = categoria.entrena_hoy(fecha)
 
     return render(request, 'adm_asistencia/view.html', data)

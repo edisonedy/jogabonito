@@ -24,6 +24,7 @@
           <th>Categoria</th>
           <th>Dias</th>
           <th>Horario</th>
+          <th>Edades</th>
           <th>Entrenadores</th>
           <th>Jugadores</th>
           <th>Mensualidad</th>
@@ -40,6 +41,7 @@
             </td>
             <td data-label="Dias">{{ c.dias_texto }}</td>
             <td data-label="Horario">{{ c.horario_texto }}</td>
+            <td data-label="Edades">{{ c.rango_edad_texto }}</td>
             <td data-label="Entrenadores">{{ c.entrenadores_texto }}</td>
             <td data-label="Jugadores">{{ c.total_jugadores_activos }}</td>
             <td data-label="Mensualidad">$ {{ c.valor_mensual }}</td>
@@ -65,11 +67,71 @@
             </td>
           </tr>
         {% empty %}
-          <tr><td colspan="8" class="text-center text-muted py-4">No hay categorias registradas.</td></tr>
+          <tr><td colspan="9" class="text-center text-muted py-4">No hay categorias registradas.</td></tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
 
   {% include "paginador.html" %}
+
+  <!-- ------------------- divisiones por edad ------------------- -->
+  <section class="bloque mt-4">
+    <h6>
+      <i class="bi bi-diagram-3 me-1"></i> Divisiones por edad
+      <a href="#" class="btn btn-sm btn-joga ms-auto"
+         data-modal-url="/sistema/adm_categoria?action=adddivision">
+        <i class="bi bi-plus-lg me-1"></i> Nueva division
+      </a>
+    </h6>
+
+    <p class="small text-muted">
+      El <b>grupo</b> dice cuando entrena (manana, tarde, noche) y ahi pueden
+      estar mezclados chicos de varias edades. La <b>division</b> dice contra
+      quien le toca jugar. Sale sola de la edad de cada uno.
+    </p>
+
+    <div class="tabla-scroll">
+      <table class="tabla-joga">
+        <thead>
+          <tr>
+            <th>Division</th><th>Edades</th><th>Jugadores</th><th>Estado</th>
+            <th class="text-end">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for fila in divisiones %}
+            <tr>
+              <td data-label="Division"><b>{{ fila.division.nombre }}</b></td>
+              <td data-label="Edades">{{ fila.division.rango_texto }}</td>
+              <td data-label="Jugadores">{{ fila.cuantos }}</td>
+              <td data-label="Estado">
+                {% if fila.division.activo %}
+                  <span class="badge text-bg-success">Activa</span>
+                {% else %}
+                  <span class="badge text-bg-secondary">Inactiva</span>
+                {% endif %}
+              </td>
+              <td class="text-end celda-acciones" data-label="Acciones">
+                <div class="btn-group btn-group-sm">
+                  <a class="btn btn-outline-primary" href="#"
+                     data-modal-url="/sistema/adm_categoria?action=editdivision&amp;id={{ fila.division.id }}"
+                     title="Editar"><i class="bi bi-pencil"></i></a>
+                  <a class="btn btn-outline-danger" href="#"
+                     data-modal-url="/sistema/adm_categoria?action=deldivision&amp;id={{ fila.division.id }}"
+                     title="Eliminar"><i class="bi bi-trash"></i></a>
+                </div>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="5" class="text-center text-muted py-4">
+                Todavia no hay divisiones por edad.
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
 {% endblock %}

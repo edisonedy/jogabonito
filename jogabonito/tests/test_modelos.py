@@ -67,7 +67,7 @@ class JugadorTest(TestCase):
             valor_mensual=Decimal('25.00')
         )
 
-    def _jugador(self, **extra):
+    def crear_jugador(self, **extra):
         datos = dict(
             nombres='juan carlos', apellidos='perez lopez',
             fecha_nacimiento=date(2014, 5, 20), categoria=self.categoria
@@ -76,28 +76,29 @@ class JugadorTest(TestCase):
         return Jugador.objects.create(**datos)
 
     def test_nombre_completo_en_mayusculas(self):
-        jugador = self._jugador()
+        jugador = self.crear_jugador()
         self.assertEqual(jugador.nombre_completo(), 'PEREZ LOPEZ JUAN CARLOS')
 
     def test_edad_se_calcula_a_una_fecha(self):
-        jugador = self._jugador()
+        jugador = self.crear_jugador()
         self.assertEqual(jugador.edad(date(2026, 5, 19)), 11)
         self.assertEqual(jugador.edad(date(2026, 5, 20)), 12)
 
     def test_valor_mensual_toma_el_de_la_categoria(self):
-        jugador = self._jugador()
+        jugador = self.crear_jugador()
         self.assertEqual(jugador.valor_mensual_vigente(), Decimal('25.00'))
 
-    def test_valor_mensual_personalizado_manda(self):
-        jugador = self._jugador(valor_mensual=Decimal('15.00'))
+    def test_el_descuento_del_jugador_baja_el_valor(self):
+        jugador = self.crear_jugador(descuento=Decimal('40.00'),
+                                     motivo_descuento='hermano en la academia')
         self.assertEqual(jugador.valor_mensual_vigente(), Decimal('15.00'))
 
     def test_representante_puede_tener_varios_jugadores(self):
         representante = Representante.objects.create(
             nombres='maria', apellidos='lopez', telefono='0987654321'
         )
-        self._jugador(representante=representante)
-        self._jugador(nombres='ana', apellidos='perez lopez', representante=representante)
+        self.crear_jugador(representante=representante)
+        self.crear_jugador(nombres='ana', apellidos='perez lopez', representante=representante)
         self.assertEqual(representante.total_jugadores(), 2)
 
 

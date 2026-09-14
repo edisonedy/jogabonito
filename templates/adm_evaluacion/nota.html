@@ -1,0 +1,17 @@
+{% extends "form_modal.html" %}
+{% block form_action %}/sistema/adm_evaluacion{% endblock %}
+{% block formextra %}
+  <input type="hidden" name="action" value="nota">
+  <input type="hidden" name="jugador" value="{{ jugador.id }}">
+
+  <div class="alert alert-light border py-2 small">
+    <b>{{ jugador.nombre_completo }}</b>
+    {% if jugador.apodo %}&middot; le dicen <b>{{ jugador.apodo }}</b>{% endif %}
+    <br>{{ jugador.categoria.nombre }} &middot; {{ jugador.edad }} anios
+    <hr class="my-2">
+    Escribe lo que viste: como va, en que hay que ayudarlo, si le paso algo.
+    Queda con tu nombre y la fecha, para que el proximo profe sepa la historia
+    del chico sin tener que preguntar.
+  </div>
+{% endblock %}
+{% block save_label %}Guardar la nota{% endblock %}

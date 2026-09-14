@@ -63,20 +63,32 @@ CREDENCIALES_DIRECTOR = [
     {'icono': 'fa-solid fa-certificate', 'texto': 'Graduado en ATFA (Argentina)'},
 ]
 
+# Los cuatro valores de la academia, tal como estan en su arte oficial.
+VALORES = [
+    {'icono': 'fa-solid fa-futbol', 'texto': 'Disciplina'},
+    {'icono': 'fa-solid fa-handshake', 'texto': 'Respeto'},
+    {'icono': 'fa-solid fa-people-group', 'texto': 'Trabajo en equipo'},
+    {'icono': 'fa-solid fa-star', 'texto': 'Pasion'},
+]
 
-def _datos_publicos():
+
+def datos_publicos():
     categorias = Categoria.objects.filter(activo=True).order_by('hora_inicio', 'nombre')
+    entrenadores = Entrenador.objects.filter(activo=True).order_by('apellidos', 'nombres')
     return {
         'fortalezas': FORTALEZAS,
         'credenciales': CREDENCIALES_DIRECTOR,
+        'valores': VALORES,
         'categorias': categorias,
+        # El cuerpo tecnico sale de la base: solo nombre y foto, nada de telefonos.
+        'entrenadores': entrenadores,
         'total_jugadores': Jugador.objects.filter(estado=JUGADOR_ACTIVO).count(),
-        'total_entrenadores': Entrenador.objects.filter(activo=True).count(),
+        'total_entrenadores': entrenadores.count(),
         'total_categorias': categorias.count(),
     }
 
 
-def _supera_el_tope(ip):
+def supera_el_tope(ip):
     """Freno simple contra el spam del formulario publico."""
     if not ip:
         return False
@@ -85,16 +97,16 @@ def _supera_el_tope(ip):
     return recientes >= settings.SOLICITUDES_MAXIMAS_POR_HORA
 
 
-@require_http_methods(['GET', 'POST'])
+@require_http_methods(['GET', 'HEAD', 'POST'])
 @transaction.atomic()
 def home(request):
-    data = _datos_publicos()
+    data = datos_publicos()
 
     if request.method == 'POST':
         form = SolicitudInscripcionForm(request.POST)
         ip = ip_cliente(request)
 
-        if _supera_el_tope(ip):
+        if supera_el_tope(ip):
             data['form'] = form
             data['error'] = ('Ya recibimos varias solicitudes desde este dispositivo. '
                              'Escribenos por WhatsApp y te atendemos enseguida.')

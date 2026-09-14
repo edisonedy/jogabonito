@@ -1,0 +1,7 @@
+{% extends "delete_modal.html" %}
+{% block formaction %}/sistema/adm_evaluacion{% endblock %}
+{% block formactionvalue %}borrarcontrol{% endblock %}
+{% block formobjectid %}{{ control.id }}{% endblock %}
+{% block formobjectrepr %}
+  el control del {{ control.fecha|date:"d/m/Y" }} de <b>{{ control.jugador.nombre_completo }}</b>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% load joga_extras %}
+{% comment %}
+Tela de arania del jugador. Todo el calculo viene del servidor
+(Jugador.radar() y los filtros de joga_extras); aqui solo se dibuja.
+Lienzo 300x240, centro (150,112), radio 80.
+{% endcomment %}
+
+<div class="radar-caja">
+  <svg class="radar" viewBox="0 0 300 240" role="img"
+       aria-label="Habilidades de {{ jugador.nombre_completo }}">
+    <circle cx="150" cy="112" r="16" class="radar-anillo"></circle>
+    <circle cx="150" cy="112" r="32" class="radar-anillo"></circle>
+    <circle cx="150" cy="112" r="48" class="radar-anillo"></circle>
+    <circle cx="150" cy="112" r="64" class="radar-anillo"></circle>
+    <circle cx="150" cy="112" r="80" class="radar-anillo radar-anillo-borde"></circle>
+
+    {% for punto in radar.ejes|linea_radar %}
+      <line x1="150" y1="112" x2="{{ punto.x }}" y2="{{ punto.y }}" class="radar-rayo"></line>
+    {% endfor %}
+
+    <polygon points="{{ radar.ejes|poligono_radar }}" class="radar-area"></polygon>
+
+    {% for v in radar.ejes|vertices_radar %}
+      <circle cx="{{ v.x }}" cy="{{ v.y }}" r="4" class="radar-punto"></circle>
+    {% endfor %}
+
+    {% for etiqueta in radar.ejes|etiquetas_radar %}
+      <text x="{{ etiqueta.x }}" y="{{ etiqueta.y }}" text-anchor="{{ etiqueta.anclaje }}"
+            class="radar-etiqueta">{{ etiqueta.eje.etiqueta|title }}</text>
+      <text x="{{ etiqueta.x }}" y="{{ etiqueta.y_valor }}" text-anchor="{{ etiqueta.anclaje }}"
+            class="radar-valor {% if not etiqueta.eje.medidos %}radar-valor-vacio{% endif %}">
+        {% if etiqueta.eje.medidos %}{{ etiqueta.eje.puntaje|stringformat:"s" }}{% else %}sin medir{% endif %}
+      </text>
+    {% endfor %}
+  </svg>
+
+  <div class="radar-leyenda">
+    <div class="radar-promedio">
+      <b>{{ radar.promedio }}</b><span>de 100</span>
+    </div>
+    <p class="small text-muted mb-0 mt-2">
+      Las notas del 1 al 10 se miden contra su propio maximo; los tiempos y las
+      cantidades se comparan con el resto del grupo, por eso hacen falta al menos
+      dos jugadores medidos.
+    </p>
+  </div>
+</div>
