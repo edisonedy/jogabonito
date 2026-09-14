@@ -14,6 +14,7 @@ lista para mostrarla, no para usarla con datos de verdad ya cargados.
 from datetime import date, time, timedelta
 from decimal import Decimal
 
+from django.contrib.auth.models import Group, User
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
@@ -21,9 +22,14 @@ from jogabonito.cobros import poner_al_dia_jugador
 from jogabonito.models import (
     ASISTENCIA_ATRASO, ASISTENCIA_FALTA, ASISTENCIA_JUSTIFICADO, ASISTENCIA_PRESENTE,
     JUGADOR_ACTIVO, MENSUALIDAD_PAGADO, NOTA_ATENCION, NOTA_FELICITACION, NOTA_GENERAL,
-    PAGO_EFECTIVO, Asistencia, Categoria, ControlFisico, Entrenador, Evaluacion, Indicador,
-    Jugador, Medicion, Nota, Posicion, Representante, TipoEvaluacion,
+    PAGO_EFECTIVO, ROL_ADMINISTRADOR, Asistencia, Categoria, ControlFisico, Entrenador,
+    Evaluacion, Indicador, Jugador, Medicion, Nota, PerfilUsuario, Posicion, Representante,
+    TipoEvaluacion,
 )
+
+# El acceso de Kevyn al sistema. La clave se pasa por --clave-kevyn; si no se
+# pasa y el usuario ya existe, no se le toca.
+USUARIO_KEVYN = 'ksupe'
 
 HOY = date.today()
 
@@ -129,10 +135,15 @@ class Command(BaseCommand):
             '--limpiar', action='store_true',
             help='Borra los jugadores de prueba que no sean estos tres.'
         )
+        parser.add_argument(
+            '--clave-kevyn', default='',
+            help='Clave del usuario %s. Vacio = no se le crea ni se le cambia.' % USUARIO_KEVYN
+        )
 
     @transaction.atomic
     def handle(self, *args, **opciones):
         kevyn = self.crear_entrenador()
+        self.crear_acceso_de_kevyn(kevyn, opciones.get('clave_kevyn') or '')
         grupo = self.crear_grupo(kevyn)
         alumnos = self.crear_alumnos(grupo)
 
@@ -158,6 +169,42 @@ class Command(BaseCommand):
         self.stdout.write('  entrenador %s %s' % (kevyn.nombre_completo(),
                                                   '(creado)' if creado else '(ya estaba)'))
         return kevyn
+
+    def crear_acceso_de_kevyn(self, kevyn, clave):
+        """Su usuario para entrar al sistema.
+
+        Va como ADMINISTRADOR porque es el duenio: necesita ver la plata y
+        los jugadores, no solo marcar asistencia.
+        """
+        if not clave and not User.objects.filter(username=USUARIO_KEVYN).exists():
+            return  # sin clave no se inventa un acceso
+
+        usuario, creado = User.objects.get_or_create(
+            username=USUARIO_KEVYN,
+            defaults={'first_name': kevyn.nombres, 'last_name': kevyn.apellidos,
+                      'email': kevyn.email or ''}
+        )
+        if clave:
+            usuario.set_password(clave)
+            usuario.save()
+
+        grupo = Group.objects.filter(name='ADMINISTRADOR').first()
+        if grupo:
+            usuario.groups.add(grupo)
+
+        perfil = PerfilUsuario.objects.filter(usuario=usuario).first() or PerfilUsuario(usuario=usuario)
+        perfil.rol = ROL_ADMINISTRADOR
+        perfil.telefono = kevyn.telefono or ''
+        perfil.activo = True
+        perfil.save()
+
+        if kevyn.usuario_id is None:
+            kevyn.usuario = usuario
+            kevyn.save()
+
+        self.stdout.write('  acceso de %s: usuario %s %s' % (
+            kevyn.nombre_completo(), USUARIO_KEVYN,
+            '(creado)' if creado else '(clave actualizada)' if clave else '(ya estaba)'))
 
     def crear_grupo(self, kevyn):
         grupo, creado = Categoria.objects.get_or_create(

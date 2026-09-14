@@ -14,6 +14,7 @@ Esto se ejecuta cuando se abre el modulo de mensualidades y tambien con el
 comando "poner_al_dia", por si algun dia se quiere dejar programado.
 """
 from datetime import date
+from decimal import ROUND_HALF_UP, Decimal
 
 from jogabonito.models import JUGADOR_ACTIVO, MENSUALIDAD_PENDIENTE, Jugador, Mensualidad
 
@@ -21,19 +22,37 @@ from jogabonito.models import JUGADOR_ACTIVO, MENSUALIDAD_PENDIENTE, Jugador, Me
 MAXIMO_MESES_ATRASADOS = 24
 
 
-def crear_mensualidad(jugador, inicio, fin, request=None):
-    """Abre el mes del jugador con el precio que tiene hoy."""
+def crear_mensualidad(jugador, inicio, fin, request=None, descuento=None,
+                      descuento_monto=None, motivo_descuento=None):
+    """Abre el mes del jugador con el precio que tiene hoy.
+
+    Los descuentos opcionales se usan para una rebaja de ese periodo; no
+    cambian el acuerdo permanente que tiene guardado el jugador.
+    """
     # El precio del grupo va en valor_completo y la rebaja aparte: asi despues
     # se puede explicar de donde salio lo que paga (25 menos el 10% = 22,50).
+    if descuento is None and descuento_monto is None:
+        descuento = jugador.descuento or Decimal('0')
+        descuento_monto = jugador.descuento_monto or Decimal('0')
+        motivo_descuento = jugador.motivo_descuento
+    descuento = descuento or Decimal('0')
+    descuento_monto = descuento_monto or Decimal('0')
+    if descuento_monto:
+        descuento = Decimal('0')
+        rebaja = descuento_monto
+    else:
+        rebaja = (jugador.precio_base() * descuento / Decimal('100')).quantize(
+            Decimal('0.01'), rounding=ROUND_HALF_UP)
+
     mensualidad = Mensualidad(
         jugador=jugador,
         mes=inicio.month,
         anio=inicio.year,
-        valor=jugador.valor_mensual_vigente(),
+        valor=(jugador.precio_base() - rebaja).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP),
         valor_completo=jugador.precio_base(),
-        descuento_aplicado=jugador.descuento,
-        descuento_monto=jugador.descuento_monto,
-        motivo_descuento=jugador.motivo_descuento,
+        descuento_aplicado=descuento,
+        descuento_monto=descuento_monto,
+        motivo_descuento=motivo_descuento or '',
         periodo_inicio=inicio,
         periodo_fin=fin,
         fecha_vencimiento=inicio,

@@ -133,6 +133,11 @@
                     <a class="btn btn-outline-secondary" href="#"
                        data-modal-url="/sistema/adm_mensualidad?action=pagar&amp;id={{ m.id }}"
                        title="Editar el mes"><i class="bi bi-pencil"></i></a>
+                    {% if m.estado == estado_pendiente %}
+                      <a class="btn btn-outline-danger" href="#"
+                         data-modal-url="/sistema/adm_mensualidad?action=delete&amp;id={{ m.id }}"
+                         title="Eliminar mensualidad pendiente"><i class="bi bi-trash"></i></a>
+                    {% endif %}
                   </div>
                 </td>
               </tr>

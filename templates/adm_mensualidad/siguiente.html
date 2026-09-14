@@ -1,28 +1,45 @@
-{% extends "confirm_modal.html" %}
-{% block formaction %}/sistema/adm_mensualidad{% endblock %}
-{% block formactionvalue %}siguiente{% endblock %}
-{% block formobjectid %}{{ jugador.id }}{% endblock %}
-{% block body_alert_class %}alert-light border{% endblock %}
-{% block ok_label %}Si, abrir ese mes{% endblock %}
+{% extends "form_modal.html" %}
+{% block form_action %}/sistema/adm_mensualidad{% endblock %}
+{% block save_label %}Si, abrir ese mes{% endblock %}
 
-{% block mensaje %}
-  Se le abre el siguiente mes a <b>{{ jugador.nombre_completo }}</b>:
-{% endblock %}
-
-{% block formobjectrepr %}
+{% block formextra %}
+  <input type="hidden" name="action" value="siguiente">
+  <input type="hidden" name="id" value="{{ jugador.id }}">
   {% if proximo %}
-    <div>
-      <b>{{ proximo.0|date:"d/m/Y" }}</b> al <b>{{ proximo.1|date:"d/m/Y" }}</b>
-      &middot; <b>$ {{ valor }}</b>
-      <div class="small text-muted">{{ jugador.explicacion_precio }}</div>
-    </div>
-    <div class="small text-muted">
-      Arranca el dia despues de que termina su mes anterior. Queda pendiente,
-      igual que si se hubiera abierto solo.
+    <div class="alert alert-light border py-2 small">
+      Se le abrirá el siguiente mes a <b>{{ jugador.nombre_completo }}</b>.
+      <div class="mt-1">
+        <b>{{ proximo.0|date:"d/m/Y" }}</b> al <b>{{ proximo.1|date:"d/m/Y" }}</b>
+        &middot; Precio: <b>$ {{ precio_base }}</b>
+      </div>
+      <div class="text-muted mt-1" id="precioFinal">Pagará $ {{ valor }}</div>
     </div>
   {% else %}
     <div class="text-danger">
       No se sabe desde cuando cobrarle. Revisa su fecha de ingreso.
     </div>
   {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  var porcentaje = document.getElementById('id_descuento_aplicado');
+  var monto = document.getElementById('id_descuento_monto');
+  var precioFinal = document.getElementById('precioFinal');
+  var base = {{ precio_base|default:0 }};
+
+  function numero(campo) {
+    return parseFloat((campo.value || '0').replace(',', '.')) || 0;
+  }
+  function actualizar() {
+    if (!precioFinal) { return; }
+    var rebaja = numero(monto) || (base * numero(porcentaje) / 100);
+    precioFinal.textContent = 'Pagará $ ' + Math.max(base - rebaja, 0).toFixed(2);
+  }
+  if (porcentaje) { porcentaje.addEventListener('input', actualizar); }
+  if (monto) { monto.addEventListener('input', actualizar); }
+  actualizar();
+})();
+</script>
 {% endblock %}

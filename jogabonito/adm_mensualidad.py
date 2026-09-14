@@ -31,7 +31,7 @@ from jogabonito.cobros import crear_mensualidad, poner_al_dia, proximos_cobros, 
 from jogabonito.commonviews import adduserdata
 from jogabonito.decorators import URL_LOGIN, last_access, secure_module, solo_administrador
 from jogabonito.forms import (
-    CobroRapidoForm, MensualidadForm, MensualidadNuevaForm, PrecioJugadorForm,
+    CobroRapidoForm, DescuentoDelMesForm, MensualidadForm, MensualidadNuevaForm, PrecioJugadorForm,
 )
 from jogabonito.funciones import bad_json, ok_json, paginar, url_back
 from jogabonito.models import (
@@ -211,7 +211,16 @@ def view(request):
                 if Mensualidad.objects.filter(jugador=jugador, periodo_inicio=inicio).exists():
                     return bad_json(mensaje='Ese mes ya esta abierto.')
 
-                mensualidad = crear_mensualidad(jugador, inicio, fin, request)
+                form = DescuentoDelMesForm(request.POST, jugador=jugador)
+                if not form.is_valid():
+                    return bad_json(mensaje=primer_error(form))
+
+                mensualidad = crear_mensualidad(
+                    jugador, inicio, fin, request,
+                    descuento=form.cleaned_data['descuento_aplicado'],
+                    descuento_monto=form.cleaned_data['descuento_monto'],
+                    motivo_descuento=form.cleaned_data['motivo_descuento'],
+                )
                 return ok_json({'mensaje': 'Listo: %s del %s al %s, %s.' % (
                     mensualidad.periodo(),
                     inicio.strftime('%d/%m'), fin.strftime('%d/%m/%Y'),
@@ -384,6 +393,8 @@ def view(request):
         data['jugador'] = jugador
         data['proximo'] = jugador.proximo_periodo()
         data['valor'] = jugador.valor_mensual_vigente()
+        data['precio_base'] = jugador.precio_base()
+        data['form'] = DescuentoDelMesForm(jugador=jugador)
         return render(request, 'adm_mensualidad/siguiente.html', data)
 
     if action == 'aldia':
@@ -450,6 +461,7 @@ def view(request):
         data['jugador'] = jugador
         data['historial'] = jugador.historial_de_pagos()
         data['proximo'] = jugador.proximo_periodo()
+        data['estado_pendiente'] = MENSUALIDAD_PENDIENTE
         return render(request, 'adm_mensualidad/historial.html', data)
 
     # ---- a quien le llega el mes de pago ------------------------------

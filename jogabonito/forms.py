@@ -539,6 +539,52 @@ class PrecioJugadorForm(BaseForm):
         return limpios
 
 
+class DescuentoDelMesForm(forms.Form):
+    """Descuento puntual al abrir el siguiente periodo de un jugador."""
+
+    descuento_aplicado = forms.DecimalField(
+        required=False, min_value=Decimal('0'), max_value=Decimal('100'),
+        label='Descuento en porcentaje (%)', decimal_places=2, max_digits=5,
+        widget=forms.NumberInput(attrs={'class': CLASE_INPUT, 'step': '0.01', 'min': '0', 'max': '100'})
+    )
+    descuento_monto = forms.DecimalField(
+        required=False, min_value=Decimal('0'),
+        label='o descuento en dolares ($)', decimal_places=2, max_digits=10,
+        widget=forms.NumberInput(attrs={'class': CLASE_INPUT, 'step': '0.01', 'min': '0'})
+    )
+    motivo_descuento = forms.CharField(
+        required=False, label='Motivo del descuento', max_length=255,
+        widget=forms.TextInput(attrs={
+            'class': CLASE_INPUT,
+            'placeholder': 'Beca, acuerdo de este mes...'
+        })
+    )
+
+    def __init__(self, *args, **kwargs):
+        self.jugador = kwargs.pop('jugador')
+        super().__init__(*args, **kwargs)
+        self.fields['descuento_aplicado'].initial = self.jugador.descuento or Decimal('0')
+        self.fields['descuento_monto'].initial = self.jugador.descuento_monto or Decimal('0')
+        self.fields['motivo_descuento'].initial = self.jugador.motivo_descuento or ''
+
+    def clean(self):
+        limpios = super().clean()
+        monto = limpios.get('descuento_monto') or Decimal('0')
+        descuento = limpios.get('descuento_aplicado') or Decimal('0')
+        precio = self.jugador.precio_base()
+
+        if monto > precio:
+            self.add_error('descuento_monto',
+                           'El descuento no puede ser mayor que el precio del mes (%s).' % precio)
+        if monto:
+            limpios['descuento_aplicado'] = Decimal('0')
+        if (monto or descuento) and not (limpios.get('motivo_descuento') or '').strip():
+            self.add_error('motivo_descuento', 'Escribe por que se le hace el descuento.')
+        if not (monto or descuento):
+            limpios['motivo_descuento'] = ''
+        return limpios
+
+
 def dias_entre(inicio, fin):
     """Cuantos dias cubre un periodo, contando el primero y el ultimo."""
     return (fin - inicio).days + 1

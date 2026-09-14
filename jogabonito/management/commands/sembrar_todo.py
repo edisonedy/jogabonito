@@ -36,6 +36,10 @@ class Command(BaseCommand):
             help='Nombre del usuario administrador (por defecto: admin).'
         )
         parser.add_argument(
+            '--clave-kevyn', default='',
+            help='Clave del usuario ksupe (Kevyn, el duenio). Vacio = no se le toca.'
+        )
+        parser.add_argument(
             '--limpiar', action='store_true',
             help='Ademas borra los jugadores de prueba que no sean los reales.'
         )
@@ -49,10 +53,11 @@ class Command(BaseCommand):
         )
 
         self.titulo('2 de 2: la academia y sus datos')
-        if opciones['limpiar']:
-            call_command('cargar_academia', limpiar=True)
-        else:
-            call_command('cargar_academia')
+        call_command(
+            'cargar_academia',
+            limpiar=opciones['limpiar'],
+            clave_kevyn=opciones['clave_kevyn'],
+        )
 
         self.resumen()
 
