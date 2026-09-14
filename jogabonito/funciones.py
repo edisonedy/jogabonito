@@ -155,4 +155,9 @@ def paginar(request, queryset, data, modulo, por_pagina=25):
     data['paging'] = paginador
     data['rangospaging'] = paginador.rangos_paginado(pagina_actual)
     data['page'] = pagina
+    # Los enlaces de pagina deben conservar la pantalla, el jugador y todos
+    # los filtros actuales; solo cambia el numero de pagina.
+    parametros = request.GET.copy()
+    parametros.pop('page', None)
+    data['paginacion_query'] = parametros.urlencode()
     return pagina.object_list
