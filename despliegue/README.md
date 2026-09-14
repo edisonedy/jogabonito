@@ -69,7 +69,53 @@ sudo certbot --nginx -d jogabonito.horus-tecnologia.com
 Con `DJANGO_DEBUG=False` el sistema ya exige cookies seguras y HSTS, asi que
 esto no es opcional: sin https no se puede entrar.
 
-## 2. Cada vez que haya algo nuevo
+### Datos para probar
+
+Para dejar la base como la del computador (los modulos, los catalogos, Kevyn,
+los tres alumnos con sus pruebas, sus asistencias de estos meses y sus
+mensualidades):
+
+```bash
+sudo -u jogabonito /opt/jogabonito/.venv/bin/python /opt/jogabonito/manage.py \
+    sembrar_todo --admin-clave "una-clave-que-no-sea-edison"
+```
+
+Se puede correr las veces que haga falta: **no duplica nada**. Al final
+imprime las cuentas (jugadores, asistencias, mensualidades, deuda total) para
+compararlas con las del computador.
+
+## 2. Si el servidor YA tiene el proyecto en otra carpeta
+
+El script asume `/opt/jogabonito`. Si esta en otro lado -por ejemplo en
+`/home/django/jogabonito`, con el usuario `django`-, se le dice por delante:
+
+```bash
+sudo RUTA=/home/django/jogabonito USUARIO=django bash \
+     /home/django/jogabonito/despliegue/desplegar.sh
+```
+
+Si esa carpeta todavia no es una copia de git (se subio a mano), se la
+conecta una sola vez y de ahi en adelante ya se actualiza con el script:
+
+```bash
+cd /home/django/jogabonito
+git init
+git remote add origin https://github.com/edisonedy/jogabonito.git
+git fetch origin
+git checkout -f -b main origin/main
+```
+
+`git checkout -f` **pisa los archivos locales con los del repositorio**. Saca
+un respaldo antes si tocaste algo ahi:
+
+```bash
+cp -a /home/django/jogabonito /home/django/jogabonito.respaldo
+```
+
+El `.env`, `media/` y `staticfiles/` no estan en el repositorio, asi que no
+se pierden.
+
+## 3. Cada vez que haya algo nuevo
 
 ```bash
 sudo bash /opt/jogabonito/despliegue/desplegar.sh
@@ -79,7 +125,13 @@ Baja el codigo, instala lo que falte, migra, junta los estaticos, actualiza
 los modulos, abre las mensualidades vencidas y reinicia. **No toca el `.env`
 ni borra datos.**
 
-## 3. Tarea diaria (opcional)
+Con `--sembrar` ademas deja los datos de la academia:
+
+```bash
+sudo bash /opt/jogabonito/despliegue/desplegar.sh --sembrar
+```
+
+## 4. Tarea diaria (opcional)
 
 ```bash
 sudo crontab -u jogabonito /opt/jogabonito/despliegue/tarea-diaria.cron
@@ -87,7 +139,7 @@ sudo crontab -u jogabonito /opt/jogabonito/despliegue/tarea-diaria.cron
 
 Abre las mensualidades que vencen aunque nadie entre al sistema.
 
-## 4. Respaldo de la base
+## 5. Respaldo de la base
 
 ```bash
 sudo -u postgres pg_dump jogabonito | gzip > ~/jogabonito-$(date +%F).sql.gz

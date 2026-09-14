@@ -4,17 +4,33 @@
 #
 #   La PRIMERA vez:   sudo bash desplegar.sh --primera-vez
 #   Cada actualizada: sudo bash desplegar.sh
+#   Con datos de arranque: sudo bash desplegar.sh --sembrar
 #
 # Lo que hace cada vez: baja el codigo nuevo, instala lo que falte, aplica
 # migraciones, junta los estaticos y reinicia el servicio. No toca la base de
 # datos mas alla de las migraciones, y nunca toca el .env.
 #
+# Si el proyecto no esta en /opt/jogabonito, se le dice por delante:
+#   sudo RUTA=/home/django/jogabonito USUARIO=django bash desplegar.sh
+#
 set -euo pipefail
 
 APP=jogabonito
-RUTA=/opt/$APP
-USUARIO=$APP
-RAMA=main
+RUTA="${RUTA:-/opt/$APP}"
+USUARIO="${USUARIO:-$APP}"
+RAMA="${RAMA:-main}"
+SERVICIO="${SERVICIO:-$APP}"
+
+# Las opciones pueden venir en cualquier orden.
+PRIMERA_VEZ=no
+SEMBRAR=no
+for opcion in "$@"; do
+  case "$opcion" in
+    --primera-vez) PRIMERA_VEZ=si ;;
+    --sembrar)     SEMBRAR=si ;;
+    *) echo "Opcion desconocida: $opcion" >&2; exit 1 ;;
+  esac
+done
 
 verde() { printf '\n\033[1;32m==> %s\033[0m\n' "$1"; }
 rojo()  { printf '\n\033[1;31m!!! %s\033[0m\n' "$1" >&2; }
@@ -25,7 +41,7 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 # ---------------------------------------------------------------- primera vez
-if [ "${1:-}" = "--primera-vez" ]; then
+if [ "$PRIMERA_VEZ" = "si" ]; then
   verde "Instalando lo que necesita el servidor"
   apt-get update
   apt-get install -y python3-venv python3-pip postgresql nginx git
@@ -55,13 +71,19 @@ if [ "${1:-}" = "--primera-vez" ]; then
   ln -sf /etc/nginx/sites-available/$APP /etc/nginx/sites-enabled/$APP
   rm -f /etc/nginx/sites-enabled/default
   systemctl daemon-reload
-  systemctl enable $APP
+  systemctl enable "$SERVICIO"
 fi
 
 # ---------------------------------------------------------------- cada vez
 cd "$RUTA"
 
 verde "Bajando el codigo nuevo"
+if [ ! -d .git ]; then
+  rojo "$RUTA no es una copia de git. Clonalo una vez:"
+  echo "  git clone https://github.com/edisonedy/jogabonito.git $RUTA"
+  echo "  (o desde adentro: git init && git remote add origin <url> && git fetch && git checkout -f main)"
+  exit 1
+fi
 git fetch --all
 git checkout "$RAMA"
 git pull origin "$RAMA"
@@ -85,6 +107,14 @@ verde "Juntando los archivos estaticos"
 verde "Actualizando modulos y catalogos"
 "$RUTA/.venv/bin/python" manage.py cargar_base
 
+# Solo cuando se pide: deja la academia con sus datos de arranque. Es para
+# el servidor recien instalado o para una base de prueba; no borra nada de
+# lo que ya este cargado.
+if [ "$SEMBRAR" = "si" ]; then
+  verde "Sembrando los datos de la academia"
+  "$RUTA/.venv/bin/python" manage.py sembrar_todo
+fi
+
 verde "Abriendo las mensualidades que hayan vencido"
 "$RUTA/.venv/bin/python" manage.py poner_al_dia
 
@@ -93,10 +123,10 @@ chown -R "$USUARIO:$USUARIO" "$RUTA"
 chmod 640 "$RUTA/.env"
 
 verde "Reiniciando"
-systemctl restart $APP
+systemctl restart "$SERVICIO"
 nginx -t && systemctl reload nginx
 
 sleep 2
-systemctl --no-pager --lines=5 status $APP || true
+systemctl --no-pager --lines=5 status "$SERVICIO" || true
 
 verde "Listo. Revisa el sitio en el navegador."
