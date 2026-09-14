@@ -983,6 +983,13 @@ input.check-group{
 @media (max-width: 992px){
   .app,
   .app.op-mini{ grid-template-columns:1fr; }
+
+  /* En el telefono la barra deja de ser una columna y se monta ENCIMA del
+     contenido. Ahi necesita fondo propio: el degradado de modo claro
+     arranca casi invisible (6% de verde), asi que se transparentaba y se
+     leia la lista de atras. En modo oscuro no pasaba porque su degradado
+     va al 98%. */
+  .app-sidebar{ background-color:var(--card, #fff); }
 }
 
 /* ---- El monto grande del cobro rapido ---- */

@@ -350,11 +350,21 @@
     });
   }
 
+  // En el telefono la barra es una gaveta que se abre entera y se monta
+  // encima del contenido: el modo angosto (solo iconos) ahi no va, deja la
+  // barra sin las palabras. La preferencia se guarda igual, para cuando
+  // vuelva a una pantalla grande.
+  function aplicarOpMini() {
+    if (!appRoot) return;
+    const quiere = safeLocalStorageGet(STORAGE_OP_MINI_KEY, '0') === '1';
+    appRoot.classList.toggle('op-mini', quiere && !isMobile());
+  }
+
   function setOpMini(enabled) {
     if (!appRoot) return;
 
-    appRoot.classList.toggle('op-mini', !!enabled);
     safeLocalStorageSet(STORAGE_OP_MINI_KEY, enabled ? '1' : '0');
+    aplicarOpMini();
 
     const icon = $id('opToggleIcon');
     const btn = $id('opToggle');
@@ -376,13 +386,15 @@
     const opToggle = $id('opToggle');
     if (!opToggle || !appRoot) return;
 
-    const saved = safeLocalStorageGet(STORAGE_OP_MINI_KEY, '0');
-    setOpMini(saved === '1');
+    aplicarOpMini();
 
     opToggle.addEventListener('click', function () {
       const enabled = !appRoot.classList.contains('op-mini');
       setOpMini(enabled);
     });
+
+    // Al girar el telefono o al achicar la ventana se vuelve a decidir.
+    window.addEventListener('resize', aplicarOpMini);
   }
 
   function getCompactText(element) {
