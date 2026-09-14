@@ -48,8 +48,8 @@ ALUMNOS = [
      'Picaihua, Tangaiche', date(1989, 3, 13), date(2026, 9, 2), 'VOLANTE MIXTO', 1),
     ('CHRISTIAN', '', 'MOYOLEMA', '', '', '', '',
      date(1998, 8, 9), HOY - timedelta(days=70), 'DELANTERO', 1),
-    ('LUIS', '', 'SAILEMA', '', '', '', '',
-     date(1993, 2, 25), HOY - timedelta(days=40), 'DEFENSA CENTRAL', 2),
+    ('LUIS', 'MIGUEL', 'SAILEMA', 'MORALES', '1804358925', '0984538221', '',
+     date(1993, 9, 23), HOY - timedelta(days=40), 'DEFENSA CENTRAL', 2),
 ]
 
 # Que se le midio a cada uno en cada prueba: (indicador, valor de cada alumno).

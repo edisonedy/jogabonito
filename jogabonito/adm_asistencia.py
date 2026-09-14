@@ -90,8 +90,13 @@ def view(request):
                 if error:
                     return bad_json(mensaje=error)
 
-                estado = int(request.POST.get('estado', 0))
-                if estado not in ESTADOS_VALIDOS:
+                # Vacio = borrar la marca. Si el profe se equivoco de boton,
+                # vuelve a tocarlo y el jugador queda sin marcar otra vez.
+                crudo = (request.POST.get('estado') or '').strip()
+                borrar = crudo == ''
+
+                estado = 0 if borrar else int(crudo)
+                if not borrar and estado not in ESTADOS_VALIDOS:
                     return bad_json(error=6)
 
                 # El jugador debe pertenecer a esa categoria y estar activo.
@@ -102,6 +107,17 @@ def view(request):
                 asistencia = Asistencia.objects.filter(
                     jugador=jugador, categoria=categoria, fecha=fecha
                 ).first()
+
+                if borrar:
+                    if asistencia is not None:
+                        asistencia.delete()
+                    return ok_json({
+                        'jugador': jugador.id,
+                        'estado': None,
+                        'borrado': True,
+                        'resumen': resumen_del_dia(categoria, fecha),
+                    })
+
                 if asistencia is None:
                     asistencia = Asistencia(jugador=jugador, categoria=categoria, fecha=fecha)
                 asistencia.estado = estado

@@ -25,7 +25,11 @@
     </div>
 
     {% if categoria %}
-      <span class="modulo-chip"><i class="fa-solid fa-calendar-day"></i> {{ fecha|date:"l d/m/Y" }}</span>
+      <span class="dia-de-lista {% if fecha == fecha_maxima %}dia-de-hoy{% endif %}">
+        <i class="fa-solid fa-calendar-day"></i>
+        <b>{{ fecha|date:"l d/m/Y" }}</b>
+        {% if fecha == fecha_maxima %}<span class="badge text-bg-success">hoy</span>{% endif %}
+      </span>
     {% endif %}
   </form>
 
@@ -71,6 +75,11 @@
         <button type="button" class="btn btn-sm btn-outline-success btn-touch" id="btnTodosPresentes">
           <i class="bi bi-check2-all me-1"></i> Marcar presentes a los que faltan
         </button>
+
+        <span class="small text-muted">
+          <i class="bi bi-info-circle"></i>
+          Toca otra vez el mismo boton para borrar la marca.
+        </span>
 
         <div class="buscador-lista ms-auto">
           <i class="bi bi-search"></i>
@@ -120,8 +129,8 @@
                    data-modal-url="/sistema/adm_asistencia?action=detalle&amp;categoria={{ categoria.id }}&amp;fecha={{ fecha|date:'Y-m-d' }}&amp;jugador={{ fila.jugador.id }}">
                   <i class="bi bi-chat-left-text"></i>
                 </a>
-                <a href="#" class="btn btn-sm btn-soft" title="Anotar una novedad de hoy"
-                   data-modal-url="/sistema/adm_evaluacion?action=nota&amp;jugador={{ fila.jugador.id }}">
+                <a href="#" class="btn btn-sm btn-soft" title="Anotar una novedad de esta clase"
+                   data-modal-url="/sistema/adm_evaluacion?action=nota&amp;jugador={{ fila.jugador.id }}&amp;fecha={{ fecha|date:'Y-m-d' }}">
                   <i class="bi bi-journal-plus"></i>
                 </a>
               </span>
@@ -182,7 +191,9 @@
       var grupoBotones = boton.closest('.btn-group-asistencia');
       var estado = boton.data('estado');
 
-      if (boton.hasClass('active')) { return; }
+      // Volver a tocar el boton que ya esta marcado lo borra: asi se corrige
+      // el dedazo sin tener que buscar otra pantalla.
+      var borrar = boton.hasClass('active');
 
       grupoBotones.find('.btn-marcar').prop('disabled', true);
 
@@ -194,15 +205,21 @@
           categoria: categoria,
           fecha: fecha,
           jugador: fila.data('jugador'),
-          estado: estado,
+          estado: borrar ? '' : estado,
           csrfmiddlewaretoken: csrftoken
         },
         dataType: 'json'
       }).done(function (data) {
         if (data.result === 'ok') {
           grupoBotones.find('.btn-marcar').removeClass('active');
-          boton.addClass('active');
-          fila.addClass('marcada');
+
+          if (data.borrado) {
+            fila.removeClass('marcada');
+          } else {
+            boton.addClass('active');
+            fila.addClass('marcada');
+          }
+
           pintarResumen(data.resumen);
         } else {
           avisar(data);

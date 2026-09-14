@@ -23,14 +23,13 @@
     <input type="hidden" name="id" value="{{ evaluacion.id }}">
 
     <p class="small text-muted">
-      Marca solo lo que vas a tomar ese dia. Puedes abrir un area a la vez,
-      buscar por nombre o marcar el area completa. Despues se abre la planilla
-      para anotar los valores.
+      Marca solo lo que vas a tomar ese dia. Puedes buscar por nombre o marcar
+      un area completa. Despues se abre la planilla para anotar los valores.
     </p>
 
     {% include "adm_evaluacion/selector.html" %}
 
-    <div class="d-flex flex-wrap gap-2 mt-3">
+    <div class="barra-guardar">
       <button type="button" class="btn btn-joga btn-touch" id="btnGuardarElegir">
         <i class="bi bi-check2-circle me-1"></i> Guardar y tomar la prueba
       </button>

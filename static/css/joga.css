@@ -836,46 +836,78 @@ input.check-group{
   white-space:pre-line;
 }
 
-/* ---- Selector de indicadores de la evaluacion ---- */
+/* ---- Que se va a medir: pantalla propia, con aire ---- */
 .selector-indicadores{
-  border:1px solid var(--linea, #e6e9ef);
-  border-radius:12px;
-  padding:10px;
-  max-height:320px;
-  overflow-y:auto;
-  background:#fff;
+  display:flex;
+  flex-direction:column;
+  gap:14px;
 }
-.area-indicadores{
-  border-bottom:1px solid var(--linea, #e6e9ef);
-  padding:6px 0;
-}
-.area-indicadores:last-child{ border-bottom:0; }
-.area-indicadores > summary{
+.selector-barra{
+  position:sticky;
+  top:0;
+  z-index:2;
   display:flex;
   align-items:center;
-  gap:8px;
-  cursor:pointer;
-  font-weight:700;
-  font-size:.9rem;
-  color:var(--joga-azul, #2b2a6e);
-  list-style:none;
+  gap:12px;
+  flex-wrap:wrap;
+  background:var(--card, #fff);
+  border:1px solid var(--linea, #e6e9ef);
+  border-radius:12px;
+  padding:10px 14px;
 }
-.area-indicadores > summary::marker{ content:''; }
+.selector-barra .buscador-lista{ flex:1 1 240px; }
+.selector-cuenta{
+  font-size:13px;
+  color:#6c757d;
+  white-space:nowrap;
+}
+.selector-cuenta b{
+  font-size:16px;
+  color:var(--joga-verde, #17a44b);
+}
+.area-indicadores{
+  border:1px solid var(--linea, #e6e9ef);
+  border-radius:14px;
+  padding:12px 14px;
+  background:var(--card, #fff);
+}
+.area-cabecera{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:10px;
+}
+.area-cuantos{ font-size:12px; color:#6c757d; }
 .area-lista{
   display:grid;
-  grid-template-columns:repeat(auto-fill, minmax(220px, 1fr));
-  gap:4px 12px;
-  padding:8px 0 4px 6px;
+  grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));
+  gap:8px;
 }
 .opcion-indicador{
   display:flex;
   align-items:flex-start;
-  gap:8px;
-  font-size:.88rem;
-  padding:3px 0;
+  gap:10px;
+  border:1px solid var(--linea, #e6e9ef);
+  border-radius:12px;
+  padding:10px 12px;
   cursor:pointer;
+  transition:border-color .15s, background .15s;
 }
-.opcion-indicador input{ margin-top:3px; }
+.opcion-indicador:hover{ border-color:#bfe6cd; background:#f7fcf9; }
+.opcion-indicador:has(input:checked){
+  border-color:var(--joga-verde, #17a44b);
+  background:#eaf9ef;
+}
+.opcion-indicador input{
+  margin-top:2px;
+  width:20px;
+  height:20px;
+  flex:0 0 auto;
+}
+.opcion-texto{ display:flex; flex-direction:column; min-width:0; }
+.opcion-texto b{ font-size:.9rem; line-height:1.25; }
+.opcion-texto small{ color:#6c757d; font-size:11.5px; }
 
 /* ---- Quien dirige cada grupo ---- */
 .dias-turno{
@@ -992,4 +1024,35 @@ input.check-group{
   justify-content:center;
   flex:0 0 auto;
   font-size:15px;
+}
+
+/* ---- El dia que se esta pasando lista: tiene que saltar a la vista ---- */
+.dia-de-lista{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:8px 14px;
+  border-radius:999px;
+  background:#eef1f6;
+  border:1px solid var(--linea, #e6e9ef);
+  font-size:14px;
+  text-transform:capitalize;
+}
+.dia-de-lista b{ font-size:15px; color:var(--joga-azul, #2b2a6e); }
+.dia-de-lista.dia-de-hoy{
+  background:#eaf9ef;
+  border-color:#bfe6cd;
+}
+.dia-de-lista.dia-de-hoy b{ color:var(--joga-verde, #17a44b); }
+
+/* ---- Barra de guardar que se queda abajo a la vista ---- */
+.barra-guardar{
+  position:sticky;
+  bottom:0;
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  padding:12px 0;
+  margin-top:14px;
+  background:linear-gradient(180deg, rgba(255,255,255,0) 0%, var(--fondo, #f6faf7) 35%);
 }

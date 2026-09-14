@@ -503,3 +503,68 @@ class LaNotaNoTocaLaAsistenciaTest(BaseFamilia):
     def test_la_fecha_que_sale_es_la_de_la_nota(self):
         respuesta = self.client.get('/sistema/adm_asistencia?categoria=%s' % self.categoria.id)
         self.assertContains(respuesta, self.nota.fecha.strftime('%d/%m/%Y'))
+
+
+class BorrarLaMarcaDeAsistenciaTest(BaseFamilia):
+    """El dedazo se corrige tocando otra vez el mismo boton."""
+
+    def setUp(self):
+        self.client.force_login(self.admin)
+
+    def marcar(self, estado):
+        from jogabonito.models import ASISTENCIA_PRESENTE  # noqa: F401
+        return self.client.post('/sistema/adm_asistencia', {
+            'action': 'marcar', 'categoria': self.categoria.id,
+            'fecha': HOY.strftime('%Y-%m-%d'), 'jugador': self.jugador.id,
+            'estado': estado,
+        })
+
+    def test_marcar_y_despues_borrar(self):
+        from jogabonito.models import ASISTENCIA_PRESENTE, Asistencia
+
+        self.marcar(ASISTENCIA_PRESENTE)
+        self.assertEqual(Asistencia.objects.count(), 1)
+
+        respuesta = self.marcar('')
+        datos = json.loads(respuesta.content)
+
+        self.assertEqual(datos['result'], 'ok')
+        self.assertTrue(datos['borrado'])
+        self.assertEqual(Asistencia.objects.count(), 0)
+
+    def test_borrar_deja_el_resumen_en_cero(self):
+        from jogabonito.models import ASISTENCIA_FALTA
+
+        self.marcar(ASISTENCIA_FALTA)
+        respuesta = self.marcar('')
+        resumen = json.loads(respuesta.content)['resumen']
+
+        self.assertEqual(resumen['marcados'], 0)
+        self.assertEqual(resumen['faltas'], 0)
+        self.assertEqual(resumen['pendientes'], resumen['total'])
+
+    def test_borrar_algo_que_no_estaba_no_rompe(self):
+        respuesta = self.marcar('')
+        self.assertEqual(json.loads(respuesta.content)['result'], 'ok')
+
+    def test_un_estado_inventado_sigue_sin_pasar(self):
+        from jogabonito.models import Asistencia
+
+        respuesta = self.marcar(99)
+        self.assertEqual(json.loads(respuesta.content)['result'], 'bad')
+        self.assertEqual(Asistencia.objects.count(), 0)
+
+    def test_la_nota_desde_la_asistencia_toma_la_fecha_de_esa_clase(self):
+        ayer = HOY - timedelta(days=1)
+        respuesta = self.client.get(
+            '/sistema/adm_evaluacion?action=nota&jugador=%s&fecha=%s'
+            % (self.jugador.id, ayer.strftime('%Y-%m-%d')))
+
+        self.assertEqual(respuesta.context['form'].initial.get('fecha'), ayer)
+
+    def test_pero_no_acepta_una_fecha_futura(self):
+        respuesta = self.client.get(
+            '/sistema/adm_evaluacion?action=nota&jugador=%s&fecha=%s'
+            % (self.jugador.id, (HOY + timedelta(days=5)).strftime('%Y-%m-%d')))
+
+        self.assertIsNone(respuesta.context['form'].initial.get('fecha'))

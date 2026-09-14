@@ -1,59 +1,55 @@
 {% comment %}
-  Selector de indicadores agrupado por area.
+  Que se va a medir en esta prueba.
 
-  Reemplaza la lista plana de casillas: con muchos indicadores esa lista se
-  vuelve larguisima. Aqui se busca, se abre un area a la vez y se puede marcar
-  el area completa de un clic. Las casillas son las mismas del formulario, asi
-  que el POST no cambia.
+  Con casi 40 indicadores, una lista de casillas apretadas no sirve: aqui cada
+  area es un bloque con su color, cada cosa es una tarjeta que se toca entera
+  (tambien con el dedo) y arriba queda el buscador con la cuenta de lo marcado.
 {% endcomment %}
 
-<div class="horus-field">
-  <label class="horus-label">
-    Que se va a medir <span class="text-danger ms-1">*</span>
-  </label>
-  <div class="horus-control">
-    <div class="selector-indicadores" id="selectorIndicadores">
-      <div class="buscador-lista mb-2">
-        <i class="bi bi-search"></i>
-        <input type="search" class="form-control form-control-sm" id="buscarIndicador"
-               placeholder="Buscar lo que quieres medir" autocomplete="off">
-      </div>
-
-      <div class="small text-muted mb-2">
-        <span id="cuentaIndicadores">0</span> marcados
-        &middot;
-        <a href="#" id="limpiarIndicadores">quitar todos</a>
-      </div>
-
-      {% for grupo in areas_indicadores %}
-        <details class="area-indicadores" {% if forloop.first %}open{% endif %}>
-          <summary>
-            {{ grupo.nombre }}
-            <span class="badge text-bg-light">{{ grupo.indicadores|length }}</span>
-            <a href="#" class="small ms-auto marcar-area" data-area="{{ grupo.area }}">marcar toda</a>
-          </summary>
-
-          <div class="area-lista">
-            {% for indicador in grupo.indicadores %}
-              <label class="opcion-indicador" data-nombre="{{ indicador.nombre|lower }}">
-                <input type="checkbox" name="indicadores" value="{{ indicador.id }}"
-                       class="form-check-input casilla-indicador" data-area="{{ grupo.area }}"
-                       {% if indicador.id in indicadores_marcados %}checked{% endif %}>
-                <span>
-                  {{ indicador.nombre }}
-                  {% if indicador.sufijo %}
-                    <small class="text-muted">({{ indicador.sufijo }})</small>
-                  {% endif %}
-                </span>
-              </label>
-            {% endfor %}
-          </div>
-        </details>
-      {% empty %}
-        <p class="small text-muted mb-0">
-          Todavia no hay indicadores. Crealos en el modulo <b>Que medimos</b>.
-        </p>
-      {% endfor %}
+<div class="selector-indicadores" id="selectorIndicadores">
+  <div class="selector-barra">
+    <div class="buscador-lista">
+      <i class="bi bi-search"></i>
+      <input type="search" class="form-control form-control-sm" id="buscarIndicador"
+             placeholder="Buscar lo que quieres medir" autocomplete="off">
     </div>
+
+    <span class="selector-cuenta">
+      <b id="cuentaIndicadores">0</b> marcados
+    </span>
+
+    <a href="#" id="limpiarIndicadores" class="small">quitar todos</a>
   </div>
+
+  {% for grupo in areas_indicadores %}
+    <section class="area-indicadores">
+      <header class="area-cabecera">
+        <span class="badge text-bg-{{ grupo.color }}">{{ grupo.nombre }}</span>
+        <span class="area-cuantos">{{ grupo.indicadores|length }} cosas que se pueden medir</span>
+        <a href="#" class="small marcar-area ms-auto" data-area="{{ grupo.area }}">
+          marcar toda el area
+        </a>
+      </header>
+
+      <div class="area-lista">
+        {% for indicador in grupo.indicadores %}
+          <label class="opcion-indicador" data-nombre="{{ indicador.nombre|lower }}">
+            <input type="checkbox" name="indicadores" value="{{ indicador.id }}"
+                   class="form-check-input casilla-indicador" data-area="{{ grupo.area }}"
+                   {% if indicador.id in indicadores_marcados %}checked{% endif %}>
+            <span class="opcion-texto">
+              <b>{{ indicador.nombre }}</b>
+              <small>
+                {% if indicador.sufijo %}se anota en {{ indicador.sufijo }}{% else %}si o no{% endif %}
+              </small>
+            </span>
+          </label>
+        {% endfor %}
+      </div>
+    </section>
+  {% empty %}
+    <p class="small text-muted mb-0">
+      Todavia no hay indicadores. Crealos en el modulo <b>Que medimos</b>.
+    </p>
+  {% endfor %}
 </div>

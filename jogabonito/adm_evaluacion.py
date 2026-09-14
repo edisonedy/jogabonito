@@ -22,8 +22,8 @@ from jogabonito.decorators import URL_LOGIN, last_access, secure_module
 from jogabonito.forms import ControlFisicoForm, EvaluacionForm, NotaForm
 from jogabonito.funciones import bad_json, ok_json, paginar, url_back
 from jogabonito.models import (
-    AREAS_INDICADOR, JUGADOR_ACTIVO, ControlFisico, Evaluacion, Indicador, Jugador, Medicion,
-    Nota, TipoEvaluacion,
+    AREAS_INDICADOR, COLORES_AREA, JUGADOR_ACTIVO, ControlFisico, Evaluacion, Indicador,
+    Jugador, Medicion, Nota, TipoEvaluacion,
 )
 
 MODULO = 'adm_evaluacion'
@@ -60,7 +60,12 @@ def indicadores_por_area():
         grupos.setdefault(indicador.area, []).append(indicador)
 
     return [
-        {'area': area, 'nombre': nombres.get(area, ''), 'indicadores': lista}
+        {
+            'area': area,
+            'nombre': nombres.get(area, ''),
+            'color': COLORES_AREA.get(area, 'secondary'),
+            'indicadores': lista,
+        }
         for area, lista in sorted(grupos.items())
     ]
 
@@ -442,7 +447,11 @@ def view(request):
             return url_back(request)
         data['title'] = 'Nota sobre %s' % jugador.como_le_dicen()
         data['jugador'] = jugador
-        data['form'] = NotaForm()
+
+        # Si viene desde la asistencia, la nota queda con la fecha de ESA clase.
+        dia = fecha_pedida(request, 'fecha')
+        inicial = {'fecha': dia} if dia and dia <= date.today() else {}
+        data['form'] = NotaForm(initial=inicial)
         return render(request, 'adm_evaluacion/nota.html', data)
 
     if action in ('control', 'editcontrol'):
