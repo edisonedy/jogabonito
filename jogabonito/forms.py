@@ -542,6 +542,12 @@ class PrecioJugadorForm(BaseForm):
 class DescuentoDelMesForm(forms.Form):
     """Descuento puntual al abrir el siguiente periodo de un jugador."""
 
+    valor_completo = forms.DecimalField(
+        required=False, min_value=Decimal('0'),
+        label='Precio de este mes ($)', decimal_places=2, max_digits=10,
+        help_text='Viene cargado con el precio del grupo. Cambialo solo si este mes cuesta distinto.',
+        widget=forms.NumberInput(attrs={'class': CLASE_INPUT, 'step': '0.01', 'min': '0'})
+    )
     descuento_aplicado = forms.DecimalField(
         required=False, min_value=Decimal('0'), max_value=Decimal('100'),
         label='Descuento en porcentaje (%)', decimal_places=2, max_digits=5,
@@ -563,6 +569,7 @@ class DescuentoDelMesForm(forms.Form):
     def __init__(self, *args, **kwargs):
         self.jugador = kwargs.pop('jugador')
         super().__init__(*args, **kwargs)
+        self.fields['valor_completo'].initial = self.jugador.precio_base()
         self.fields['descuento_aplicado'].initial = self.jugador.descuento or Decimal('0')
         self.fields['descuento_monto'].initial = self.jugador.descuento_monto or Decimal('0')
         self.fields['motivo_descuento'].initial = self.jugador.motivo_descuento or ''
@@ -571,7 +578,10 @@ class DescuentoDelMesForm(forms.Form):
         limpios = super().clean()
         monto = limpios.get('descuento_monto') or Decimal('0')
         descuento = limpios.get('descuento_aplicado') or Decimal('0')
-        precio = self.jugador.precio_base()
+        precio = limpios.get('valor_completo')
+        if precio is None:
+            precio = self.jugador.precio_base()
+        limpios['valor_completo'] = precio
 
         if monto > precio:
             self.add_error('descuento_monto',

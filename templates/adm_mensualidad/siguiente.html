@@ -10,7 +10,7 @@
       Se le abrirá el siguiente mes a <b>{{ jugador.nombre_completo }}</b>.
       <div class="mt-1">
         <b>{{ proximo.0|date:"d/m/Y" }}</b> al <b>{{ proximo.1|date:"d/m/Y" }}</b>
-        &middot; Precio: <b>$ {{ precio_base }}</b>
+        &middot; Precio sugerido: <b>$ {{ precio_base }}</b>
       </div>
       <div class="text-muted mt-1" id="precioFinal">Pagará $ {{ valor }}</div>
     </div>
@@ -27,18 +27,20 @@
   var porcentaje = document.getElementById('id_descuento_aplicado');
   var monto = document.getElementById('id_descuento_monto');
   var precioFinal = document.getElementById('precioFinal');
-  var base = {{ precio_base|default:0 }};
+  var valor = document.getElementById('id_valor_completo');
 
   function numero(campo) {
     return parseFloat((campo.value || '0').replace(',', '.')) || 0;
   }
   function actualizar() {
     if (!precioFinal) { return; }
+    var base = numero(valor);
     var rebaja = numero(monto) || (base * numero(porcentaje) / 100);
     precioFinal.textContent = 'Pagará $ ' + Math.max(base - rebaja, 0).toFixed(2);
   }
   if (porcentaje) { porcentaje.addEventListener('input', actualizar); }
   if (monto) { monto.addEventListener('input', actualizar); }
+  if (valor) { valor.addEventListener('input', actualizar); }
   actualizar();
 })();
 </script>

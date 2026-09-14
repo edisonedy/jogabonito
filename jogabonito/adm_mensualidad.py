@@ -220,6 +220,7 @@ def view(request):
                     descuento=form.cleaned_data['descuento_aplicado'],
                     descuento_monto=form.cleaned_data['descuento_monto'],
                     motivo_descuento=form.cleaned_data['motivo_descuento'],
+                    valor_completo=form.cleaned_data['valor_completo'],
                 )
                 return ok_json({'mensaje': 'Listo: %s del %s al %s, %s.' % (
                     mensualidad.periodo(),

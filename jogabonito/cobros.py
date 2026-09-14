@@ -23,7 +23,7 @@ MAXIMO_MESES_ATRASADOS = 24
 
 
 def crear_mensualidad(jugador, inicio, fin, request=None, descuento=None,
-                      descuento_monto=None, motivo_descuento=None):
+                      descuento_monto=None, motivo_descuento=None, valor_completo=None):
     """Abre el mes del jugador con el precio que tiene hoy.
 
     Los descuentos opcionales se usan para una rebaja de ese periodo; no
@@ -35,21 +35,22 @@ def crear_mensualidad(jugador, inicio, fin, request=None, descuento=None,
         descuento = jugador.descuento or Decimal('0')
         descuento_monto = jugador.descuento_monto or Decimal('0')
         motivo_descuento = jugador.motivo_descuento
+    valor_completo = valor_completo if valor_completo is not None else jugador.precio_base()
     descuento = descuento or Decimal('0')
     descuento_monto = descuento_monto or Decimal('0')
     if descuento_monto:
         descuento = Decimal('0')
         rebaja = descuento_monto
     else:
-        rebaja = (jugador.precio_base() * descuento / Decimal('100')).quantize(
+        rebaja = (valor_completo * descuento / Decimal('100')).quantize(
             Decimal('0.01'), rounding=ROUND_HALF_UP)
 
     mensualidad = Mensualidad(
         jugador=jugador,
         mes=inicio.month,
         anio=inicio.year,
-        valor=(jugador.precio_base() - rebaja).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP),
-        valor_completo=jugador.precio_base(),
+        valor=(valor_completo - rebaja).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP),
+        valor_completo=valor_completo,
         descuento_aplicado=descuento,
         descuento_monto=descuento_monto,
         motivo_descuento=motivo_descuento or '',
