@@ -1142,9 +1142,12 @@ class Jugador(ModeloBase):
             indicador = fila['indicador']
             valor = fila['ultima'].valor
 
-            if indicador.tipo_medida == MEDIDA_ESCALA:
-                minimo = indicador.valor_minimo if indicador.valor_minimo is not None else 1
-                maximo = indicador.valor_maximo if indicador.valor_maximo is not None else 10
+            if indicador.tipo_medida in MEDIDAS_ABSOLUTAS:
+                # Estas tienen techo propio (10, 100%, si/no): se comparan
+                # contra ese techo y no contra el resto del grupo.
+                tope_bajo, tope_alto = TOPES_ABSOLUTOS[indicador.tipo_medida]
+                minimo = indicador.valor_minimo if indicador.valor_minimo is not None else tope_bajo
+                maximo = indicador.valor_maximo if indicador.valor_maximo is not None else tope_alto
                 referencia = 'escala'
             else:
                 # Ultimo valor de cada jugador activo del grupo en ese indicador.
@@ -1179,6 +1182,13 @@ class Jugador(ModeloBase):
         ejes = []
         for area, etiqueta in AREAS_INDICADOR:
             puntajes = por_area.get(area, [])
+
+            # Las cuatro de siempre salen aunque esten vacias, para que la tela
+            # tenga forma. Las de portero y mental solo si se le midieron: a un
+            # jugador de campo no le vamos a dibujar un eje de arquero en cero.
+            if area not in AREAS_BASE and not puntajes:
+                continue
+
             ejes.append({
                 'area': area,
                 'etiqueta': etiqueta,
@@ -1524,12 +1534,19 @@ AREA_TECNICA = 1
 AREA_FISICA = 2
 AREA_TACTICA = 3
 AREA_ACTITUD = 4
+AREA_PORTERO = 5       # lo que solo se le mide al arquero
+AREA_MENTAL = 6        # concentracion, decision bajo presion, reaccion
+
+# Las cuatro que tiene cualquier jugador de campo: son los ejes fijos del radar.
+AREAS_BASE = (AREA_TECNICA, AREA_FISICA, AREA_TACTICA, AREA_ACTITUD)
 
 AREAS_INDICADOR = (
     (AREA_TECNICA, 'TECNICA'),
     (AREA_FISICA, 'FISICA'),
     (AREA_TACTICA, 'TACTICA'),
     (AREA_ACTITUD, 'ACTITUD'),
+    (AREA_PORTERO, 'PORTERO'),
+    (AREA_MENTAL, 'MENTAL'),
 )
 
 COLORES_AREA = {
@@ -1537,17 +1554,33 @@ COLORES_AREA = {
     AREA_FISICA: 'danger',
     AREA_TACTICA: 'primary',
     AREA_ACTITUD: 'warning',
+    AREA_PORTERO: 'info',
+    AREA_MENTAL: 'dark',
 }
 
 MEDIDA_ESCALA = 1      # 1 a 10, lo califica el entrenador
 MEDIDA_NUMERO = 2      # una cantidad con unidad: metros, repeticiones, goles
 MEDIDA_TIEMPO = 3      # segundos: aqui mejorar es bajar el numero
+MEDIDA_PORCENTAJE = 4  # 0 a 100: aciertos sobre intentos
+MEDIDA_SI_NO = 5       # 1 o 0: lo hace o no lo hace
 
 TIPOS_MEDIDA = (
     (MEDIDA_ESCALA, 'ESCALA 1 A 10'),
     (MEDIDA_NUMERO, 'NUMERO CON UNIDAD'),
     (MEDIDA_TIEMPO, 'TIEMPO EN SEGUNDOS'),
+    (MEDIDA_PORCENTAJE, 'PORCENTAJE (0 A 100)'),
+    (MEDIDA_SI_NO, 'SI O NO (1 O 0)'),
 )
+
+# Las que se comparan contra un maximo fijo y no contra el resto del grupo.
+MEDIDAS_ABSOLUTAS = (MEDIDA_ESCALA, MEDIDA_PORCENTAJE, MEDIDA_SI_NO)
+
+# El techo natural de cada una de esas.
+TOPES_ABSOLUTOS = {
+    MEDIDA_ESCALA: (1, 10),
+    MEDIDA_PORCENTAJE: (0, 100),
+    MEDIDA_SI_NO: (0, 1),
+}
 
 MEJOR_MAYOR = 1
 MEJOR_MENOR = 2
@@ -1590,7 +1623,12 @@ class Posicion(ModeloBase):
         super().save(*args, **kwargs)
 
     def pesos_por_area(self):
-        """{area: peso} para calcular la afinidad del jugador."""
+        """{area: peso} para calcular la afinidad del jugador.
+
+        Las areas que no estan aqui (portero, mental) pesan 0: no definen el
+        puesto de un jugador de campo. El arquero se mide con las suyas, pero
+        eso no cambia si a alguien le queda ser lateral o volante.
+        """
         return {
             AREA_TECNICA: self.peso_tecnica,
             AREA_FISICA: self.peso_fisica,
@@ -1652,11 +1690,18 @@ class Indicador(ModeloBase):
     def sufijo(self):
         if self.tipo_medida == MEDIDA_ESCALA:
             return '/ 10'
+        if self.tipo_medida == MEDIDA_PORCENTAJE:
+            return '%'
+        if self.tipo_medida == MEDIDA_SI_NO:
+            return ''
         return self.unidad
 
     def formatear(self, valor):
         if valor is None:
             return '-'
+        if self.tipo_medida == MEDIDA_SI_NO:
+            return 'SI' if valor else 'NO'
+
         texto = ('%s' % valor).rstrip('0').rstrip('.') if '.' in ('%s' % valor) else '%s' % valor
         sufijo = self.sufijo()
         return ('%s %s' % (texto, sufijo)).strip()

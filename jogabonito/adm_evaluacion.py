@@ -109,8 +109,12 @@ def view(request):
                 evaluacion = form.save(commit=False)
                 evaluacion.save(request)
                 form.save_m2m()
-                return ok_json({'mensaje': 'Evaluacion guardada.',
-                                'redirect_url': '/sistema/adm_evaluacion?action=planilla&id=%s' % evaluacion.id})
+                destino = 'planilla' if evaluacion.indicadores.exists() else 'elegir'
+                return ok_json({
+                    'mensaje': 'Evaluacion guardada.',
+                    'redirect_url': '/sistema/adm_evaluacion?action=%s&id=%s' % (
+                        destino, evaluacion.id),
+                })
             except Exception as ex:
                 transaction.set_rollback(True)
                 return bad_json(error=1, ex=ex)
@@ -191,6 +195,40 @@ def view(request):
             except Exception as ex:
                 transaction.set_rollback(True)
                 return bad_json(error=2, ex=ex)
+
+        # ---- que se va a medir en esta prueba ------------------------
+        if action == 'elegir':
+            try:
+                evaluacion = evaluacion_permitida(perfil, request.POST.get('id'))
+                if evaluacion is None:
+                    return bad_json(error=4)
+                if evaluacion.cerrada:
+                    return bad_json(mensaje='La evaluacion esta cerrada.')
+
+                pedidos = request.POST.getlist('indicadores')
+                indicadores = list(Indicador.objects.filter(id__in=pedidos, activo=True))
+                if not indicadores:
+                    return bad_json(mensaje='Marca al menos una cosa para medir.')
+
+                # Lo que se saca y ya tenia valores se avisa, no se borra a escondidas.
+                quitados = evaluacion.indicadores.exclude(
+                    id__in=[i.id for i in indicadores]).values_list('id', flat=True)
+                con_datos = evaluacion.mediciones.filter(indicador_id__in=list(quitados)).count()
+
+                evaluacion.indicadores.set(indicadores)
+
+                mensaje = 'Se van a medir %s cosas.' % len(indicadores)
+                if con_datos:
+                    mensaje += (' Ojo: %s marca%s de lo que quitaste dejan de verse en la '
+                                'planilla.' % (con_datos, '' if con_datos == 1 else 's'))
+
+                return ok_json({
+                    'mensaje': mensaje,
+                    'redirect_url': '/sistema/adm_evaluacion?action=planilla&id=%s' % evaluacion.id,
+                })
+            except Exception as ex:
+                transaction.set_rollback(True)
+                return bad_json(error=1, ex=ex)
 
         # ---- la prueba de ingreso de UN jugador ----------------------
         # El chico llega, el profe lo coge aparte y lo mide. No es una jornada
@@ -447,6 +485,17 @@ def view(request):
         data['title'] = 'Eliminar nota'
         data['nota'] = nota
         return render(request, 'adm_evaluacion/borrarnota.html', data)
+
+    if action == 'elegir':
+        evaluacion = evaluacion_permitida(perfil, request.GET.get('id'))
+        if evaluacion is None:
+            return url_back(request)
+
+        data['title'] = 'Que se va a medir'
+        data['evaluacion'] = evaluacion
+        data['areas_indicadores'] = indicadores_por_area()
+        data['indicadores_marcados'] = list(evaluacion.indicadores.values_list('id', flat=True))
+        return render(request, 'adm_evaluacion/elegir.html', data)
 
     if action == 'ingreso':
         try:

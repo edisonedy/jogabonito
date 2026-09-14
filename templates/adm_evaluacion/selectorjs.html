@@ -63,4 +63,30 @@
   if (buscar) { buscar.addEventListener('input', filtrar); }
   contar();
 })();
+
+// Cuando la prueba es de UN solo jugador, sobra el rango de fechas y el
+// nombre se arma solo: se esconden los dos campos para no hacer ruido.
+(function () {
+  var jugador = document.getElementById('id_jugador');
+  if (!jugador) { return; }
+
+  var hasta = document.getElementById('fieldset_fecha_fin');
+  var titulo = document.getElementById('fieldset_titulo');
+  var campoTitulo = document.getElementById('id_titulo');
+
+  function acomodar() {
+    var individual = !!jugador.value;
+
+    if (hasta) { hasta.hidden = individual; }
+    if (titulo) { titulo.hidden = individual && !campoTitulo.value; }
+
+    if (individual) {
+      var fin = document.getElementById('id_fecha_fin');
+      if (fin) { fin.value = ''; }
+    }
+  }
+
+  jugador.addEventListener('change', acomodar);
+  acomodar();
+})();
 </script>

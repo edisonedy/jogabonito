@@ -186,9 +186,28 @@ class RadarTest(BaseTablero):
         self.assertEqual(tactica['puntaje'], 0.0)
         self.assertEqual(radar['areas_medidas'], 2)
 
-    def test_siempre_devuelve_los_cuatro_ejes(self):
+    def test_siempre_devuelve_los_cuatro_ejes_de_campo(self):
+        """Portero y mental solo aparecen si se le midieron."""
         self.assertEqual(len(self.jugador.radar()['ejes']), 4)
         self.assertEqual(len(self.jugador_ajeno.radar()['ejes']), 4)
+
+    def test_al_arquero_se_le_agrega_su_eje(self):
+        from decimal import Decimal
+        from jogabonito.models import AREA_PORTERO, MEDIDA_ESCALA, Indicador, Medicion
+
+        from jogabonito.models import Evaluacion
+
+        blocaje = Indicador.objects.create(
+            nombre='blocaje', area=AREA_PORTERO, tipo_medida=MEDIDA_ESCALA, orden=1)
+        prueba = Evaluacion.objects.create(
+            categoria=self.mi_categoria, fecha=HOY, titulo='prueba de arquero')
+        prueba.indicadores.set([blocaje])
+        Medicion.objects.create(evaluacion=prueba, jugador=self.jugador,
+                                indicador=blocaje, valor=Decimal('8'))
+
+        areas = [e['etiqueta'] for e in self.jugador.radar()['ejes']]
+        self.assertIn('PORTERO', areas)
+        self.assertEqual(len(areas), 5)
 
     def test_sin_companieros_no_se_puede_normalizar_un_tiempo(self):
         """Con un solo jugador medido no hay contra que comparar el tiempo."""

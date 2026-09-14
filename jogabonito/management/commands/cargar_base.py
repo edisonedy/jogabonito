@@ -144,6 +144,25 @@ INDICADORES = [
      'Del 1 al 10 segun atencion, orden y cumplimiento de las consignas.'),
     ('REACCION AL ERROR', 4, 1, '', 4,
      'Del 1 al 10: como sigue despues de fallar o de recibir un gol.'),
+
+    # ---------------------------- PORTERO (area 5) ----------------------------
+    # Solo para arqueros. No entran en la afinidad de los jugadores de campo.
+    ('BLOCAJE Y SEGURIDAD', 5, 1, '', 1, 'Del 1 al 10 segun como atrapa y asegura el balon.'),
+    ('ACHIQUE Y 1 CONTRA 1', 5, 1, '', 2, 'Del 1 al 10 segun como sale al delantero.'),
+    ('JUEGO CON LOS PIES', 5, 1, '', 3, 'Del 1 al 10 segun su salida jugando.'),
+    ('SAQUE LARGO', 5, 2, 'm', 4, 'Metros que alcanza con el saque de arco.'),
+    ('ATAJADAS DE 10 REMATES', 5, 4, '', 5,
+     'De 10 remates a puerta, que porcentaje ataja.'),
+
+    # ---------------------------- MENTAL (area 6) -----------------------------
+    ('CONCENTRACION EN EL PARTIDO', 6, 1, '', 1,
+     'Del 1 al 10: se mantiene atento los 90 minutos o se desconecta.'),
+    ('DECISION BAJO PRESION', 6, 1, '', 2,
+     'Del 1 al 10: que tan bien resuelve cuando lo aprietan.'),
+    ('TIEMPO DE REACCION', 6, 3, 'seg', 3,
+     'Segundos en responder al estimulo (luz, silbato o senia del profe).'),
+    ('LIDERAZGO EN LA CANCHA', 6, 1, '', 4,
+     'Del 1 al 10: habla, ordena y levanta al companiero.'),
 ]
 
 # El peso y la estatura NO son indicadores: van en ControlFisico, en la ficha

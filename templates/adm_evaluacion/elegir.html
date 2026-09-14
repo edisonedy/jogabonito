@@ -1,0 +1,76 @@
+{% extends "base_nueva.html" %}
+
+{% block pagetitle %}Que se va a medir | {{ academia.nombre }}{% endblock %}
+
+{% block canvas %}
+  <div class="modulo-toolbar">
+    <div>
+      <h5 class="mb-0">Que se va a medir</h5>
+      <div class="small text-muted">
+        {{ evaluacion.titulo }} &middot; {{ evaluacion.texto_a_quien }}
+        &middot; {{ evaluacion.texto_fechas }}
+      </div>
+    </div>
+
+    <a href="/sistema/adm_evaluacion" class="btn btn-sm btn-outline-secondary btn-touch ms-auto">
+      <i class="bi bi-arrow-left me-1"></i> Volver
+    </a>
+  </div>
+
+  <form id="formularioElegir">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="elegir">
+    <input type="hidden" name="id" value="{{ evaluacion.id }}">
+
+    <p class="small text-muted">
+      Marca solo lo que vas a tomar ese dia. Puedes abrir un area a la vez,
+      buscar por nombre o marcar el area completa. Despues se abre la planilla
+      para anotar los valores.
+    </p>
+
+    {% include "adm_evaluacion/selector.html" %}
+
+    <div class="d-flex flex-wrap gap-2 mt-3">
+      <button type="button" class="btn btn-joga btn-touch" id="btnGuardarElegir">
+        <i class="bi bi-check2-circle me-1"></i> Guardar y tomar la prueba
+      </button>
+      <a href="/sistema/adm_evaluacion?action=planilla&amp;id={{ evaluacion.id }}"
+         class="btn btn-outline-secondary btn-touch">
+        Ir a la planilla sin cambiar
+      </a>
+    </div>
+  </form>
+{% endblock %}
+
+{% block heading %}
+  {% include "adm_evaluacion/selectorjs.html" %}
+<script>
+  $(function () {
+    $('#btnGuardarElegir').on('click', function () {
+      var boton = $(this);
+      boton.prop('disabled', true);
+
+      $.ajax({
+        type: 'POST',
+        url: '/sistema/adm_evaluacion',
+        data: $('#formularioElegir').serialize(),
+        dataType: 'json'
+      }).done(function (data) {
+        if (data.result === 'ok') {
+          window.location.href = data.redirect_url;
+        } else {
+          if (typeof NotificacionAlerta === 'function') {
+            NotificacionAlerta('warning', 'Advertencia', data.mensaje || 'No se pudo guardar.');
+          } else {
+            alert(data.mensaje || 'No se pudo guardar.');
+          }
+          boton.prop('disabled', false);
+        }
+      }).fail(function () {
+        alert('Error de conexion. Revisa la senal.');
+        boton.prop('disabled', false);
+      });
+    });
+  });
+</script>
+{% endblock %}

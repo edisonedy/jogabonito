@@ -344,6 +344,14 @@ class EvaluacionForm(BaseForm):
         # Individual: solo jugadores de los grupos que el usuario maneja.
         self.fields['jugador'].required = False
         self.fields['jugador'].empty_label = 'A todo el grupo'
+        self.fields['titulo'].required = False
+        # Que se mide se elige en la pantalla siguiente, no en el modal.
+        self.fields['indicadores'].required = False
+        self.fields['titulo'].help_text = (
+            'Si es de un solo jugador y lo dejas vacio, se le pone el nombre solo.')
+        self.fields['fecha_fin'].help_text = (
+            'Solo para la prueba de todo el grupo, cuando se toma en varios dias. '
+            'La de un solo jugador es de un dia y ya.')
         self.fields['jugador'].queryset = Jugador.objects.filter(
             estado=JUGADOR_ACTIVO,
             categoria__in=self.fields['categoria'].queryset
@@ -355,8 +363,19 @@ class EvaluacionForm(BaseForm):
             raise forms.ValidationError('No se puede registrar una prueba de una fecha futura.')
         return fecha
 
+    def nombre_sugerido(self, jugador, tipo, fecha):
+        """Como se llama una prueba de un solo jugador si no le ponen nombre.
+
+        La primera que se le toma es su prueba inicial: con eso llego. Las
+        siguientes llevan la fecha, que es lo unico que las distingue.
+        """
+        es_la_primera = not jugador.mediciones.exists()
+        if es_la_primera or (tipo and tipo.es_inicial):
+            return 'PRUEBA INICIAL DE %s' % jugador.nombre_completo()
+        return 'PRUEBA DE %s DEL %s' % (jugador.nombre_completo(), fecha.strftime('%d/%m/%Y'))
+
     def clean(self):
-        """Si es individual, el jugador tiene que ser de ese grupo."""
+        """La individual es de UN jugador, de UN dia y con nombre propio."""
         limpios = super().clean()
         jugador = limpios.get('jugador')
         categoria = limpios.get('categoria')
@@ -365,6 +384,18 @@ class EvaluacionForm(BaseForm):
             self.add_error('jugador', '%s no entrena en %s. Elige su grupo o deja la '
                                       'prueba para todo el grupo.'
                                       % (jugador.nombre_completo(), categoria.nombre))
+            return limpios
+
+        if jugador:
+            # Tomarle una prueba a uno es cosa de un dia: no hay rango.
+            limpios['fecha_fin'] = None
+            if not (limpios.get('titulo') or '').strip() and limpios.get('fecha'):
+                limpios['titulo'] = self.nombre_sugerido(
+                    jugador, limpios.get('tipo'), limpios['fecha'])
+
+        elif not (limpios.get('titulo') or '').strip():
+            self.add_error('titulo', 'Ponle un nombre a la prueba del grupo.')
+
         return limpios
 
     def clean_fecha_fin(self):
@@ -377,11 +408,8 @@ class EvaluacionForm(BaseForm):
             raise forms.ValidationError('Una prueba que dura mas de un mes ya son dos pruebas.')
         return fin
 
-    def clean_indicadores(self):
-        indicadores = self.cleaned_data.get('indicadores')
-        if not indicadores:
-            raise forms.ValidationError('Elige al menos un indicador para medir.')
-        return indicadores
+    # Que se va a medir NO se pide aqui: se elige en la pantalla siguiente,
+    # que tiene espacio para la lista completa. Por eso no hay validacion.
 
 
 class RepresentanteDelJugadorForm(forms.Form):

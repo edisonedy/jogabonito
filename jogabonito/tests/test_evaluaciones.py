@@ -312,14 +312,69 @@ class CrearEvaluacionTest(BaseEvaluacion):
         self.assertIn('action=planilla', datos['redirect_url'])
         self.assertTrue(Evaluacion.objects.filter(titulo='prueba semanal 3').exists())
 
-    def test_no_crea_una_prueba_sin_indicadores(self):
+    def test_se_crea_sin_indicadores_y_manda_a_elegirlos(self):
+        """Que se mide se elige en la pantalla siguiente, no en el modal."""
         self.client.force_login(self.usuario_entrenador)
         respuesta = self.client.post('/sistema/adm_evaluacion', {
             'action': 'add', 'categoria': self.mi_categoria.id,
             'fecha': HOY.strftime('%Y-%m-%d'), 'titulo': 'sin nada',
         })
-        self.assertEqual(json.loads(respuesta.content)['result'], 'bad')
-        self.assertFalse(Evaluacion.objects.filter(titulo='sin nada').exists())
+        datos = json.loads(respuesta.content)
+
+        self.assertEqual(datos['result'], 'ok')
+        self.assertIn('action=elegir', datos['redirect_url'])
+
+        evaluacion = Evaluacion.objects.get(titulo='sin nada')
+        self.assertEqual(evaluacion.indicadores.count(), 0)
+
+    def test_elegir_que_se_mide_manda_a_la_planilla(self):
+        self.client.force_login(self.usuario_entrenador)
+        evaluacion = Evaluacion.objects.create(
+            categoria=self.mi_categoria, fecha=HOY, titulo='para elegir')
+
+        respuesta = self.client.post('/sistema/adm_evaluacion', {
+            'action': 'elegir', 'id': evaluacion.id,
+            'indicadores': [self.control.id, self.velocidad.id],
+        })
+        datos = json.loads(respuesta.content)
+
+        self.assertEqual(datos['result'], 'ok')
+        self.assertIn('action=planilla', datos['redirect_url'])
+        self.assertEqual(evaluacion.indicadores.count(), 2)
+
+    def test_no_deja_dejarla_sin_nada_que_medir(self):
+        self.client.force_login(self.usuario_entrenador)
+        evaluacion = Evaluacion.objects.create(
+            categoria=self.mi_categoria, fecha=HOY, titulo='vacia')
+        evaluacion.indicadores.set([self.control])
+
+        respuesta = self.client.post('/sistema/adm_evaluacion', {
+            'action': 'elegir', 'id': evaluacion.id,
+        })
+        datos = json.loads(respuesta.content)
+
+        self.assertEqual(datos['result'], 'bad')
+        self.assertIn('al menos una cosa', datos['mensaje'])
+        self.assertEqual(evaluacion.indicadores.count(), 1)
+
+    def test_avisa_si_al_quitar_algo_se_pierden_marcas_de_la_planilla(self):
+        from decimal import Decimal
+        from jogabonito.models import Medicion
+
+        self.client.force_login(self.usuario_entrenador)
+        evaluacion = Evaluacion.objects.create(
+            categoria=self.mi_categoria, fecha=HOY, titulo='con datos')
+        evaluacion.indicadores.set([self.control, self.velocidad])
+        Medicion.objects.create(evaluacion=evaluacion, jugador=self.jugador,
+                                indicador=self.velocidad, valor=Decimal('5.5'))
+
+        respuesta = self.client.post('/sistema/adm_evaluacion', {
+            'action': 'elegir', 'id': evaluacion.id, 'indicadores': [self.control.id],
+        })
+        datos = json.loads(respuesta.content)
+
+        self.assertEqual(datos['result'], 'ok')
+        self.assertIn('dejan de verse', datos['mensaje'])
 
     def test_no_crea_una_prueba_con_fecha_futura(self):
         self.client.force_login(self.usuario_entrenador)
