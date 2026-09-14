@@ -109,6 +109,24 @@ class DescuentoEnDolaresTest(BaseDescuentos):
         self.assertEqual(self.jugador.valor_mensual_vigente(), Decimal('20.00'))
         self.assertIn('$ 5 de descuento', self.jugador.explicacion_precio())
 
+    def test_editando_el_mes_tambien_se_le_puede_bajar_el_precio(self):
+        """La pantalla de editar es la que se usa cuando ya estaba creado."""
+        self.crear()
+        mensualidad = Mensualidad.objects.get(jugador=self.jugador)
+
+        respuesta = self.client.post('/sistema/adm_mensualidad', {
+            'action': 'pagar', 'id': mensualidad.id,
+            'periodo_inicio': '2026-09-10', 'periodo_fin': '2026-10-09',
+            'fecha_vencimiento': '2026-09-10', 'valor_completo': '25.00',
+            'descuento_monto': '7.50', 'motivo_descuento': 'Acuerdo de este mes',
+            'estado': 1, 'dias_ausente': 0,
+        })
+        self.assertEqual(json.loads(respuesta.content)['result'], 'ok')
+
+        mensualidad.refresh_from_db()
+        self.assertEqual(mensualidad.valor, Decimal('17.50'))
+        self.assertEqual(mensualidad.descuento_monto, Decimal('7.50'))
+
     def test_la_ausencia_se_descuenta_despues_de_la_rebaja(self):
         """Primero la rebaja del mes y sobre eso los dias que aviso."""
         self.crear(descuento_monto='5.00', motivo_descuento='Acuerdo')
