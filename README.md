@@ -652,6 +652,20 @@ como queda el sistema cuando alguien no da una prueba.
 `--limpiar` borra los jugadores que no son esos tres y las pruebas que quedan
 sin ninguna medicion. Es para dejar la base lista para mostrarla.
 
+## Subirlo al servidor
+
+Todo lo del despliegue esta en la carpeta [despliegue/](despliegue/README.md):
+el script, el servicio de systemd, el sitio de Nginx y la tarea diaria.
+
+```bash
+sudo bash /opt/jogabonito/despliegue/desplegar.sh --primera-vez   # la primera vez
+sudo bash /opt/jogabonito/despliegue/desplegar.sh                 # cada actualizada
+```
+
+El `.env` **nunca** se sube al repositorio: en el servidor se crea a mano
+copiando `.env.example`. Y la clave del administrador de produccion no puede
+ser la de desarrollo.
+
 ## Buscador en listas largas
 
 La pantalla de asistencia tiene un filtro que esconde a los que no coinciden
