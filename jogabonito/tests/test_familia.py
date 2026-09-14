@@ -451,3 +451,55 @@ class EnlacesDeWhatsappTest(BaseFamilia):
     def test_y_en_la_lista_de_jugadores(self):
         respuesta = self.client.get('/sistema/adm_jugador')
         self.assertContains(respuesta, 'https://wa.me/593999955936')
+
+
+class LaNotaNoTocaLaAsistenciaTest(BaseFamilia):
+    """Abrir la lista no guarda nada: la novedad es solo lectura.
+
+    La nota vive en su propia tabla y esta atada al JUGADOR, no al dia. Por eso
+    se ve siempre, aunque ese dia no se tome lista, y por eso abrir la pantalla
+    no crea ni una fila de asistencia.
+    """
+
+    def setUp(self):
+        self.client.force_login(self.admin)
+        self.nota = Nota.objects.create(
+            jugador=self.jugador, fecha=HOY - timedelta(days=20),
+            tipo=NOTA_GENERAL, texto='le cuesta el pase largo'
+        )
+
+    def test_abrir_la_lista_no_crea_asistencias(self):
+        from jogabonito.models import Asistencia
+
+        for _ in range(3):
+            self.client.get('/sistema/adm_asistencia?categoria=%s' % self.categoria.id)
+
+        self.assertEqual(Asistencia.objects.count(), 0)
+
+    def test_verla_en_otro_dia_tampoco_guarda_nada(self):
+        from jogabonito.models import Asistencia
+
+        otro_dia = (HOY - timedelta(days=5)).strftime('%Y-%m-%d')
+        respuesta = self.client.get(
+            '/sistema/adm_asistencia?categoria=%s&fecha=%s' % (self.categoria.id, otro_dia))
+
+        filas = {f['jugador'].id: f for f in respuesta.context['filas']}
+        self.assertEqual(filas[self.jugador.id]['nota'], self.nota)
+        self.assertIsNone(filas[self.jugador.id]['asistencia'])
+        self.assertEqual(Asistencia.objects.count(), 0)
+
+    def test_la_nota_no_se_borra_ni_se_repite_al_marcar(self):
+        from jogabonito.models import ASISTENCIA_PRESENTE, Asistencia
+
+        self.client.post('/sistema/adm_asistencia', {
+            'action': 'marcar', 'categoria': self.categoria.id,
+            'fecha': HOY.strftime('%Y-%m-%d'), 'jugador': self.jugador.id,
+            'estado': ASISTENCIA_PRESENTE,
+        })
+
+        self.assertEqual(Asistencia.objects.count(), 1)
+        self.assertEqual(Nota.objects.count(), 1)
+
+    def test_la_fecha_que_sale_es_la_de_la_nota(self):
+        respuesta = self.client.get('/sistema/adm_asistencia?categoria=%s' % self.categoria.id)
+        self.assertContains(respuesta, self.nota.fecha.strftime('%d/%m/%Y'))

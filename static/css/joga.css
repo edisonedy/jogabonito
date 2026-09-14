@@ -974,3 +974,22 @@ input.check-group{
   color:var(--joga-verde, #17a44b);
 }
 .cobro-monto > small{ color:#6c757d; }
+
+/* ---- Los dos iconos de cada jugador en la asistencia ----
+   Tienen que quedar del mismo alto y centrados con los botones de estado;
+   antes salian mas chicos y pegados arriba. */
+.fila-asistencia .fila-jugador > span:last-child{
+  align-items:center;
+  flex:0 0 auto;
+}
+.fila-asistencia .btn-soft{
+  width:38px;
+  height:38px;
+  padding:0;
+  border-radius:12px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  flex:0 0 auto;
+  font-size:15px;
+}

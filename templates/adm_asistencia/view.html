@@ -110,8 +110,8 @@
                 {% if fila.nota %}
                   <div class="novedad-jugador text-{{ fila.nota.color }}" title="{{ fila.nota.texto }}">
                     <i class="bi {{ fila.nota.icono }}"></i>
+                    <span class="text-muted">ultima nota del {{ fila.nota.fecha|date:"d/m/Y" }}:</span>
                     {{ fila.nota.texto|truncatechars:60 }}
-                    <span class="text-muted">&middot; {{ fila.nota.fecha|date:"d/m" }}</span>
                   </div>
                 {% endif %}
               </div>
