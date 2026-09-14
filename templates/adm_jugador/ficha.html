@@ -394,8 +394,14 @@
         {% endif %}
 
         {% if mensualidades %}
+          <div class="small text-muted mb-2">
+            Los ultimos 3 meses.
+            <a href="/sistema/adm_mensualidad?action=historial&amp;id={{ jugador.id }}">
+              Ver todos sus pagos</a>.
+          </div>
+
           <div class="lista-meses">
-            {% for m in mensualidades|slice:":6" %}
+            {% for m in mensualidades|slice:":3" %}
               <a class="mes-item" href="#"
                  data-modal-url="/sistema/adm_mensualidad?action={% if m.esta_pagada %}pagar{% else %}cobrar{% endif %}&amp;id={{ m.id }}">
                 <span>
@@ -435,7 +441,14 @@
     <!-- ------------------- asistencia y rendimiento ------------------- -->
     <div class="col-12 col-lg-6 columna-bloques">
       <section class="bloque bloque-crece">
-        <h6><i class="bi bi-calendar-check me-1"></i> Ultimas asistencias</h6>
+        <h6>
+          <i class="bi bi-calendar-check me-1"></i> Ultimas asistencias
+          <a href="/sistema/adm_asistencia?action=historial&amp;id={{ jugador.id }}"
+             class="btn btn-sm btn-outline-secondary ms-auto"
+             title="Todas sus clases, una por una">
+            <i class="bi bi-clock-history me-1"></i> Ver todas
+          </a>
+        </h6>
 
         <div class="resumen-asistencia mb-2">
           <span class="res-item res-total"><b>{{ resumen.porcentaje }}%</b> asistencia</span>
@@ -444,7 +457,7 @@
           <span class="res-item text-bg-warning"><b>{{ resumen.atrasos }}</b> atrasos</span>
         </div>
 
-        {% for a in asistencias|slice:":6" %}
+        {% for a in asistencias|slice:":3" %}
           <div class="ficha-dato">
             <span>
               {{ a.fecha|date:"d/m/Y" }}

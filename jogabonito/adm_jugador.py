@@ -7,7 +7,7 @@ nunca se confia en el id que llega del navegador).
 """
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, F, Q, Sum
 from django.shortcuts import render
 
 from jogabonito.acceso import categorias_permitidas, jugadores_permitidos
@@ -183,8 +183,11 @@ def view(request):
         data['jugador'] = jugador
         data['entrenadores'] = jugador.entrenadores()
         data['resumen'] = jugador.resumen_asistencia()
-        data['asistencias'] = jugador.ultimas_asistencias(10)
-        data['mensualidades'] = jugador.mensualidades.all().order_by('-anio', '-mes')[:12]
+        # En la ficha van solo los ultimos: para ver todo estan las pantallas
+        # de historial, que es donde un chico de anios se revisa de verdad.
+        data['asistencias'] = jugador.ultimas_asistencias(3)
+        data['mensualidades'] = jugador.mensualidades.order_by(
+            F('periodo_inicio').desc(nulls_last=True), '-anio', '-mes')[:3]
         data['proximo_cobro'] = jugador.proximo_periodo()
         data['controles'] = list(jugador.controles_fisicos())[::-1][:6]
         data['ultimo_control'] = jugador.ultimo_control()
